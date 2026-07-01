@@ -1,0 +1,10 @@
+.env
+data/
+backup/postgres/*.sql.gz
+logs/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+.DS_Store
