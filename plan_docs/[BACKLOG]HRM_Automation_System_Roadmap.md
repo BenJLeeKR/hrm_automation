@@ -566,6 +566,8 @@
 - ERD 정리 과정에서 발견한 미확정 사항 3건을 §9 리스크에 추가 (`HR_EMPL_ROLE_REL` 범위 포함 여부, `SYS_ROLE_MST` 세부 값 미정, `PJT_RCMD_RSLT` 추천 가중치 표기 불일치)
 - (관계자 확인 완료) `HR_EMPL_ROLE_REL`(사원역할 연결, 복수 직무 지원) 테이블을 Phase 2 데이터 모델 범위에 포함하기로 확정 — 로드맵 전체의 "15개 테이블" 표현을 "16개 테이블"로 정정, §4 Phase 2 테이블 생성 목록·§11 MVP 체크리스트(데이터베이스/백엔드)에 `HR_EMPL_ROLE_REL` 추가, §9 리스크 중 해당 항목 해결 처리
 - `HR_SKILL_MST` 초기 Seed MVP 초안 작성 (`backend/app/db/seed/hr_skill_mst_seed.py`, 55건) — BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN 6개 그룹, 한국 SI/IT 조직 통상 기술 스택 기준. `backend/docs/ERD.md` §3.4에 초안 표기 및 근거 추가. §9 리스크 "직원 기술 스택 표준화 기준 미정" 상태를 "차단→주의"로 하향 (운영팀 최종 확정 전까지 MVP 표기 유지)
+- `SYS_ROLE_MST` 초기 Seed MVP 확정 (`backend/app/db/seed/sys_role_mst_seed.py`) — ROLE_CD 6종(ADMIN/HR_MGR/PM/TEAM_LEAD/EXEC/VIEWER) 유지, ROLE_NM/ROLE_DESC 및 화면 단위 `PERM_JSON`(`{"screens": {...: "edit"|"view"|"none"}}`) 작성. `backend/docs/ERD.md` §3.13 갱신. §9 리스크 "인증/권한 범위 미정", "`SYS_ROLE_MST` 세부 값 미정" 2건을 "해결(MVP)"로 처리
+- MVP 권한 매트릭스(화면 접근 + 버튼 권한) 작성 — `backend/docs/PERMISSION_MATRIX.md` 신규. 화면 접근 권한은 `[DESIGN]HRM_Screen_Design.md` "화면 목록" 표의 역할 기준(SCR-001~016)을 그대로 따르고, 버튼 권한은 조회/등록/수정/삭제/Excel/관리자 기능 6개 카테고리로 세분화. `sys_role_mst_seed.py`의 `PERM_JSON`을 단순 화면 단위(`edit`/`view`/`none`) 구조에서 화면×버튼 세부 구조(각 6개 boolean)로 v2 갱신, `backend/docs/ERD.md` §3.13 근거 링크 갱신. 화면 설계서에 역할 제한이 명시되지 않은 일부 버튼(예: 프로젝트 등록, 리포트 Excel/발송)은 인접 권한 그룹 기준으로 추정 처리하고 `PERMISSION_MATRIX.md` §5에 운영팀 확인 필요 사항으로 별도 기록
 
 ---
 
@@ -595,14 +597,14 @@
 |---|---|---|---|
 | 직원 기술 스택 표준화 기준 미정 | 높음 | 주의 (2026-07-02 하향, 기존 차단) | `HR_SKILL_MST` MVP 초안 55건(BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN 6개 그룹) 작성 완료 — `backend/app/db/seed/hr_skill_mst_seed.py`, `backend/docs/ERD.md` §3.4 참조. 초안이 마련되어 Phase 2 Alembic Seed 작업 착수는 가능하나, 운영팀 최종 확정 전까지는 MVP 표기 유지 및 실 데이터 반영 보류 — 확정 후 "해결"로 재변경 |
 | 가동 가능일 계산 기준 미정 | 높음 | 차단 | `HR_AVAIL_SNAP` 산정 로직 (투입률 0%=오늘, <100%=부분, ≥100%=MAX 종료일+1) 초안 확정 후 관계자 검토 필요 |
-| 인증/권한 범위 미정 | 높음 | 차단 | `SYS_ROLE_MST` 6개 역할(Admin/HR_MGR/PM/TEAM_LEAD/EXEC/VIEWER) 및 기능별 권한 매트릭스 관계자 승인 필요 |
+| 인증/권한 범위 미정 | 높음 | 해결 (MVP, 2026-07-02 갱신) | `SYS_ROLE_MST` 6개 역할 및 화면×버튼(조회/등록/수정/삭제/Excel/관리자 기능) 권한 매트릭스 MVP 확정 완료 — `backend/docs/PERMISSION_MATRIX.md`(매트릭스 근거), `backend/app/db/seed/sys_role_mst_seed.py`(Seed), `backend/docs/ERD.md` §3.13 참조. 화면 설계서에 명시 없는 일부 버튼 권한은 추정치이며 `PERMISSION_MATRIX.md` §5에 운영팀 확인 필요 사항으로 별도 정리 |
 | AI 질의응답 연동 범위 미정 | 중간 | 주의 | MVP는 OpenAI/Anthropic API 연동, 보안 요건에 따라 사내 LLM 전환 — Phase 5 완료 후 결정 |
 | 기존 Excel/SharePoint 데이터 마이그레이션 방식 미정 | 높음 | 주의 | Excel Import 기능 구현 (Phase 3) 후 데이터 정제 절차 수립 — Phase 8 전 완료 목표 |
 | 운영 서버 백업 정책 미정 | 중간 | 주의 | `pg_dump` 매일 02:00 + 14일 보관 + 외부 스토리지 복제 초안 제시, 운영팀 확인 필요 |
 | 서버 HTTPS/도메인 미적용 | 낮음 | 주의 | 초기 구축은 내부망 HTTP로 운영, Phase 7에서 Nginx + TLS 도입 여부 재검토 |
 | `HR_EMPL_MST.JIKMU_ID` 기존 데이터 없음 | 낮음 | 주의 | NULL 허용 설계로 이관 후 운영팀 수동 보정, Phase 8 데이터 이관 시 처리 |
 | `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 해결 (2026-07-02) | 관계자 확인 완료 — Phase 2 데이터 모델 범위에 포함 확정. 로드맵 전체 테이블 수를 "15개→16개"로 정정, §4/§11 테이블 목록에 반영 완료 (`backend/docs/ERD.md` §5 참조) |
-| `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 주의 | 역할 코드 6종(ADMIN/HR_MGR/PM/TEAM_LEAD/EXEC/VIEWER)만 확정, 표시명·설명·세부 권한 JSON은 미정 — "인증/권한 범위 미정" 이슈와 함께 Phase 2 Seed 작성 전 확정 필요 |
+| `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 해결 (MVP, 2026-07-02 갱신) | ROLE_NM/ROLE_DESC 및 화면×버튼 권한(`view`/`create`/`update`/`delete`/`excel`/`admin`) 기준 PERM_JSON MVP 확정 완료 — `backend/app/db/seed/sys_role_mst_seed.py`, `backend/docs/PERMISSION_MATRIX.md` 참조 |
 | `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 |
 
 ---
@@ -671,7 +673,7 @@
   - [ ] `SYS_ROLE_MST` — 역할 마스터
   - [ ] `SYS_AUDIT_LOG` — 감사 로그
   - [ ] `SYS_BATCH_HIS` — 배치 실행 이력
-- [ ] Seed 데이터 입력: `SYS_ROLE_MST` (6종) + `HR_JIKGUP_MST` + `HR_JIKMU_MST` (12종)
+- [ ] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST` + `HR_JIKMU_MST` (12종) — 내용 확정 완료, Alembic Seed 스크립트 반영은 Phase 2 착수 시 수행 (미완료 유지)
 - [ ] `HR_SKILL_MST` Seed 입력 — MVP 초안 55건 작성 완료(`backend/app/db/seed/hr_skill_mst_seed.py`), 운영팀 최종 확정 후 실 데이터 반영 예정 (미완료 유지)
 - [ ] DB 백업 스크립트 작성 (`/App/hrmngr/backup/backup_db.sh`) 및 crontab 등록 (매일 02:00)
 - [ ] 복구 테스트 완료 (백업 파일 → 신규 DB 복구 확인)
@@ -787,4 +789,6 @@
 | 2026-07-02 | v0.4 | §8 다음 작업 1번(ERD 최종 확정) 완료 처리 — `backend/docs/ERD.md` 작성. Phase 2 진행률 5%로 갱신, 상태 "진행 중"으로 변경. ERD 정리 중 발견한 미확정 사항 3건을 §9 리스크에 추가 | — |
 | 2026-07-02 | v0.5 | `HR_EMPL_ROLE_REL` 테이블을 Phase 2 데이터 모델 범위에 포함 확정 (관계자 확인 완료) — 로드맵 전체의 "15개 테이블" 표현을 "16개 테이블"로 정정 (§4 Phase 2/3, §11 데이터베이스·백엔드 체크리스트), §9 해당 리스크 항목 "해결" 처리, `backend/docs/ERD.md`에 §3.6-1 `HR_EMPL_ROLE_REL` 스키마 섹션 추가 | — |
 | 2026-07-02 | v0.6 | `HR_SKILL_MST` 초기 Seed MVP 초안 작성(55건, 6개 그룹) 및 §9 리스크 "직원 기술 스택 표준화 기준 미정" 상태를 "차단→주의"로 하향 — 운영팀 최종 확정 전까지 MVP 표기 유지, §11 데이터베이스 체크리스트에 항목 추가 (미완료 유지) | — |
+| 2026-07-02 | v0.7 | `SYS_ROLE_MST` 초기 Seed MVP 확정(ROLE_CD 6종, ROLE_NM/ROLE_DESC/화면 단위 `PERM_JSON`) — `backend/app/db/seed/sys_role_mst_seed.py` 작성, `backend/docs/ERD.md` §3.13 갱신. §9 리스크 "인증/권한 범위 미정", "`SYS_ROLE_MST` 세부 값 미정" 2건 "해결(MVP)"로 처리 | — |
+| 2026-07-02 | v0.8 | MVP 권한 매트릭스(화면 접근 + 버튼 권한 조회/등록/수정/삭제/Excel/관리자 기능) 작성 — `backend/docs/PERMISSION_MATRIX.md` 신규, `sys_role_mst_seed.py`의 `PERM_JSON`을 화면×버튼 세부 구조(v2)로 갱신. §9 리스크 2건 해결 내용을 v2 매트릭스 기준으로 갱신 | — |
 
