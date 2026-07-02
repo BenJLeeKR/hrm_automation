@@ -216,6 +216,7 @@
 | `HR_SKILL_MST` (기술 마스터) 테이블 생성 | 예정 |
 | `HR_EMPL_MST` (사원 마스터) 테이블 생성 | 예정 |
 | `HR_EMPL_SKILL_REL` (사원기술 연결) 테이블 생성 | 예정 |
+| `HR_EMPL_ROLE_REL` (사원역할 연결, 복수 직무 지원) 테이블 생성 | 예정 |
 | `PJT_MST` (프로젝트 마스터) 테이블 생성 | 예정 |
 | `PJT_ASGN_HIS` (투입 이력) 테이블 생성 | 예정 |
 | `PJT_RSRC_REQ` (리소스 요청) 테이블 생성 | 예정 |
@@ -236,7 +237,7 @@
 
 **완료 기준**
 
-- `alembic upgrade head` 실행 후 15개 테이블 전부 생성 확인
+- `alembic upgrade head` 실행 후 16개 테이블 전부 생성 확인
 - Seed 데이터 정상 입력 확인
 - `pg_dump` 백업 파일 생성 확인
 
@@ -257,7 +258,7 @@
 | 작업 | 상태 |
 |---|---|
 | FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`) | 예정 |
-| SQLAlchemy 2.x ORM 모델 작성 (15개 테이블) | 예정 |
+| SQLAlchemy 2.x ORM 모델 작성 (16개 테이블) | 예정 |
 | Pydantic v2 스키마 작성 | 예정 |
 | `/health` 헬스체크 엔드포인트 구현 | 예정 |
 | JWT 인증 API 구현 (`SYS_USER_MST` 기반) | 예정 |
@@ -563,6 +564,8 @@
 - 컨테이너 실기동·헬스체크·UFW 방화벽 설정은 Docker 소켓 접근 권한 제약으로 미검증 — 실 서버에서 후속 확인 필요
 - (§8 다음 작업 1번) PostgreSQL ERD 최종 확정 — 설계 문서(수정 없이 원본 유지) §5 기준 15개 테이블 전체 컬럼·PK/FK·CHECK 제약·Seed 데이터·카디널리티를 `backend/docs/ERD.md`로 정리 완료. Alembic 마이그레이션(§8 4번) 작성의 근거 자료로 확정
 - ERD 정리 과정에서 발견한 미확정 사항 3건을 §9 리스크에 추가 (`HR_EMPL_ROLE_REL` 범위 포함 여부, `SYS_ROLE_MST` 세부 값 미정, `PJT_RCMD_RSLT` 추천 가중치 표기 불일치)
+- (관계자 확인 완료) `HR_EMPL_ROLE_REL`(사원역할 연결, 복수 직무 지원) 테이블을 Phase 2 데이터 모델 범위에 포함하기로 확정 — 로드맵 전체의 "15개 테이블" 표현을 "16개 테이블"로 정정, §4 Phase 2 테이블 생성 목록·§11 MVP 체크리스트(데이터베이스/백엔드)에 `HR_EMPL_ROLE_REL` 추가, §9 리스크 중 해당 항목 해결 처리
+- `HR_SKILL_MST` 초기 Seed MVP 초안 작성 (`backend/app/db/seed/hr_skill_mst_seed.py`, 55건) — BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN 6개 그룹, 한국 SI/IT 조직 통상 기술 스택 기준. `backend/docs/ERD.md` §3.4에 초안 표기 및 근거 추가. §9 리스크 "직원 기술 스택 표준화 기준 미정" 상태를 "차단→주의"로 하향 (운영팀 최종 확정 전까지 MVP 표기 유지)
 
 ---
 
@@ -572,7 +575,7 @@
 > 순서대로 수행하는 것을 권장한다.
 
 - [ ] 0. (Phase 1 마무리) 실 서버에서 `docker compose up -d --build` 기동 확인, UFW 방화벽 설정, Docker Compose Plugin v2 전환
-- [x] 1. PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 15개 테이블 관계 검토) → `backend/docs/ERD.md`
+- [x] 1. PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 16개 테이블 관계 검토, `HR_EMPL_ROLE_REL` 포함 확정) → `backend/docs/ERD.md`
 - [x] 2. Docker Compose 개발환경 구성 (`docker-compose.yml` 작성 — api / web / db / redis / worker)
 - [x] 3. FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`, `core/`)
 - [ ] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정)
@@ -590,7 +593,7 @@
 
 | 이슈 | 영향도 | 상태 | 대응 방안 |
 |---|---|---|---|
-| 직원 기술 스택 표준화 기준 미정 | 높음 | 차단 | `HR_SKILL_MST` 마스터 초안 작성 후 운영팀 확정 필요 — Phase 2 시작 전 완료 목표 |
+| 직원 기술 스택 표준화 기준 미정 | 높음 | 주의 (2026-07-02 하향, 기존 차단) | `HR_SKILL_MST` MVP 초안 55건(BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN 6개 그룹) 작성 완료 — `backend/app/db/seed/hr_skill_mst_seed.py`, `backend/docs/ERD.md` §3.4 참조. 초안이 마련되어 Phase 2 Alembic Seed 작업 착수는 가능하나, 운영팀 최종 확정 전까지는 MVP 표기 유지 및 실 데이터 반영 보류 — 확정 후 "해결"로 재변경 |
 | 가동 가능일 계산 기준 미정 | 높음 | 차단 | `HR_AVAIL_SNAP` 산정 로직 (투입률 0%=오늘, <100%=부분, ≥100%=MAX 종료일+1) 초안 확정 후 관계자 검토 필요 |
 | 인증/권한 범위 미정 | 높음 | 차단 | `SYS_ROLE_MST` 6개 역할(Admin/HR_MGR/PM/TEAM_LEAD/EXEC/VIEWER) 및 기능별 권한 매트릭스 관계자 승인 필요 |
 | AI 질의응답 연동 범위 미정 | 중간 | 주의 | MVP는 OpenAI/Anthropic API 연동, 보안 요건에 따라 사내 LLM 전환 — Phase 5 완료 후 결정 |
@@ -598,7 +601,7 @@
 | 운영 서버 백업 정책 미정 | 중간 | 주의 | `pg_dump` 매일 02:00 + 14일 보관 + 외부 스토리지 복제 초안 제시, 운영팀 확인 필요 |
 | 서버 HTTPS/도메인 미적용 | 낮음 | 주의 | 초기 구축은 내부망 HTTP로 운영, Phase 7에서 Nginx + TLS 도입 여부 재검토 |
 | `HR_EMPL_MST.JIKMU_ID` 기존 데이터 없음 | 낮음 | 주의 | NULL 허용 설계로 이관 후 운영팀 수동 보정, Phase 8 데이터 이관 시 처리 |
-| `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 주의 | 설계 문서 ERD 다이어그램에는 존재(사원 복수 직무 지원용)하나 로드맵 "15개 테이블" 목록에는 없음 — Phase 2 착수 전 관계자 확인 후 포함 여부 확정 필요 (`backend/docs/ERD.md` §5 참조) |
+| `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 해결 (2026-07-02) | 관계자 확인 완료 — Phase 2 데이터 모델 범위에 포함 확정. 로드맵 전체 테이블 수를 "15개→16개"로 정정, §4/§11 테이블 목록에 반영 완료 (`backend/docs/ERD.md` §5 참조) |
 | `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 주의 | 역할 코드 6종(ADMIN/HR_MGR/PM/TEAM_LEAD/EXEC/VIEWER)만 확정, 표시명·설명·세부 권한 JSON은 미정 — "인증/권한 범위 미정" 이슈와 함께 Phase 2 Seed 작성 전 확정 필요 |
 | `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 |
 
@@ -651,13 +654,14 @@
 - [ ] PostgreSQL Docker 컨테이너 구성 (외부 포트 **5442** → 내부 5432)
 - [ ] `/App/hrmngr/data/postgres/` 바인드 마운트 확인
 - [ ] Alembic 마이그레이션 환경 구성 (`env.py` 설정)
-- [ ] 전체 테이블 생성 (15개)
+- [ ] 전체 테이블 생성 (16개)
   - [ ] `HR_DEPT_MST` — 부서 마스터
   - [ ] `HR_JIKGUP_MST` — 직급 마스터
   - [ ] `HR_JIKMU_MST` — 직무 마스터
   - [ ] `HR_SKILL_MST` — 기술 마스터
   - [ ] `HR_EMPL_MST` — 사원 마스터
   - [ ] `HR_EMPL_SKILL_REL` — 사원기술 연결
+  - [ ] `HR_EMPL_ROLE_REL` — 사원역할 연결 (복수 직무 지원)
   - [ ] `HR_AVAIL_SNAP` — 가동가능 스냅샷
   - [ ] `PJT_MST` — 프로젝트 마스터
   - [ ] `PJT_ASGN_HIS` — 투입 이력
@@ -668,6 +672,7 @@
   - [ ] `SYS_AUDIT_LOG` — 감사 로그
   - [ ] `SYS_BATCH_HIS` — 배치 실행 이력
 - [ ] Seed 데이터 입력: `SYS_ROLE_MST` (6종) + `HR_JIKGUP_MST` + `HR_JIKMU_MST` (12종)
+- [ ] `HR_SKILL_MST` Seed 입력 — MVP 초안 55건 작성 완료(`backend/app/db/seed/hr_skill_mst_seed.py`), 운영팀 최종 확정 후 실 데이터 반영 예정 (미완료 유지)
 - [ ] DB 백업 스크립트 작성 (`/App/hrmngr/backup/backup_db.sh`) 및 crontab 등록 (매일 02:00)
 - [ ] 복구 테스트 완료 (백업 파일 → 신규 DB 복구 확인)
 - [ ] 외부 DB 클라이언트 접속 확인 (DBeaver 등, `localhost:5442`)
@@ -677,7 +682,7 @@
 ### 백엔드 `→ Phase 3`
 
 - [ ] FastAPI 프로젝트 구조 생성 (`app/core/`, `app/models/`, `app/schemas/`, `app/api/v1/`, `app/services/`)
-- [ ] SQLAlchemy 2.x ORM 모델 작성 (15개 테이블 전체)
+- [ ] SQLAlchemy 2.x ORM 모델 작성 (16개 테이블 전체)
 - [ ] Pydantic v2 스키마 작성
 - [ ] `/health` 헬스체크 엔드포인트 구현
 - [ ] JWT 인증 API 구현 (`SYS_USER_MST` 기반 — 로그인, 토큰 갱신, 로그아웃)
@@ -780,4 +785,6 @@
 | 2026-07-01 | v0.2 | 설계 문서(v0.4) § 14.2 MVP 완료 체크리스트를 §11로 이관 — 인프라/DB/백엔드/프론트엔드/검색추천/AI/운영자동화/파일럿 8개 카테고리, 각 Phase 연결, 테이블 수준 세부 항목 추가 | — |
 | 2026-07-02 | v0.3 | Phase 1 착수 — 디렉토리 구조, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`, `backend`/`frontend` Dockerfile, FastAPI `/health` 스켈레톤, `backup_db.sh` 작성 완료. Phase 1 진행률 60%로 갱신. 컨테이너 실기동·UFW 설정은 실 서버 확인 대기 | — |
 | 2026-07-02 | v0.4 | §8 다음 작업 1번(ERD 최종 확정) 완료 처리 — `backend/docs/ERD.md` 작성. Phase 2 진행률 5%로 갱신, 상태 "진행 중"으로 변경. ERD 정리 중 발견한 미확정 사항 3건을 §9 리스크에 추가 | — |
+| 2026-07-02 | v0.5 | `HR_EMPL_ROLE_REL` 테이블을 Phase 2 데이터 모델 범위에 포함 확정 (관계자 확인 완료) — 로드맵 전체의 "15개 테이블" 표현을 "16개 테이블"로 정정 (§4 Phase 2/3, §11 데이터베이스·백엔드 체크리스트), §9 해당 리스크 항목 "해결" 처리, `backend/docs/ERD.md`에 §3.6-1 `HR_EMPL_ROLE_REL` 스키마 섹션 추가 | — |
+| 2026-07-02 | v0.6 | `HR_SKILL_MST` 초기 Seed MVP 초안 작성(55건, 6개 그룹) 및 §9 리스크 "직원 기술 스택 표준화 기준 미정" 상태를 "차단→주의"로 하향 — 운영팀 최종 확정 전까지 MVP 표기 유지, §11 데이터베이스 체크리스트에 항목 추가 (미완료 유지) | — |
 

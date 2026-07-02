@@ -1,8 +1,8 @@
 # HRM 자동화 시스템 — PostgreSQL ERD (최종 확정)
 
 > 출처: `plan_docs/[DESIGN]HRM_Automation_System_Design_v0_6.md` § 5 (설계서는 수정하지 않음, 본 문서는 Phase 2 Alembic 마이그레이션 작성을 위한 실행용 정리본)
-> 대상: 로드맵 §8 다음 작업 1번 — "PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 15개 테이블 관계 검토)"
-> 작성일: 2026-07-02
+> 대상: 로드맵 §8 다음 작업 1번 — "PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 16개 테이블 관계 검토)"
+> 작성일: 2026-07-02 (최초), 2026-07-02 갱신 — `HR_EMPL_ROLE_REL` 포함 확정(관계자 확인 완료), 테이블 수 15개→16개로 정정
 
 ---
 
@@ -39,6 +39,8 @@ erDiagram
     HR_DEPT_MST ||--o{ HR_EMPL_MST : has
     HR_JIKGUP_MST ||--o{ HR_EMPL_MST : has
     HR_JIKMU_MST ||--o{ HR_EMPL_MST : "classified as (primary)"
+    HR_EMPL_MST ||--o{ HR_EMPL_ROLE_REL : "has roles"
+    HR_JIKMU_MST ||--o{ HR_EMPL_ROLE_REL : "used in"
     HR_EMPL_MST ||--o{ HR_EMPL_SKILL_REL : has
     HR_SKILL_MST ||--o{ HR_EMPL_SKILL_REL : has
     PJT_MST ||--o{ PJT_ASGN_HIS : has
@@ -51,7 +53,7 @@ erDiagram
     SYS_ROLE_MST ||--o{ SYS_USER_MST : has
 ```
 
-> 설계서 다이어그램에는 `HR_EMPL_ROLE_REL`(사원-직무 다중 역할 N:M 연결 테이블)이 16번째 테이블로 함께 표시되어 있음. 로드맵 §2/§11의 "15개 테이블" 범위에는 포함되어 있지 않으나, `HR_EMPL_MST`↔`HR_JIKMU_MST` 다중 역할(예: "PM, AA")을 지원하려면 필요한 테이블이므로 **범위 확정 필요 이슈**로 별도 기록한다 (§9 리스크 참조).
+> **[확정, 2026-07-02]** `HR_EMPL_ROLE_REL`(사원-직무 다중 역할 N:M 연결 테이블)을 Phase 2 데이터 모델 범위에 포함하기로 관계자 확인 완료. 이에 따라 로드맵 전체의 "15개 테이블" 표현을 **"16개 테이블"**로 정정함 (`[BACKLOG]HRM_Automation_System_Roadmap.md` §3/§4/§9/§11 반영 완료). 상세 스키마는 §3.6-1 참조.
 
 ---
 
@@ -157,7 +159,7 @@ FK: `PRNT_DEPT_ID → HR_DEPT_MST.DEPT_ID` (자기참조, 트리 구조)
 | REG_DTTM | TIMESTAMPTZ | NOT NULL | 등록일시 |
 | UPD_DTTM | TIMESTAMPTZ | NOT NULL | 수정일시 |
 
-> 설계서에 구체적 Seed 목록 없음 — 그룹 카테고리 예시만 제시. Phase 2 Seed 작업 시 운영팀 확정 필요 (로드맵 §9 리스크 "직원 기술 스택 표준화 기준 미정"과 연결).
+> **[MVP 초안, 2026-07-02]** 설계서에 구체적 Seed 목록이 없어 한국 SI/IT 조직에서 통상적으로 쓰이는 기술 스택 기준 초안을 `backend/app/db/seed/hr_skill_mst_seed.py`에 작성했다 (55건, `SKILL_GRP_CD` 6종: BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN). **운영팀 최종 확정 전까지는 MVP 초안이며, Alembic Seed 스크립트에 그대로 반영하지 않고 검토 후 확정할 것.** 로드맵 §9 리스크 "직원 기술 스택 표준화 기준 미정" 항목 참조 — 초안 작성으로 상태를 "차단"에서 "주의"로 하향.
 
 ---
 
@@ -202,6 +204,26 @@ Enum: `EMPL_STAT_CD ∈ {ACTIVE, LEAVE, RETIRED}`
 
 FK: `EMPL_ID → HR_EMPL_MST.EMPL_ID`, `SKILL_ID → HR_SKILL_MST.SKILL_ID`
 Check: `PRFCY_LEVL BETWEEN 1 AND 5`
+
+---
+
+### 3.6-1 HR_EMPL_ROLE_REL — 사원역할 연결 (N:M 연결 테이블, **Phase 2 범위 포함 확정**)
+
+> 2026-07-02 관계자 확인 완료 — Phase 2 데이터 모델 및 Alembic 마이그레이션 대상에 포함. 사원의 복수 보유역할을 관리하는 N:M 연결 테이블. `HR_EMPL_MST.JIKMU_ID`가 주(Primary) 직무 1개를 나타내는 반면, 이 테이블은 "PM, AA"처럼 복수 역할을 보유한 경우를 처리한다.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| EMPL_ROLE_ID | UUID | PK | 사원역할 ID |
+| EMPL_ID | UUID | FK NOT NULL | 사원 ID (`HR_EMPL_MST`) |
+| JIKMU_ID | UUID | FK NOT NULL | 직무 ID (`HR_JIKMU_MST`) |
+| IS_PRIMARY | BOOLEAN | DEFAULT FALSE | 주 직무 여부 |
+| REG_DTTM | TIMESTAMPTZ | NOT NULL | 등록일시 |
+| UPD_DTTM | TIMESTAMPTZ | NOT NULL | 수정일시 |
+
+FK: `EMPL_ID → HR_EMPL_MST.EMPL_ID`, `JIKMU_ID → HR_JIKMU_MST.JIKMU_ID`
+Unique 제약: `(EMPL_ID, JIKMU_ID)` 복합 Unique — 동일 사원에 동일 직무 중복 등록 방지
+
+**데이터 정합성 규칙 (설계서 §5.5, 애플리케이션 레이어에서 보장 — DB 제약 아님):** `IS_PRIMARY = TRUE`인 행의 `JIKMU_ID`는 `HR_EMPL_MST.JIKMU_ID`와 반드시 일치해야 한다.
 
 ---
 
@@ -413,6 +435,7 @@ FK 관계 없음 (독립 테이블). 연계 배치: `HR_AVAIL_SNAP_GEN`(매일 0
 | HR_JIKGUP_MST → HR_EMPL_MST | 1:N | `JIKGUP_ID` |
 | HR_JIKMU_MST → HR_EMPL_MST | 1:N | `JIKMU_ID` (주 직무만) |
 | HR_EMPL_MST ↔ HR_SKILL_MST | N:M | 연결 테이블 `HR_EMPL_SKILL_REL` |
+| HR_EMPL_MST ↔ HR_JIKMU_MST | N:M | 연결 테이블 `HR_EMPL_ROLE_REL` (복수 직무 지원, Phase 2 포함 확정) |
 | PJT_MST → PJT_ASGN_HIS | 1:N | `PJT_ID` |
 | HR_EMPL_MST → PJT_ASGN_HIS | 1:N | `EMPL_ID` |
 | PJT_MST → PJT_RSRC_REQ | 1:N | `PJT_ID` |
@@ -428,9 +451,9 @@ FK 관계 없음 (독립 테이블). 연계 배치: `HR_AVAIL_SNAP_GEN`(매일 0
 
 ## 5. Phase 2 착수 전 확인 필요 사항
 
-1. **`HR_EMPL_ROLE_REL` 테이블 범위 포함 여부** — 설계서 ERD 다이어그램에는 존재하나 로드맵 15개 테이블 목록에는 없음. 사원의 다중 직무(예: "PM, AA") 지원 여부에 따라 Phase 2 범위 포함 여부 결정 필요 (관계자 확인 필요).
+1. ~~**`HR_EMPL_ROLE_REL` 테이블 범위 포함 여부**~~ — **[해결, 2026-07-02]** 관계자 확인 완료, Phase 2 데이터 모델 범위에 포함 확정. 테이블 수 15개→16개로 정정 완료 (§3.6-1 참조).
 2. **`HR_SKILL_MST` Seed 데이터** — 설계서에 구체적 기술 목록 없음. 로드맵 §9 리스크 "직원 기술 스택 표준화 기준 미정"과 동일 이슈.
 3. **`SYS_ROLE_MST` 세부 값** — 역할 코드 6종은 확정되었으나 `ROLE_NM`/`ROLE_DESC`/`PERM_JSON` 상세는 미정 (로드맵 §9 "인증/권한 범위 미정"과 동일 이슈).
 4. **`PJT_RCMD_RSLT` 점수 가중치** — 설계서 §5 인용 구간 가중치와 로드맵 §11 명시 가중치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%) 간 표기 차이 있음 — Phase 5 착수 시 로드맵 수치 기준으로 확정.
 
-이 문서는 Alembic 마이그레이션(로드맵 §8 다음 작업 4번) 작성 시 테이블 스키마의 근거 자료로 사용한다.
+이 문서는 Alembic 마이그레이션(로드맵 §8 다음 작업 4번) 작성 시 테이블 스키마의 근거 자료로 사용한다. 마이그레이션 대상은 이제 **16개 테이블**(§3.1~§3.15 + §3.6-1 `HR_EMPL_ROLE_REL`)이다.
