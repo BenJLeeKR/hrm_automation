@@ -43,3 +43,11 @@ Thumbs.db
 .aider*
 node_modules/
 postgres_data/
+
+# --- Next.js ---
+.next/
+
+# --- Project data / runtime (Phase 1) ---
+data/
+backup/postgres/*.sql.gz
+logs/

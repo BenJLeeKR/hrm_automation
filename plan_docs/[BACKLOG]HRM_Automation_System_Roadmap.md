@@ -95,7 +95,7 @@
 | Phase | 이름 | 계획 기간 | 개발 상태 | 진행률 | 일정 상태 |
 |---|---|---|---|---:|---|
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
-| Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 예정 | 0% | 정상 |
+| Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 진행 중 | 60% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 예정 | 0% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 예정 | 0% | 정상 |
@@ -151,39 +151,46 @@
 |---|---|
 | **목표** | Docker 기반 개발·운영 환경 구성 및 전체 서비스 컨테이너 기동 확인 |
 | **계획 기간** | 2주차 |
-| **개발 상태** | 예정 |
-| **진행률** | 0% |
+| **개발 상태** | 진행 중 |
+| **진행률** | 60% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
 
 | 작업 | 상태 |
 |---|---|
-| Ubuntu Server 24.04 LTS 환경 준비 | 예정 |
-| Docker Engine 설치 | 예정 |
-| Docker Compose Plugin 설치 | 예정 |
-| `/App/hrmngr/` 디렉토리 구조 생성 | 예정 |
-| `docker-compose.yml` 초안 작성 (api / web / db / redis / worker) | 예정 |
-| `.env` 파일 작성 및 `.gitignore` 설정 | 예정 |
-| Git Repository 초기화 | 예정 |
-| PostgreSQL 컨테이너 기동 및 포트 5442 접속 확인 | 예정 |
-| FastAPI 컨테이너 기동 및 `/health` 응답 확인 | 예정 |
-| Next.js 컨테이너 기동 및 포트 3030 접속 확인 | 예정 |
+| Ubuntu Server 24.04 LTS 환경 준비 | 완료 |
+| Docker Engine 설치 | 완료 |
+| Docker Compose Plugin 설치 | 예정 (현재 `docker-compose` v1.29.2만 설치됨 — v2 플러그인 전환 필요) |
+| `/App/hrmngr/` 디렉토리 구조 생성 | 완료 (`backend/`, `frontend/`, `data/postgres/`, `data/redis/`, `backup/postgres/`, `logs/`) |
+| `docker-compose.yml` 초안 작성 (api / web / db / redis / worker) | 완료 (`docker-compose config`로 문법 검증 완료) |
+| `.env` 파일 작성 및 `.gitignore` 설정 | 완료 (`.env.example` 작성, `.gitignore`에 `data/`, `backup/postgres/*.sql.gz`, `logs/`, `.next/` 추가) |
+| Git Repository 초기화 | 완료 (기존 리포지토리) |
+| PostgreSQL 컨테이너 기동 및 포트 5442 접속 확인 | 예정 (개발 환경 권한 제약으로 미검증 — 서버에서 확인 필요) |
+| FastAPI 컨테이너 기동 및 `/health` 응답 확인 | 예정 (최소 `/health` 엔드포인트 스켈레톤은 작성 완료, 컨테이너 기동 미검증) |
+| Next.js 컨테이너 기동 및 포트 3030 접속 확인 | 예정 (Dockerfile 작성 완료, 기동 미검증) |
 | 방화벽(UFW) 설정 (3030, 8000 허용 / 5442 내부망 제한) | 예정 |
 
 **산출물**
 
-- `docker-compose.yml`
-- `.env.example`
-- `.gitignore`
-- `README.md` (기동 명령어 포함)
+- `docker-compose.yml` — 완료
+- `.env.example` — 완료
+- `.gitignore` — 완료
+- `README.md` (기동 명령어 포함) — 완료
+- `backend/Dockerfile`, `backend/requirements.txt`, `backend/app/main.py`(`/health`), `backend/app/core/config.py` — 완료 (Phase 3에서 본격 확장 예정)
+- `frontend/Dockerfile`, `frontend/next.config.mjs`(`output: 'standalone'`) — 완료
+- `backup/backup_db.sh` — 완료 (crontab 등록은 서버에서 별도 수행 필요)
 
 **완료 기준**
 
-- `docker compose up -d` 한 번으로 api / web / db / redis / worker 5개 컨테이너 모두 정상 기동
-- `http://{서버IP}:3030` Next.js 초기 화면 접근 가능
-- `http://{서버IP}:8000/health` FastAPI 헬스체크 응답 확인
-- `localhost:5442` PostgreSQL 외부 접속 확인 (DBeaver 등)
+- `docker compose up -d` 한 번으로 api / web / db / redis / worker 5개 컨테이너 모두 정상 기동 — 미검증 (샌드박스 환경 Docker 소켓 권한 제약, 실서버에서 확인 필요)
+- `http://{서버IP}:3030` Next.js 초기 화면 접근 가능 — 미검증
+- `http://{서버IP}:8000/health` FastAPI 헬스체크 응답 확인 — 미검증
+- `localhost:5442` PostgreSQL 외부 접속 확인 (DBeaver 등) — 미검증
+
+**참고**
+
+- 2026-07-02 기준 개발 환경에서 `docker-compose config`로 compose 파일 문법 검증까지는 완료. 실제 컨테이너 기동/헬스체크/포트 접속 확인은 Docker 소켓 접근 권한이 있는 실 서버 환경에서 이어서 수행 필요.
 
 ---
 
@@ -541,6 +548,20 @@
 - 설계 문서 `HRM_Automation_System_Design_v0.4.md` 작성 완료
 - `ROADMAP.md` 최초 작성 완료 (본 문서)
 
+### 2026-07-02
+
+- Phase 1 인프라 구축 착수
+- `/App/hrmngr/` 하위 디렉토리 구조 생성 (`backend/`, `data/postgres/`, `data/redis/`, `backup/postgres/`, `logs/`)
+- `docker-compose.yml` 작성 완료 (api / web / db / redis / worker 5개 서비스, 설계 문서 §8.3 스펙 반영, `docker-compose config` 문법 검증 완료)
+- `.env.example` 작성 완료 (설계 문서 §8.7 변수 전체 반영)
+- `.gitignore`에 `data/`, `backup/postgres/*.sql.gz`, `logs/`, `.next/` 추가
+- `README.md` 작성 (기동/재기동/백업 명령어 포함)
+- `backend/` FastAPI 프로젝트 기본 구조 생성 (`app/core/`, `app/db/`, `app/models/`, `app/schemas/`, `app/repositories/`, `app/services/`, `app/api/v1/`, `alembic/`, `tests/`) 및 `/health` 엔드포인트 최소 스켈레톤 구현
+- `backend/Dockerfile`, `backend/requirements.txt` 작성
+- `frontend/Dockerfile` (pnpm 기반 3-stage 빌드) 및 `next.config.mjs`에 `output: 'standalone'` 추가
+- `backup/backup_db.sh` 작성 및 실행 권한 부여
+- 컨테이너 실기동·헬스체크·UFW 방화벽 설정은 Docker 소켓 접근 권한 제약으로 미검증 — 실 서버에서 후속 확인 필요
+
 ---
 
 ## 8. 다음 작업
@@ -548,9 +569,10 @@
 > 개발자가 Phase 1~2 시작 시 즉시 수행할 수 있는 작업 단위.
 > 순서대로 수행하는 것을 권장한다.
 
+- [ ] 0. (Phase 1 마무리) 실 서버에서 `docker compose up -d --build` 기동 확인, UFW 방화벽 설정, Docker Compose Plugin v2 전환
 - [ ] 1. PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 15개 테이블 관계 검토)
-- [ ] 2. Docker Compose 개발환경 구성 (`docker-compose.yml` 작성 — api / web / db / redis / worker)
-- [ ] 3. FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`, `core/`)
+- [x] 2. Docker Compose 개발환경 구성 (`docker-compose.yml` 작성 — api / web / db / redis / worker)
+- [x] 3. FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`, `core/`)
 - [ ] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정)
 - [ ] 5. `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 테이블 생성
 - [ ] 6. `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 테이블 생성 및 Seed 데이터 입력
@@ -605,17 +627,17 @@
 
 ### 인프라 `→ Phase 1`
 
-- [ ] Ubuntu 서버 준비 (Ubuntu 24.04 LTS 이상)
-- [ ] Docker Engine 설치
-- [ ] Docker Compose Plugin 설치
-- [ ] `/App/hrmngr/` 기준 경로 디렉토리 구조 생성
+- [x] Ubuntu 서버 준비 (Ubuntu 24.04 LTS 이상)
+- [x] Docker Engine 설치
+- [ ] Docker Compose Plugin 설치 (현재 `docker-compose` v1.29.2만 설치됨, v2 플러그인 전환 필요)
+- [x] `/App/hrmngr/` 기준 경로 디렉토리 구조 생성
   ```bash
   mkdir -p /App/hrmngr/{backend,frontend,data/postgres,data/redis,backup/postgres,logs}
   ```
-- [ ] `docker-compose.yml` 작성 (api / web / db / redis / worker 5개 서비스)
-- [ ] `.env` 파일 작성 및 `.gitignore` 설정 (`.env`, `data/`, `backup/postgres/*.sql.gz`, `logs/` 제외)
-- [ ] Git Repository 초기화
-- [ ] 방화벽(UFW) 설정 — 포트 3030, 8000 허용 / 포트 5442 내부망 제한
+- [x] `docker-compose.yml` 작성 (api / web / db / redis / worker 5개 서비스)
+- [x] `.env` 파일 작성 및 `.gitignore` 설정 (`.env`, `data/`, `backup/postgres/*.sql.gz`, `logs/` 제외)
+- [x] Git Repository 초기화
+- [ ] 방화벽(UFW) 설정 — 포트 3030, 8000 허용 / 포트 5442 내부망 제한 (실 서버 sudo 권한 필요, 미실행)
 
 ---
 

@@ -1,0 +1,158 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* HRM theme v2 - brand blue navigation */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans), 'Geist Fallback';
+  --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+
+  --color-nav: var(--nav);
+  --color-nav-foreground: var(--nav-foreground);
+  --color-nav-muted: var(--nav-muted);
+  --color-nav-icon: var(--nav-icon);
+  --color-nav-accent: var(--nav-accent);
+  --color-nav-border: var(--nav-border);
+  --color-nav-hover: var(--nav-hover);
+  --color-nav-active-bg: var(--nav-active-bg);
+  --color-nav-active-text: var(--nav-active-text);
+
+  /* 엔터프라이즈용 절제된 radius 스케일 (--radius = 8px 기준) */
+  --radius-sm: calc(var(--radius) - 4px); /* 4px */
+  --radius-md: calc(var(--radius) - 2px); /* 6px - 입력/버튼 */
+  --radius-lg: var(--radius); /* 8px - 카드/메뉴 */
+  --radius-xl: calc(var(--radius) + 2px); /* 10px - 패널/모달 */
+  --radius-2xl: calc(var(--radius) + 4px); /* 12px */
+}
+
+:root {
+  color-scheme: light;
+
+  /* 브랜드 컬러 */
+  --brand: #004799;
+  --brand-hover: #003a7d;
+  --brand-soft: #eaf2ff;
+  --brand-soft-2: #d7e7ff;
+
+  --background: #f5f7fa;
+  --foreground: #16181d;
+
+  --card: #ffffff;
+  --card-foreground: #16181d;
+
+  --popover: #ffffff;
+  --popover-foreground: #16181d;
+
+  --primary: #004799;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eef1f5;
+  --secondary-foreground: #16181d;
+
+  --muted: #f1f4f8;
+  --muted-foreground: #6b7280;
+
+  --accent: #eaf2ff;
+  --accent-foreground: #004799;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #0f9d67;
+  --success-foreground: #ffffff;
+
+  --warning: #ea8a0c;
+  --warning-foreground: #ffffff;
+
+  --info: #0d9488;
+  --info-foreground: #ffffff;
+
+  --border: #e4e8ee;
+  --input: #dfe3ea;
+  --ring: #004799;
+
+  /* 차트 */
+  --chart-1: #004799;
+  --chart-2: #3b82f6;
+  --chart-3: #0d9488;
+  --chart-4: #ea8a0c;
+  --chart-5: #64748b;
+  --chart-6: #8ab4e8;
+  --chart-7: #b91c1c;
+
+  /* 브랜드 블루 내비게이션 (GNB / LNB) */
+  --nav: #004799;
+  --nav-foreground: #ffffff;
+  --nav-muted: #d7e7ff;
+  --nav-icon: #eaf2ff;
+  --nav-accent: #ffb020;
+  --nav-border: rgba(255, 255, 255, 0.16);
+  --nav-hover: rgba(255, 255, 255, 0.12);
+  --nav-active-bg: #ffffff;
+  --nav-active-text: #004799;
+
+  --radius: 0.5rem; /* 8px (기존 12px에서 축소) */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* 얇은 스크롤바 */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd2dc;
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
