@@ -96,7 +96,7 @@
 |---|---|---|---|---:|---|
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 진행 중 | 60% | 정상 |
-| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 예정 | 0% | 정상 |
+| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 5% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
@@ -200,15 +200,15 @@
 |---|---|
 | **목표** | 한국 HR META 명명 규칙 기반 전체 테이블 생성 및 초기 데이터 적재 |
 | **계획 기간** | 2~3주차 |
-| **개발 상태** | 예정 |
-| **진행률** | 0% |
+| **개발 상태** | 진행 중 |
+| **진행률** | 5% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
 
 | 작업 | 상태 |
 |---|---|
-| ERD 최종 확정 | 예정 |
+| ERD 최종 확정 | 완료 (`backend/docs/ERD.md`, 2026-07-02) |
 | Alembic 마이그레이션 환경 구성 | 예정 |
 | `HR_DEPT_MST` (부서 마스터) 테이블 생성 | 예정 |
 | `HR_JIKGUP_MST` (직급 마스터) 테이블 생성 | 예정 |
@@ -561,6 +561,8 @@
 - `frontend/Dockerfile` (pnpm 기반 3-stage 빌드) 및 `next.config.mjs`에 `output: 'standalone'` 추가
 - `backup/backup_db.sh` 작성 및 실행 권한 부여
 - 컨테이너 실기동·헬스체크·UFW 방화벽 설정은 Docker 소켓 접근 권한 제약으로 미검증 — 실 서버에서 후속 확인 필요
+- (§8 다음 작업 1번) PostgreSQL ERD 최종 확정 — 설계 문서(수정 없이 원본 유지) §5 기준 15개 테이블 전체 컬럼·PK/FK·CHECK 제약·Seed 데이터·카디널리티를 `backend/docs/ERD.md`로 정리 완료. Alembic 마이그레이션(§8 4번) 작성의 근거 자료로 확정
+- ERD 정리 과정에서 발견한 미확정 사항 3건을 §9 리스크에 추가 (`HR_EMPL_ROLE_REL` 범위 포함 여부, `SYS_ROLE_MST` 세부 값 미정, `PJT_RCMD_RSLT` 추천 가중치 표기 불일치)
 
 ---
 
@@ -570,7 +572,7 @@
 > 순서대로 수행하는 것을 권장한다.
 
 - [ ] 0. (Phase 1 마무리) 실 서버에서 `docker compose up -d --build` 기동 확인, UFW 방화벽 설정, Docker Compose Plugin v2 전환
-- [ ] 1. PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 15개 테이블 관계 검토)
+- [x] 1. PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 15개 테이블 관계 검토) → `backend/docs/ERD.md`
 - [x] 2. Docker Compose 개발환경 구성 (`docker-compose.yml` 작성 — api / web / db / redis / worker)
 - [x] 3. FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`, `core/`)
 - [ ] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정)
@@ -596,6 +598,9 @@
 | 운영 서버 백업 정책 미정 | 중간 | 주의 | `pg_dump` 매일 02:00 + 14일 보관 + 외부 스토리지 복제 초안 제시, 운영팀 확인 필요 |
 | 서버 HTTPS/도메인 미적용 | 낮음 | 주의 | 초기 구축은 내부망 HTTP로 운영, Phase 7에서 Nginx + TLS 도입 여부 재검토 |
 | `HR_EMPL_MST.JIKMU_ID` 기존 데이터 없음 | 낮음 | 주의 | NULL 허용 설계로 이관 후 운영팀 수동 보정, Phase 8 데이터 이관 시 처리 |
+| `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 주의 | 설계 문서 ERD 다이어그램에는 존재(사원 복수 직무 지원용)하나 로드맵 "15개 테이블" 목록에는 없음 — Phase 2 착수 전 관계자 확인 후 포함 여부 확정 필요 (`backend/docs/ERD.md` §5 참조) |
+| `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 주의 | 역할 코드 6종(ADMIN/HR_MGR/PM/TEAM_LEAD/EXEC/VIEWER)만 확정, 표시명·설명·세부 권한 JSON은 미정 — "인증/권한 범위 미정" 이슈와 함께 Phase 2 Seed 작성 전 확정 필요 |
+| `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 |
 
 ---
 
@@ -774,4 +779,5 @@
 | 2026-07-01 | v0.1 | ROADMAP 최초 작성 (Phase 0~8 구성, 기능·기술 요소 상태표, 리스크 초안) | — |
 | 2026-07-01 | v0.2 | 설계 문서(v0.4) § 14.2 MVP 완료 체크리스트를 §11로 이관 — 인프라/DB/백엔드/프론트엔드/검색추천/AI/운영자동화/파일럿 8개 카테고리, 각 Phase 연결, 테이블 수준 세부 항목 추가 | — |
 | 2026-07-02 | v0.3 | Phase 1 착수 — 디렉토리 구조, `docker-compose.yml`, `.env.example`, `.gitignore`, `README.md`, `backend`/`frontend` Dockerfile, FastAPI `/health` 스켈레톤, `backup_db.sh` 작성 완료. Phase 1 진행률 60%로 갱신. 컨테이너 실기동·UFW 설정은 실 서버 확인 대기 | — |
+| 2026-07-02 | v0.4 | §8 다음 작업 1번(ERD 최종 확정) 완료 처리 — `backend/docs/ERD.md` 작성. Phase 2 진행률 5%로 갱신, 상태 "진행 중"으로 변경. ERD 정리 중 발견한 미확정 사항 3건을 §9 리스크에 추가 | — |
 
