@@ -15,8 +15,12 @@ from app.models.sys_audit_log import SysAuditLog
 from app.models.sys_role_mst import SysRoleMst
 from app.models.sys_user_mst import SysUserMst
 
-# ERD 16개 테이블 중 나머지(HR_EMPL_SKILL_REL, HR_EMPL_ROLE_REL, HR_AVAIL_SNAP,
-# PJT_RSRC_REQ, PJT_RCMD_RSLT, SYS_BATCH_HIS)는 후속 작업에서 추가 예정.
+# Phase 2 후속 (ERD 16개 테이블 중 나머지, §11 데이터베이스 체크리스트):
+from app.models.hr_avail_snap import HrAvailSnap
+from app.models.hr_empl_role_rel import HrEmplRoleRel
+from app.models.hr_empl_skill_rel import HrEmplSkillRel
+
+# 남은 3개(PJT_RSRC_REQ, PJT_RCMD_RSLT, SYS_BATCH_HIS)는 이후 작업에서 추가 예정.
 
 __all__ = [
     "HrDeptMst",
@@ -29,4 +33,7 @@ __all__ = [
     "SysRoleMst",
     "SysUserMst",
     "SysAuditLog",
+    "HrEmplSkillRel",
+    "HrEmplRoleRel",
+    "HrAvailSnap",
 ]
