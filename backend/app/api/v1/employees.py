@@ -1,7 +1,10 @@
+import io
 import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
+from openpyxl import Workbook
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,12 +17,17 @@ from app.repositories.hr_empl_mst import (
     create_employee,
     get_employee,
     list_employees,
+    list_employees_for_export,
     retire_employee,
     update_employee,
 )
 from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeListResponse, EmployeeOut, EmployeeUpdate
 
 _TGT_TBL_NM = "HR_EMPL_MST"
+
+# SCR-003 "인력마스터_ResourceTable" 시트 컬럼 매핑([DESIGN]HRM_Screen_Design.md 참조) 그대로 사용
+_EXPORT_HEADERS = ["사번", "성명", "팀", "직급", "보유역할", "주요기술", "숙련도", "입사일", "재직상태", "휴대폰번호"]
+_EMPL_STAT_LABELS = {"ACTIVE": "재직", "LEAVE": "휴직", "RETIRED": "퇴직"}
 
 router = APIRouter(prefix="/employees", tags=["employees"])
 
@@ -140,3 +148,55 @@ def delete_employee(
         aft_val_json=EmployeeOut.model_validate(employee).model_dump(mode="json"),
     )
     return employee
+
+
+@router.get("/export")
+def export_employees(
+    request: Request,
+    dept_id: uuid.UUID | None = Query(None, description="부서 ID로 필터링 (HR_DEPT_MST.DEPT_ID)"),
+    jikmu_id: uuid.UUID | None = Query(None, description="직무 유형 ID로 필터링 (HR_JIKMU_MST.JIKMU_ID)"),
+    empl_stat_cd: str | None = Query(None, description="재직 상태 코드 (ACTIVE/LEAVE/RETIRED)"),
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("employees", "excel")),
+) -> StreamingResponse:
+    """사원 목록 Excel 내보내기 (SCR-003 "인력마스터_ResourceTable" 시트 형식).
+
+    현재 필터 결과 전체(페이지네이션 없이)를 내보낸다. 숙련도는 원본 Excel 서식 자체가
+    "전체 기술에 동일 숙련도" 한 칸만 두는 손실 매핑이라, 여러 기술의 숙련도가 다르면
+    최댓값을 대표로 내보낸다 (`list_employees_for_export` 주석 참조).
+    """
+    rows = list_employees_for_export(db, dept_id=dept_id, jikmu_id=jikmu_id, empl_stat_cd=empl_stat_cd)
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "인력마스터_ResourceTable"
+    sheet.append(_EXPORT_HEADERS)
+    for row in rows:
+        employee = row["employee"]
+        sheet.append(
+            [
+                employee.EMPL_NO,
+                employee.EMPL_NM,
+                row["DEPT_NM"],
+                row["JIKGUP_NM"],
+                row["ROLES"],
+                row["SKILLS"],
+                row["PRFCY_LEVL"],
+                employee.HIRE_DT.isoformat() if employee.HIRE_DT else None,
+                _EMPL_STAT_LABELS.get(employee.EMPL_STAT_CD, employee.EMPL_STAT_CD),
+                employee.MPHONE_NO,
+            ]
+        )
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    record_audit(db, request, current_user, act_cd="EXPORT", tgt_tbl_nm=_TGT_TBL_NM, aft_val_json={"row_count": len(rows)})
+
+    filename = f"employees_{date.today().isoformat()}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
