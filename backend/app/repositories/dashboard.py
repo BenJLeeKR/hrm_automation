@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.models.hr_dept_mst import HrDeptMst
 from app.models.hr_empl_mst import HrEmplMst
+from app.models.hr_empl_skill_rel import HrEmplSkillRel
 from app.models.hr_jikmu_mst import HrJikmuMst
 from app.models.pjt_asgn_his import PjtAsgnHis
+from app.models.pjt_mst import PjtMst
 from app.repositories.hr_avail_snap import active_alloc_rt_subquery
 
 # 조직 평균 가동률 3단계 집계 대상 (`[DESIGN]HRM_Screen_Design.md` SCR-002 참조) —
@@ -140,3 +142,152 @@ def get_utilization_by_type(db: Session, *, year: int, month: int) -> dict:
         "running_committed_rate": _rate(_alloc_rt_sum(_UTILIZATION_STAGE_TYPE_CODES["running_committed"])),
         "all_rate": _rate(_alloc_rt_sum(_UTILIZATION_STAGE_TYPE_CODES["all"])),
     }
+
+
+def get_data_quality(db: Session) -> dict:
+    """데이터 품질 점검 요약 (프론트엔드 `/dashboard` 위젯 "데이터 품질 점검" 참조).
+
+    `HR_DATA_QUALITY_CHK` 배치(Phase 7, 매주 금요일 18:00, 미구현)가 정기 점검을 전담할
+    예정이나, 대시보드 위젯이 즉시 표시할 수 있도록 동일한 점검 3종을 실시간 조회로 제공한다.
+    """
+    skill_missing_count = (
+        db.scalar(
+            select(func.count())
+            .select_from(HrEmplMst)
+            .outerjoin(HrEmplSkillRel, HrEmplSkillRel.EMPL_ID == HrEmplMst.EMPL_ID)
+            .where(HrEmplMst.EMPL_STAT_CD == "ACTIVE", HrEmplSkillRel.EMPL_SKILL_ID.is_(None))
+        )
+        or 0
+    )
+    job_missing_count = (
+        db.scalar(
+            select(func.count())
+            .select_from(HrEmplMst)
+            .where(HrEmplMst.EMPL_STAT_CD == "ACTIVE", HrEmplMst.JIKMU_ID.is_(None))
+        )
+        or 0
+    )
+    # 100% 초과 ALLOC_RT는 등록/수정 API에서 이미 저장 차단하지만(assignments.py), 기존 Excel
+    # 이관 데이터 예외(AVAILABILITY_CALC_SPEC.md §5)를 대비해 사원별 합계를 다시 점검한다.
+    over_allocation_stmt = (
+        select(PjtAsgnHis.EMPL_ID)
+        .where(PjtAsgnHis.ASGN_STAT_CD == "ACTIVE")
+        .group_by(PjtAsgnHis.EMPL_ID)
+        .having(func.sum(PjtAsgnHis.ALLOC_RT) > 100)
+    )
+    over_allocation_count = len(db.execute(over_allocation_stmt).all())
+
+    return {
+        "skill_missing_count": skill_missing_count,
+        "job_missing_count": job_missing_count,
+        "over_allocation_count": over_allocation_count,
+    }
+
+
+def get_ending_this_month(db: Session, *, as_of: date) -> list[dict]:
+    """이번 달 투입 종료 예정 목록 (프론트엔드 `/dashboard` 위젯 참조)."""
+    first_day = as_of.replace(day=1)
+    last_day = date(as_of.year, as_of.month, calendar.monthrange(as_of.year, as_of.month)[1])
+
+    stmt = (
+        select(
+            HrEmplMst.EMPL_NM,
+            HrDeptMst.DEPT_NM,
+            PjtMst.PJT_NM,
+            PjtAsgnHis.ASGN_END_DT,
+            PjtAsgnHis.ALLOC_RT,
+        )
+        .select_from(PjtAsgnHis)
+        .join(HrEmplMst, HrEmplMst.EMPL_ID == PjtAsgnHis.EMPL_ID)
+        .outerjoin(HrDeptMst, HrDeptMst.DEPT_ID == HrEmplMst.DEPT_ID)
+        .join(PjtMst, PjtMst.PJT_ID == PjtAsgnHis.PJT_ID)
+        .where(PjtAsgnHis.ASGN_STAT_CD == "ACTIVE", PjtAsgnHis.ASGN_END_DT.between(first_day, last_day))
+        .order_by(PjtAsgnHis.ASGN_END_DT)
+    )
+    return [
+        {
+            "EMPL_NM": row.EMPL_NM,
+            "DEPT_NM": row.DEPT_NM,
+            "PJT_NM": row.PJT_NM,
+            "ASGN_END_DT": row.ASGN_END_DT,
+            "ALLOC_RT": row.ALLOC_RT,
+        }
+        for row in db.execute(stmt).all()
+    ]
+
+
+def get_recent_employees(db: Session, *, limit: int) -> list[dict]:
+    """최근 입사자 목록 (프론트엔드 `/dashboard` 위젯 참조) — `HIRE_DT` 최신순."""
+    stmt = (
+        select(
+            HrEmplMst.EMPL_NO,
+            HrEmplMst.EMPL_NM,
+            HrDeptMst.DEPT_NM,
+            HrEmplMst.HIRE_DT,
+            HrJikmuMst.JIKMU_NM,
+        )
+        .select_from(HrEmplMst)
+        .outerjoin(HrDeptMst, HrDeptMst.DEPT_ID == HrEmplMst.DEPT_ID)
+        .outerjoin(HrJikmuMst, HrJikmuMst.JIKMU_ID == HrEmplMst.JIKMU_ID)
+        .where(HrEmplMst.EMPL_STAT_CD == "ACTIVE", HrEmplMst.HIRE_DT.is_not(None))
+        .order_by(HrEmplMst.HIRE_DT.desc())
+        .limit(limit)
+    )
+    return [
+        {
+            "EMPL_NO": row.EMPL_NO,
+            "EMPL_NM": row.EMPL_NM,
+            "DEPT_NM": row.DEPT_NM,
+            "HIRE_DT": row.HIRE_DT,
+            "JIKMU_NM": row.JIKMU_NM,
+        }
+        for row in db.execute(stmt).all()
+    ]
+
+
+def get_headcount_trend(db: Session, *, as_of: date, months: int) -> list[dict]:
+    """월별 인력 추이 (프론트엔드 `/dashboard` "월별 인력 추이" 차트 참조).
+
+    각 월말 기준 재직 인원(`total`)과 해당 월의 입사(`hires`)/퇴사(`exits`) 건수를 계산한다.
+    `months`개월(당월 포함) 만큼 과거로 거슬러 올라간다.
+    """
+    result = []
+    year, month = as_of.year, as_of.month
+    for _ in range(months):
+        first_day = date(year, month, 1)
+        last_day = date(year, month, calendar.monthrange(year, month)[1])
+
+        total = (
+            db.scalar(
+                select(func.count())
+                .select_from(HrEmplMst)
+                .where(
+                    HrEmplMst.HIRE_DT.is_not(None),
+                    HrEmplMst.HIRE_DT <= last_day,
+                    or_(HrEmplMst.RETIR_DT.is_(None), HrEmplMst.RETIR_DT > last_day),
+                )
+            )
+            or 0
+        )
+        hires = (
+            db.scalar(
+                select(func.count()).select_from(HrEmplMst).where(HrEmplMst.HIRE_DT.between(first_day, last_day))
+            )
+            or 0
+        )
+        exits = (
+            db.scalar(
+                select(func.count()).select_from(HrEmplMst).where(HrEmplMst.RETIR_DT.between(first_day, last_day))
+            )
+            or 0
+        )
+
+        result.append({"month": f"{year:04d}{month:02d}", "total": total, "hires": hires, "exits": exits})
+
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+
+    result.reverse()
+    return result

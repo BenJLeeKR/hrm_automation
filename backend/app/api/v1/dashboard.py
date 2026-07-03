@@ -9,8 +9,12 @@ from app.db.session import get_db
 from app.repositories import dashboard as dashboard_repo
 from app.schemas.dashboard import (
     DashboardSummaryOut,
+    DataQualityOut,
     DeptUtilizationItem,
+    EndingAssignmentItem,
+    HeadcountTrendItem,
     JobTypeDistributionItem,
+    RecentEmployeeItem,
     UtilizationByTypeOut,
 )
 
@@ -70,3 +74,53 @@ def get_utilization_by_type(
     if not 1 <= mon <= 12:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="month의 월 값이 유효하지 않습니다.")
     return UtilizationByTypeOut(**dashboard_repo.get_utilization_by_type(db, year=year, month=mon))
+
+
+@router.get(
+    "/data-quality", response_model=DataQualityOut, dependencies=[Depends(require_permission("dashboard", "view"))]
+)
+def get_data_quality(db: Session = Depends(get_db)) -> DataQualityOut:
+    """데이터 품질 점검 요약 (프론트엔드 `/dashboard` "데이터 품질 점검" 위젯 참조)"""
+    return DataQualityOut(**dashboard_repo.get_data_quality(db))
+
+
+@router.get(
+    "/ending-this-month",
+    response_model=list[EndingAssignmentItem],
+    dependencies=[Depends(require_permission("dashboard", "view"))],
+)
+def get_ending_this_month(
+    as_of: date | None = Query(None, description="기준일 — 생략 시 오늘"),
+    db: Session = Depends(get_db),
+) -> list[EndingAssignmentItem]:
+    """이번 달 투입 종료 예정 목록 (프론트엔드 `/dashboard` 위젯 참조)"""
+    rows = dashboard_repo.get_ending_this_month(db, as_of=as_of or date.today())
+    return [EndingAssignmentItem(**row) for row in rows]
+
+
+@router.get(
+    "/recent-employees",
+    response_model=list[RecentEmployeeItem],
+    dependencies=[Depends(require_permission("dashboard", "view"))],
+)
+def get_recent_employees(
+    limit: int = Query(10, ge=1, le=50, description="조회할 최근 입사자 수"),
+    db: Session = Depends(get_db),
+) -> list[RecentEmployeeItem]:
+    """최근 입사자 목록 (프론트엔드 `/dashboard` 위젯 참조)"""
+    return [RecentEmployeeItem(**row) for row in dashboard_repo.get_recent_employees(db, limit=limit)]
+
+
+@router.get(
+    "/headcount-trend",
+    response_model=list[HeadcountTrendItem],
+    dependencies=[Depends(require_permission("dashboard", "view"))],
+)
+def get_headcount_trend(
+    months: int = Query(12, ge=1, le=36, description="조회할 개월 수 (당월 포함)"),
+    as_of: date | None = Query(None, description="기준일 — 생략 시 오늘"),
+    db: Session = Depends(get_db),
+) -> list[HeadcountTrendItem]:
+    """월별 인력 추이 (프론트엔드 `/dashboard` "월별 인력 추이" 차트 참조)"""
+    rows = dashboard_repo.get_headcount_trend(db, as_of=as_of or date.today(), months=months)
+    return [HeadcountTrendItem(**row) for row in rows]
