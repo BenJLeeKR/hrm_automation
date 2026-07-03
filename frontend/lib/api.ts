@@ -23,3 +23,31 @@ export async function apiGet<T>(path: string): Promise<T> {
   }
   return res.json() as Promise<T>
 }
+
+async function apiSend<T>(method: 'POST' | 'PATCH', path: string, body?: unknown): Promise<T> {
+  const accessToken = getAccessToken()
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  if (!res.ok) {
+    // 등록/수정 화면은 서버가 내려주는 상세 사유(예: 중복 값 409)를 그대로 보여줘야 하므로
+    // 응답 본문의 `detail`을 최대한 추출해 에러 메시지에 담는다.
+    const detail = await res.json().catch(() => null)
+    const message = typeof detail?.detail === 'string' ? detail.detail : `API 요청에 실패했습니다 (${res.status})`
+    throw new ApiError(res.status, message)
+  }
+  return res.json() as Promise<T>
+}
+
+export function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  return apiSend<T>('POST', path, body)
+}
+
+export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  return apiSend<T>('PATCH', path, body)
+}

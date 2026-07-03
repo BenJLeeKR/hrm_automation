@@ -98,7 +98,7 @@
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
-| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 50% | 정상 |
+| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 56% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
@@ -300,7 +300,7 @@
 | **목표** | 권한별 메뉴 제어가 적용된 웹 화면 전체 구현 (포트 3030) |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 50% |
+| **진행률** | 56% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -315,7 +315,7 @@
 | 대시보드 화면 구현 (`/dashboard`) — 직무 유형 분포 위젯 포함 | 완료 (목데이터를 백엔드 8개 API로 전량 교체, 실 서버 빌드·번들 검증 완료, 2026-07-03) |
 | 사원 목록 화면 구현 (`/employees`) — 직무 유형 필터 포함 | 완료 (기존 스캐폴딩 + 직무 유형 필터 추가, 목데이터 기반, 2026-07-03) |
 | 사원 상세 화면 구현 (`/employees/[id]`) | 완료 (기존 목데이터 기반 스캐폴딩을 백엔드 실 API로 연동 — 기본정보/보유기술/투입이력 3개 탭 실 데이터 조회, 신규 `GET /api/v1/employees/{empl_id}` 추가, 실 서버 빌드·검증 완료, 2026-07-03. 정보수정/기술추가/퇴직처리 버튼은 조회 전용으로 남기고 후속 작업으로 분리 — §9 참조) |
-| 기술 관리 화면 구현 (`/skills`) | 예정 |
+| 기술 관리 화면 구현 (`/skills`) | 완료 (목데이터를 백엔드 실 API(조회/등록/수정/사용여부 토글)로 전량 교체, 실 서버 빌드·검증 완료, 2026-07-04) |
 | 직무 유형 관리 화면 구현 (`/job-types`) | 예정 |
 | 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`) | 예정 |
 | 투입 관리 화면 구현 (`/assignments`) | 예정 |
@@ -628,6 +628,7 @@
 - **공통 레이아웃·네비게이션 — 권한별 메뉴 제어 구현 (§8 다음 작업 1번)** — 사이드바 메뉴를 로그인 사용자의 `SYS_ROLE_MST.PERM_JSON` 기준으로 필터링하는 기능을 구현. 프론트엔드에는 로그인 성공 후 현재 사용자의 역할·권한을 조회할 방법이 없어(토큰에는 `role_id`만 있고 `PERM_JSON`은 없음), `backend/app/api/v1/auth.py`에 `GET /api/v1/auth/me`(신규, 기존 `get_current_user` 의존성만 사용 — 별도 권한 검사 없이 인증된 사용자면 자신의 정보 조회 가능) 및 `backend/app/schemas/auth.py`에 `MeOut`(신규, `USER_LGID`/`ROLE_CD`/`ROLE_NM`/`PERM_JSON` 반환) 추가. `frontend/lib/nav.ts`의 `NavItem`에 `permKey`(선택, `PERM_JSON.screens`의 화면 키) 필드 추가해 각 메뉴를 대응 화면 키에 매핑(대시보드→`dashboard`, 사원 관리→`employees` 등), `filterNavByPermissions` 헬퍼(신규, `permKey`가 없는 항목은 항상 노출, 있으면 `screens[permKey].view===true`인 것만 통과) 추가. `frontend/lib/auth.ts`에 `getMe()`(신규, `/auth/me` 호출, 실패 시 `null` 반환 — 권한 조회 실패가 메뉴를 숨기는 방향으로 작동하지 않도록 설계, 실제 접근 차단은 각 API의 RBAC가 담당) 추가. `frontend/components/layout/app-shell.tsx`에서 인증 확인 직후 `getMe()`를 호출해 `PERM_JSON`을 `Sidebar`(데스크톱·모바일 드로어 두 곳 모두)에 전달, `frontend/components/layout/sidebar.tsx`는 전달받은 `permJson`으로 `mainNav`/`bottomNav`를 필터링해 렌더링. **실 서버 컨테이너에서 실제 검증**: 백엔드 재빌드 후 실제 `admin` 계정으로 `GET /auth/me` 호출해 `ROLE_CD=ADMIN`과 `PERM_JSON` 전체가 정상 반환됨을 확인, 무인증 호출 401 확인. `backend/tests/test_auth.py`에 `test_me_returns_current_user_and_perm_json`/`test_me_requires_auth` 2개 케이스 추가해 pytest 스위트를 16개→18개로 확장, 전부 통과 확인. 프론트엔드는 `docker compose up -d --build web` 재빌드 후 컴파일된 클라이언트 번들에 `/auth/me` 호출 코드가 포함됨을 확인. §4 Phase 4 "공통 레이아웃·네비게이션" 항목을 진행 중→완료로 갱신(Phase 4 진행률 31%→38%), §11 동일 항목 완료 체크, §8 큐에서 완료 항목 제거(대시보드 화면 구현만 남음)
 - **대시보드 화면 구현 — 목데이터를 백엔드 8개 API로 전량 교체 (§8 다음 작업 1번)** — 기존 `frontend/app/(app)/dashboard/page.tsx`가 `lib/mock-data.ts`를 직접 참조하던 것을 실제 백엔드 API 호출로 전면 교체. 선행 작업으로 `HeadcountChart`/`JobTypeDonut`/`DeptUtilizationChart` 3개 차트 컴포넌트가 각각 목데이터를 내부에서 직접 import하던 구조를 `data` prop을 받는 구조로 리팩터링(export 타입 `HeadcountTrendPoint`/`JobTypeDistributionPoint`/`DeptUtilizationPoint` 신규 추가), 같은 컴포넌트를 소비하던 `frontend/app/(app)/reports/page.tsx`(이번 작업 범위 밖, 목데이터 유지)도 호환을 위해 `data` prop을 명시적으로 전달하도록 함께 수정. 인증이 필요한 API 호출을 화면마다 반복하지 않도록 `frontend/lib/api.ts`(신규) — `apiGet<T>(path)` 공통 헬퍼(저장된 액세스 토큰을 `Authorization` 헤더로 첨부, 실패 시 `ApiError` throw) 추가. `dashboard/page.tsx`를 `'use client'` + `useEffect`/`useState` 기반으로 재작성해 `GET /api/v1/dashboard/{summary,dept-utilization,job-type-distribution,utilization-by-type,data-quality,ending-this-month,recent-employees,headcount-trend}` 8개 엔드포인트를 병렬 호출(`Promise.all`), 응답을 각 위젯이 기대하는 형태로 매핑(부서 가동률 반올림, 직무 분포 필드명 변환, 추이 월(`yyyyMM`)을 `MM.DD` 표시 형식으로 변환). 백엔드에 실제 데이터가 없어 값이 0/null인 상황(`avg_utilization_rate: null` 등)을 대비해 화면에 이미 존재하던 조건부 렌더링을 그대로 활용, 별도 목업/폴백 값을 추가하지 않음(설계 원칙상 실 데이터 없음을 있는 그대로 표시). 로딩 중/에러 상태 UI 추가(기존 화면에 없던 것을 API 연동에 따라 신규로 최소 추가). **실 서버 컨테이너에서 실제 검증**: `docker compose up -d --build web` 재빌드 성공(`/dashboard`가 `○ (Static)`로 정상 프리렌더되어 TypeScript 컴파일 오류 없음을 확인), `curl http://localhost:3030/dashboard` 200 확인, 컴파일된 클라이언트 번들에 `dashboard/summary` 문자열이 포함되어 목업 코드가 실제 API 호출로 교체되었음을 확인, 실 `admin` 계정으로 로그인해 얻은 토큰으로 8개 엔드포인트를 전부 직접 curl 호출해 응답 JSON 구조가 `page.tsx`에 정의한 TypeScript 인터페이스와 정확히 일치함을 확인(현재 시드 데이터 없어 값은 0/빈 배열이나 구조는 유효). §4 Phase 4 "대시보드 화면 구현" 항목 완료로 갱신(Phase 4 진행률 38%→44%), §3 전체 로드맵 표 Phase 4 진행률 동일 갱신, §11 동일 항목 완료 체크, §8 큐에서 완료 항목 제거하고 Phase 4 "주요 작업" 표에서 아직 미완료인 나머지 항목들로 재구성
 - **사원 상세 화면 구현 — 목데이터 스캐폴딩을 실 API로 연동 (§8 다음 작업 1번)** — 기존 저장소에 이미 존재하던 `frontend/app/(app)/employees/[id]/page.tsx`(초기 프로토타입 스캐폴딩, 기본정보/보유기술/투입이력/변경이력 4개 탭 구조와 정보수정 모달까지 UI로는 이미 구현되어 있었으나 전부 `lib/mock-data.ts` 기반)를 실제 백엔드 API 호출로 재작성. 사원 단건 조회 API가 없어(목록/수정/삭제만 존재) `backend/app/api/v1/employees.py`에 `GET /employees/{empl_id}`(신규, 기존 `get_employee` 리포지토리 함수 재사용, `require_permission("employees","view")`, 404 처리) 추가 — 기술 조회(`GET /employee-skills?empl_id=`)와 투입 이력 조회(`GET /assignments?empl_id=`)는 이미 구현되어 있어 별도 백엔드 변경 없이 그대로 재사용. 프론트엔드는 사원 기본정보·부서명·직급명·직무유형명·사원기술(기술 마스터와 조인해 이름/그룹 표시)·투입 이력(프로젝트 마스터와 조인해 이름 표시)을 병렬로 조회해 3개 탭(기본정보/보유기술/투입이력)에 실 데이터로 렌더링, 현재 가동률은 `ASGN_STAT_CD='ACTIVE'`인 투입 건의 `ALLOC_RT` 합계로 계산. **범위를 의도적으로 축소한 부분**: (1) 정보수정·기술추가·퇴직처리 버튼은 이번 범위에서 제외 — 기존 `EmployeeFormModal`이 mock `Employee` 타입에 강하게 결합되어 있어 실 API(`PATCH`) 스키마로 재작성하려면 폼 전체를 다시 설계해야 해 "최소 단위" 원칙에 따라 조회 전용으로 우선 제공하고 후속 작업으로 분리(§9 리스크 추가), (2) "변경 이력" 탭은 설계서가 요구하는 `GET /api/v1/audit-logs?target_id=` 감사 로그 조회 API 자체가 백엔드에 아직 없어 이번 범위에서 탭을 제외(§9 리스크 추가). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 부서 마스터가 비어 있어(`HR_DEPT_MST` 0건 — Seed 미완료 상태, §9 참조) 검증용 임시 부서 1건을 직접 SQL로 추가하고, 사원 2명(기본 정보만, 기술+투입 이력 포함)을 API로 등록해 `GET /employees/{empl_id}` 200 정상 응답, 존재하지 않는 ID 404 확인, `employee-skills`/`assignments` 응답 구조를 프론트엔드 타입과 대조해 일치 확인(투입 이력 응답이 `PaginatedResponse` 래퍼(`{total, items}`)임을 뒤늦게 발견해 프론트엔드 파싱 버그를 수정 — 최초 구현 시 배열로 잘못 가정했던 점 수정 후 재빌드로 검증), `/employees/{empl_id}` 페이지 200 렌더링 확인. 검증에 사용한 임시 부서·사원·사원기술 데이터는 검증 직후 전부 SQL로 삭제(사원 삭제 API는 소프트 삭제(퇴직 처리)만 지원해 실제 행 제거는 SQL로 수행). `backend/tests/test_employees.py`에 상세 조회 성공/404/VIEWER 조회 가능 3개 케이스 추가(pytest 18→21개 전부 통과). §4 Phase 4 "사원 상세 화면 구현" 항목 완료로 갱신(진행률 44%→50%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거 — 큐 재구성 중 지난 턴(v5.4)에서 §4 표의 "설정 화면 구현"·"Excel Import/Export UI 구현" 2개 항목이 누락되었던 것도 함께 바로잡음
+- **기술 관리 화면 구현 — 목데이터를 실 API로 연동 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/skills/page.tsx`(검색/그룹/사용여부 필터, 등록·수정 모달까지 UI로는 완성되어 있었으나 전부 `lib/mock-data.ts` 기반)를 백엔드 `HR_SKILL_MST` API(조회/등록/수정, `backend/app/api/v1/skills.py`)로 연동. 백엔드는 이미 완전히 구현되어 있어 API 신규 작성 없이 프론트엔드만 재작성. `GET /skills`가 `use_yn` 생략 시 사용중(true)인 기술만 반환하는 기본 동작이라 "전체" 필터를 지원하기 위해 `use_yn=true`/`use_yn=false` 두 응답을 병렬 조회해 병합하는 방식 채택(백엔드 기본 동작은 다른 화면에 영향 없도록 변경하지 않음). "보유 인원" 컬럼은 별도 집계 API 없이 `GET /employee-skills`(전체) 조회 결과를 `SKILL_ID` 기준으로 클라이언트에서 카운트해 계산. 설계서(SCR-005)가 요구하는 "비활성 처리"는 `DELETE` 엔드포인트가 없어 기존 `PATCH /skills/{skill_id}`에 `USE_YN` 토글 요청을 보내는 방식으로 재사용(신규 엔드포인트 불필요). `frontend/lib/api.ts`에 `apiPost`/`apiPatch` 공통 헬퍼 신규 추가(기존 `apiGet`과 동일 패턴, 실패 시 서버 `detail` 메시지를 그대로 노출해 409 등 검증 오류를 화면에 표시). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 `POST /skills`로 임시 기술 1건 등록(201), `PATCH`로 `USE_YN` 토글(사용중→미사용) 확인, `use_yn=false` 목록 조회에 정상 반영됨을 확인, `/skills` 페이지 200 렌더링 확인. 검증 중 **`SKILL_NM`에 DB 유니크 제약이 없어 동일 이름으로 등록해도 409가 아닌 201이 반환됨을 발견**(설계서는 "기술명 중복 시 오류" 요구하나 현재 미충족) — §9 리스크로 신규 기록, 검증에 사용한 임시 데이터는 SQL로 삭제. 이번 작업은 프론트엔드 전용이라 백엔드 pytest 스위트는 변경 없이 21개 그대로 유지·통과 확인. §4 Phase 4 "기술 관리 화면 구현" 항목 완료로 갱신(진행률 50%→56%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 
 ---
 
@@ -636,16 +637,17 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 기술 관리 화면 구현 (`/skills`, `HR_SKILL_MST`)
-- [ ] 2. 직무 유형 관리 화면 구현 (`/job-types`, `HR_JIKMU_MST`)
-- [ ] 3. 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`)
-- [ ] 4. 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`)
-- [ ] 5. 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함)
-- [ ] 6. 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
-- [ ] 7. AI Chat 화면 구현 (`/ai-chat`)
-- [ ] 8. 리포트 화면 구현 (`/reports`)
-- [ ] 9. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
-- [ ] 10. Excel Import/Export UI 구현
+- [ ] 1. 직무 유형 관리 화면 구현 (`/job-types`, `HR_JIKMU_MST`)
+- [ ] 2. 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`)
+- [ ] 3. 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`)
+- [ ] 4. 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함)
+- [ ] 5. 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
+- [ ] 6. AI Chat 화면 구현 (`/ai-chat`)
+- [ ] 7. 리포트 화면 구현 (`/reports`)
+- [ ] 8. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
+- [ ] 9. Excel Import/Export UI 구현
+
+> 참고: "기술 관리 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: "사원 상세 화면 구현"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 지난 턴에 §4 Phase 4 표의 "설정 화면 구현"·"Excel Import/Export UI 구현" 항목이 큐 재구성에서 누락되었던 것을 이번에 바로잡아 9·10번으로 추가했다.
 
@@ -699,6 +701,7 @@
 | 사원 상세 화면 "변경 이력" 탭 미구현 — 감사 로그 조회 API 부재 | 낮음 | 주의 | 설계서(SCR-004)가 요구하는 `GET /api/v1/audit-logs?target_id={empl_id}` 감사 로그 조회 API가 백엔드에 아직 구현되어 있지 않아 사원 상세 화면에서 "변경 이력" 탭을 제외 — `SYS_AUDIT_LOG`에 데이터 자체는 이미 기록되고 있으므로(§7 참조), 조회 전용 API 1개만 추가하면 됨. 다른 화면(프로젝트 상세 등)에서도 동일 API가 필요할 수 있어 공통 작업으로 별도 백로그 항목화 검토 필요 | 2026-07-03 |
 | `HR_DEPT_MST`(부서 마스터) Seed 데이터 없음 | 중간 | 주의 | 사원 상세 화면 검증 중 실 DB에 `HR_DEPT_MST`가 0건(부서 코드 미시딩)임을 확인 — `HR_JIKGUP_MST`(직급, 10건)와 `HR_SKILL_MST`(기술, 1건, 비활성)는 일부 존재하나 부서는 전혀 없어 사원 등록·조회 화면에서 부서 필터/표시가 항상 빈 목록으로 나타남. 운영팀 확정 부서 목록 확보 후 Seed 스크립트(`backend/app/db/seed/`) 추가 필요 | 2026-07-03 |
 | `hrm-worker` 컨테이너가 재시작 루프 상태 | 중간 | 주의 | 사원 상세 화면 작업 중 `docker compose ps` 확인 과정에서 `hrm-worker` 컨테이너가 `Restarting (0)` 상태로 반복 재기동 중임을 발견 — 이번 작업과 무관한 기존 이슈로 원인 미조사(범위 밖). 백그라운드 배치/추천 작업이 필요한 Phase(§4 이후)에서 워커가 실제로 사용되기 전에 원인 확인 및 조치 필요 | 2026-07-03 |
+| `HR_SKILL_MST.SKILL_NM`에 유니크 제약 없음 — 중복 등록 시 오류 미발생 | 낮음 | 주의 | 기술 관리 화면(SCR-005) 실 API 연동 검증 중 동일 `SKILL_NM`으로 두 번 `POST /api/v1/skills`를 호출해도 둘 다 201로 성공함을 확인 — 설계서 유효성 검사 규칙("기술명 중복 시 '이미 등록된 기술명입니다' 오류")이 DB/API 레벨에서 미충족 상태. `backend/app/models/hr_skill_mst.py`에 `SKILL_NM` UNIQUE 제약이 없어 발생 — Alembic 마이그레이션 추가가 필요한 스키마 변경이라 "최소 단위" 원칙에 따라 이번 화면 작업 범위에서는 수정하지 않고 리스크로만 기록. 기존 데이터에 중복 이름이 이미 있을 가능성을 먼저 확인한 뒤 마이그레이션 적용 필요 | 2026-07-04 |
 
 ---
 
@@ -809,7 +812,7 @@
 - [x] 대시보드 구현 (`/dashboard` — 직무 유형 분포 위젯 포함) — 목데이터를 백엔드 8개 API로 전량 교체, 실 서버 빌드·번들 검증 완료 (2026-07-03)
 - [x] 사원 관리 화면 구현 (`/employees` — `JIKMU_ID` 필드·직무 유형 필터 포함) — 목데이터 기반, 실 API(`GET /api/v1/employees`) 연동 미완료
 - [x] 사원 상세 화면 구현 (`/employees/[id]`) — 목데이터 스캐폴딩을 백엔드 실 API로 연동(기본정보/보유기술/투입이력), `GET /api/v1/employees/{empl_id}` 신규 추가, 실 서버 검증 완료 (2026-07-03). 정보수정/기술추가/퇴직처리는 조회 전용으로 남겨 후속 과제로 분리
-- [ ] 기술 관리 화면 구현 (`/skills`, `HR_SKILL_MST`)
+- [x] 기술 관리 화면 구현 (`/skills`, `HR_SKILL_MST`) — 목데이터를 백엔드 실 API(조회/등록/수정)로 전량 교체, 사용여부 토글은 기존 `PATCH` 재사용, 실 서버 검증 완료 (2026-07-04)
 - [ ] 직무 유형 관리 화면 구현 (`/job-types`, `HR_JIKMU_MST`)
 - [ ] 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`)
 - [ ] 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`)
@@ -932,4 +935,5 @@
 | 2026-07-03 | v5.3 | §8 다음 작업 1번(공통 레이아웃·네비게이션 권한별 메뉴 제어) 완료 처리 — `GET /api/v1/auth/me`(신규, `MeOut` 스키마) 추가해 프론트엔드가 현재 사용자의 `ROLE_CD`/`PERM_JSON`을 조회할 수 있게 함. `frontend/lib/nav.ts`에 `NavItem.permKey` 필드와 `filterNavByPermissions` 헬퍼 추가, `lib/auth.ts`에 `getMe()` 추가, `app-shell.tsx`가 로그인 확인 후 `getMe()` 호출 결과를 `Sidebar`(데스크톱/모바일 공통)에 전달해 메뉴를 화면 권한 기준으로 필터링. `backend/tests/test_auth.py`에 `/auth/me` 테스트 2건 추가(pytest 16→18개 전부 통과). 실 서버에서 `admin` 계정으로 `/auth/me` 정상 응답, 무인증 401, 프론트엔드 재빌드 후 번들에 호출 코드 포함 확인. Phase 4 진행률 31%→38%로 갱신, §4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거(대시보드 화면 구현만 남음) | — |
 | 2026-07-03 | v5.4 | §8 다음 작업 1번(대시보드 화면 구현) 완료 처리 — `frontend/app/(app)/dashboard/page.tsx`를 목데이터에서 백엔드 대시보드 API 8종 실 호출로 전면 교체. `HeadcountChart`/`JobTypeDonut`/`DeptUtilizationChart` 3개 차트 컴포넌트를 `data` prop 기반으로 리팩터링(소비처인 `reports/page.tsx`도 호환 유지 위해 함께 수정), 인증 API 호출 공통 헬퍼 `frontend/lib/api.ts`(`apiGet<T>`) 신규 작성. 실 서버 재빌드 성공(`/dashboard` 정적 프리렌더, TypeScript 컴파일 오류 없음), 컴파일된 번들에 실 API 호출 코드 포함 확인, `admin` 토큰으로 8개 엔드포인트 전부 직접 호출해 응답 구조가 화면의 TypeScript 인터페이스와 일치함을 확인. Phase 4 진행률 38%→44%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐를 Phase 4 잔여 미완료 항목(사원 상세~설정 화면 등 9개)으로 재구성 | — |
 | 2026-07-03 | v5.5 | §8 다음 작업 1번(사원 상세 화면 구현) 완료 처리 — 기존 저장소에 이미 있던 목데이터 기반 `/employees/[id]` 프로토타입 화면을 실 API로 연동(기본정보/보유기술/투입이력 3개 탭). 신규 `GET /api/v1/employees/{empl_id}` 백엔드 엔드포인트 추가(기존 `get_employee` 리포지토리 재사용), 기술·투입 이력 조회는 기존 API 그대로 재사용. 정보수정/기술추가/퇴직처리 UI와 "변경 이력" 탭(감사 로그 조회 API 부재)은 후속 작업으로 분리, §9 리스크 4건 추가(편집 UI 미구현·감사 로그 API 부재·부서 마스터 Seed 없음·`hrm-worker` 재시작 루프). `backend/tests/test_employees.py`에 상세 조회 테스트 3건 추가(pytest 18→21개 전부 통과). 실 서버에서 임시 부서·사원 데이터로 상세 조회 200/404, 응답 구조 일치 확인(검증 중 투입 이력 응답이 페이지네이션 래퍼임을 발견해 프론트엔드 파싱 버그 수정). Phase 4 진행률 44%→50%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐 재구성(누락되었던 "설정 화면 구현"·"Excel Import/Export UI 구현" 2개 항목도 함께 추가) | — |
+| 2026-07-04 | v5.6 | §8 다음 작업 1번(기술 관리 화면 구현) 완료 처리 — 기존 목데이터 기반 `/skills` 화면을 백엔드 `HR_SKILL_MST` API(조회/등록/수정, 이미 구현되어 있어 백엔드 변경 없음)로 연동. `use_yn` 필터 두 상태 병렬 조회로 "전체" 목록 지원, "보유 인원"은 `employee-skills` 전체 조회 결과를 클라이언트에서 집계, "비활성 처리"는 신규 API 없이 기존 `PATCH`의 `USE_YN` 토글로 재사용. `frontend/lib/api.ts`에 `apiPost`/`apiPatch` 공통 헬퍼 신규 추가. 실 서버에서 등록/수정/토글 전부 검증 완료, 검증 중 `SKILL_NM` 유니크 제약 부재(중복 등록 시 오류 미발생)를 발견해 §9 리스크로 신규 기록. 백엔드 변경 없어 pytest는 21개 그대로 유지. Phase 4 진행률 50%→56%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 
