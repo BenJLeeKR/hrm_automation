@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Bell, Search, Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Dropdown, DropdownItem } from '@/components/ui/dropdown'
-import { clearAuthenticated } from '@/lib/auth'
+import { logout } from '@/lib/auth'
 
 interface TopNavProps {
   onMenuClick: () => void
@@ -73,8 +73,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
           <div className="my-1 h-px bg-border" />
           <DropdownItem
             onClick={() => {
-              clearAuthenticated()
-              router.push('/login')
+              void logout().then(() => router.push('/login'))
             }}
             className="text-destructive hover:bg-destructive/10 [&_svg]:text-destructive"
           >

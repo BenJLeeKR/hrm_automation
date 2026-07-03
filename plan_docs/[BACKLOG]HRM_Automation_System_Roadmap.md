@@ -98,7 +98,7 @@
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 94% | 정상 |
-| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
+| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 31% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
@@ -298,7 +298,7 @@
 | **목표** | 권한별 메뉴 제어가 적용된 웹 화면 전체 구현 (포트 3030) |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 25% |
+| **진행률** | 31% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -308,7 +308,7 @@
 | Next.js 프로젝트 생성 (`output: 'standalone'`) | 완료 (Phase 1, `frontend/next.config.mjs`) |
 | `NEXT_PUBLIC_API_BASE_URL` 환경변수 설정 | 완료 (Phase 1, `.env.example`) |
 | 로그인 화면 구현 (`/login`) | 완료 (`frontend/app/login/page.tsx`, 기존 스캐폴딩 보강 — JWT API 전까지 `lib/auth.ts` MVP 세션 마커로 대체, 2026-07-03) |
-| 로그인 JWT API 연동 (`frontend/lib/auth.ts` localStorage 임시 마커 → `POST /api/v1/auth/{login,refresh,logout}` 실 API 연동) | 예정 (백엔드 JWT 인증 API는 Phase 3에서 이미 완료·검증됨, 2026-07-03 — 프론트엔드 연동만 남음) |
+| 로그인 JWT API 연동 (`frontend/lib/auth.ts` localStorage 임시 마커 → `POST /api/v1/auth/{login,refresh,logout}` 실 API 연동) | 완료 (`lib/auth.ts`에 `login`/`logout`/`getAccessToken` 추가, `login/page.tsx`·`top-nav.tsx` 실 API 연동, 실 서버 컨테이너 빌드·번들 검증 완료, 2026-07-03. 토큰 저장은 MVP로 localStorage 유지 — HttpOnly Cookie 전환은 별도 후속 과제) |
 | 공통 레이아웃·네비게이션 구현 (권한별 메뉴 제어) | 진행 중 (레이아웃·네비게이션·미인증 리다이렉트는 구현 완료, "권한별 메뉴 제어"는 `SYS_ROLE_MST.PERM_JSON` 연동 미구현) |
 | 대시보드 화면 구현 (`/dashboard`) — 직무 유형 분포 위젯 포함 | 예정 |
 | 사원 목록 화면 구현 (`/employees`) — 직무 유형 필터 포함 | 완료 (기존 스캐폴딩 + 직무 유형 필터 추가, 목데이터 기반, 2026-07-03) |
@@ -525,7 +525,7 @@
 | Alembic | Alembic (SQLAlchemy 연동) | 적용 완료 | 필수 | DB 스키마 버전 관리, 실 서버 `alembic upgrade head` 정상 실행 확인 |
 | Next.js | Next.js (node:22-alpine, standalone) | 진행 중 | 필수 | 외부 포트 3030, `output: 'standalone'` 적용·컨테이너 구동 확인. 대부분 화면은 목데이터 기반이라 실 API 연동은 미완료 |
 | API Client | Axios 또는 fetch (Next.js 내장) | 예정 | 필수 | `NEXT_PUBLIC_API_BASE_URL` 환경변수는 설정되어 있으나, 현재 화면들은 실제 백엔드 API 대신 목데이터를 사용 중이라 연동 자체는 미착수 |
-| 인증 방식 | JWT (Access Token 60분 + Refresh Token 7일) | 진행 중 | 필수 | 백엔드 로그인/토큰갱신/로그아웃 API 구현 및 검증 완료(2026-07-03). 프론트엔드는 아직 localStorage 기반 임시 세션 마커(`lib/auth.ts`)를 사용 중이라 HttpOnly Cookie·Token Rotation 연동은 미완료 |
+| 인증 방식 | JWT (Access Token 60분 + Refresh Token 7일) | 진행 중 | 필수 | 백엔드 로그인/토큰갱신/로그아웃 API 구현 및 검증 완료, 프론트엔드도 `lib/auth.ts`가 실제 로그인/로그아웃 API를 호출하도록 연동 완료(2026-07-03) — 단, 토큰 저장은 MVP로 localStorage 유지, 설계서가 목표로 하는 HttpOnly Cookie·Token Rotation·자동 리프레시는 아직 미구현 |
 | Batch/Scheduler | APScheduler (MVP) → Celery (확장) | 예정 | 필수 | `hrm-worker` 컨테이너는 Phase 7까지 placeholder로 구동 중(실제 배치 로직 없음) |
 | Logging | structlog 또는 Python logging (JSON 포맷) | 예정 | 필수 | `/App/hrmngr/logs/`, 현재 기본 Uvicorn 로그만 사용, 구조화 로그 미적용 |
 | Backup | `pg_dump` + gzip + crontab | 진행 중 | 필수 | `/App/hrmngr/backup/postgres/`, 수동 백업 스크립트 작성·실행 확인 완료(2026-07-03), crontab 자동화·14일 보관 정책은 미완료 |
@@ -617,6 +617,7 @@
 - **대시보드 집계 API 구현 (§8 다음 작업 1번)** — `[DESIGN]HRM_Screen_Design.md` SCR-002(대시보드) "연동 API" 표에 명시된 4개 엔드포인트를 그대로 구현: `GET /api/v1/dashboard/summary`(전체 인원·즉시/부분/풀 가동 인원수·이달 종료 예정자·평균 가동률 KPI), `/dept-utilization`(부서별 평균 가동률), `/job-type-distribution`(직무 유형별 인력 분포, 미등록 사원은 별도 그룹), `/utilization-by-type?month=yyyyMM`(RUNNING→+COMMITTED→+PROPOSED 3단계 조직 평균 가동률). `backend/app/repositories/hr_avail_snap.py`에 `active_alloc_rt_subquery`(신규)를 추출해 가동률 계산 API(`compute_availability`)와 동일한 산정 조건을 대시보드 집계에서도 재사용, `backend/app/repositories/dashboard.py`(신규)·`backend/app/schemas/dashboard.py`(신규)·`backend/app/api/v1/dashboard.py`(신규, `require_permission("dashboard", "view")` — 기존 PERM_JSON `dashboard.view`가 6개 역할 전부 허용이라 그대로 재사용) 작성. **중요한 설계 결정**: 화면 설계서는 데이터 소스를 `HR_AVAIL_SNAP` 테이블로 명시하지만 스냅샷 생성 배치(`HR_AVAIL_SNAP_GEN`, Phase 7)가 아직 없어 테이블이 항상 비어 있으므로, 동일 산정 로직을 사원 단위로 실시간 계산해 대체 — 결과값은 스펙상 정확하나 매 요청마다 재계산하므로 Phase 7 배치 도입 후 스냅샷 기반으로 전환 검토가 필요함을 §9 리스크로 기록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 부서 2개·프로젝트·사원 3명(0%/50%/100%)의 임시 데이터로 4개 엔드포인트 응답을 수기 계산과 대조해 전부 정확히 일치함을 확인(KPI 카드 합계, 부서별 평균, 직무 미등록 그룹핑, 3단계 월별 집계 비율). 잘못된 `month` 형식 422, 무인증 401도 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. Phase 3 진행률 89%→94%로 갱신, §11 "대시보드 집계 API" 완료 체크, §9 리스크 1건 추가, §8 큐에서 완료 항목 제거 및 재번호(1)
 - **Excel Export API 구현 — Import는 별도 분리 (§8 다음 작업 1번)** — `[DESIGN]HRM_Screen_Design.md` SCR-003(사원 목록) "Excel Import/Export 컬럼 매핑" 및 "연동 API" 표에 명시된 `GET /api/v1/employees/export`를 구현. `backend/app/repositories/hr_empl_mst.py`에 `list_employees_for_export`(신규, 필터는 `list_employees`와 동일하나 페이지네이션 없이 전체 반환) 및 보유역할(`HR_EMPL_ROLE_REL`+`HR_JIKMU_MST.JIKMU_CD`)·주요기술+숙련도(`HR_EMPL_SKILL_REL`+`HR_SKILL_MST`)를 사원별로 `string_agg`로 집계하는 헬퍼 2종 추가(N:M 관계라 콤마로 이어붙임 — 숙련도는 원본 Excel 서식 자체가 "전체 기술에 동일 숙련도" 한 칸만 두는 손실 매핑이라 여러 기술 중 최댓값을 대표로 사용, 사유 주석 명시). `backend/app/api/v1/employees.py`에 `GET /employees/export`(신규) 추가 — `openpyxl`(신규 의존성, `requirements.txt`에 추가)로 설계서 컬럼 순서(사번/성명/팀/직급/보유역할/주요기술/숙련도/입사일/재직상태/휴대폰번호) 그대로 `.xlsx` 생성, `StreamingResponse`로 다운로드 응답. 재직상태는 `EMPL_STAT_CD`(ACTIVE/LEAVE/RETIRED)를 재직/휴직/퇴직으로 매핑(설계서는 재직/퇴직 2종만 예시로 들었으나 실제 코드 값이 3종이라 합리적으로 확장, 사유 주석 명시). `require_permission("employees", "excel")`을 재사용(기존 PERM_JSON `employees.excel`이 이미 ADMIN/HR_MGR만 허용 — 설계서의 "Excel 가져오기 권한: A H" 원칙과 동일하게 적용), `record_audit`으로 `ACT_CD='EXPORT'` 기록(내보낸 행 수 포함). **Import는 이번 범위에서 제외**: 팀/직급/역할/기술을 명칭으로 조회해 FK로 변환, `EMPL_NO` 기준 신규/수정 upsert, 행 단위 검증 실패 시 전체 롤백 vs 부분 성공 처리 등 여러 설계 판단이 필요해 백로그 별도 항목으로 분리(§9 참고). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 부서·기술·역할이 연결된 임시 사원 1명으로 `.xlsx` 다운로드 후 `openpyxl`로 실제 내용을 열어 10개 컬럼 전부 정확한 값(팀명/직급명/기술명/숙련도/재직상태 한글 라벨 등)으로 채워짐을 확인, `excel` 권한 없는 VIEWER 역할 403, 무인증 401, `SYS_AUDIT_LOG`에 `ACT_CD='EXPORT'` 기록 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. §11 "Excel Import/Export API" 항목을 "Export만 완료, Import 미구현"으로 설명 갱신(체크박스는 미완료 유지 — 항목 전체가 완료된 것은 아니므로), §9 리스크 1건 추가(Import 설계 판단 필요), §8 큐를 Import 전용 항목으로 재구성
 - **백로그 문서 정정 — "로그인 JWT API 연동" 항목 신규 추가 (사용자 요청)** — 사용자가 "백로그 구현 리스트에 항목이 없다면 로그인 JWT API 연동 내용을 추가해달라"고 요청. §4 Phase 4·§11 프론트엔드 체크리스트·§8 다음 작업 큐 전체를 확인한 결과, 백엔드 JWT 인증 API(`POST /api/v1/auth/{login,refresh,logout}`)는 2026-07-03에 이미 완료·검증되었으나 프론트엔드가 이를 실제로 호출하도록 연동하는 작업 자체를 가리키는 백로그 항목이 어디에도 없었음을 확인(§6 "인증 방식" 행과 §11 "로그인 화면 구현" 항목 비고에 "JWT API 연동 전까지 대체"라는 언급만 있었고, 별도 추적 항목은 부재) — 신규 발견된 누락 항목으로 추가. §4 Phase 4 "주요 작업" 표에 "로그인 JWT API 연동" 행 신규 추가(예정), §11 프론트엔드 체크리스트에 동일 항목 미완료로 신규 추가, §8 다음 작업 큐에 2번 항목으로 추가(1번 Excel Import 다음 순서). 실질적인 코드 변경은 없음(백로그 문서 정정만 수행)
+- **로그인 JWT API 연동 구현 (§8 다음 작업 2번)** — 앞서 백로그에 신규 추가한 항목을 이어서 구현. `frontend/lib/auth.ts`를 localStorage 세션 마커(`'1'`) 저장 방식에서 실제 액세스/리프레시 토큰 저장 방식으로 전면 교체 — `login(userLoginId, password)`(신규, `POST /api/v1/auth/login` 호출, 401 시 "아이디 또는 비밀번호가 올바르지 않습니다" 안내, 네트워크 오류 별도 안내), `logout()`(신규, `POST /api/v1/auth/logout`을 최선 노력으로 호출 후 클라이언트 세션 삭제 — 실패해도 사용자 경험에 영향 없도록 처리), `getAccessToken()`(신규, 향후 인증이 필요한 API 호출에 재사용 가능) 추가. `isAuthenticated()`는 기존과 동일한 시그니처를 유지해 `app-shell.tsx`의 인증 가드 코드는 변경하지 않음(영향 범위 최소화). `frontend/app/login/page.tsx`의 `setTimeout` 목업 로직을 `login()` 실제 호출로 교체, 더 이상 사실이 아닌 "데모 계정: admin / 아무 비밀번호" 안내 문구 제거. `frontend/components/layout/top-nav.tsx`의 로그아웃 메뉴를 `logout()` 비동기 호출로 교체. **중요한 설계 결정**: 토큰 저장 방식은 설계서가 목표로 하는 HttpOnly Cookie 대신 기존 아키텍처(localStorage)를 그대로 유지 — HttpOnly Cookie 전환은 백엔드가 로그인 응답을 `Set-Cookie`로 내려주도록 별도 API 변경이 필요해 이번 최소 단위 범위에서 다루지 않고 §9 리스크로 기록(XSS 시 토큰 탈취 위험이 HttpOnly Cookie보다 높음을 명시). **실 서버 컨테이너에서 실제 렌더링 검증**: `sg docker -c "docker compose up -d --build web"`로 재빌드해 TypeScript/Next.js 빌드 정상 통과 확인(로컬 Node 16 제약 대체 검증), `/login` 200 정상 응답, 컴파일된 클라이언트 번들에서 `USER_LGID` 필드가 포함된 로그인 요청 페이로드가 실제로 존재함을 확인해 목업 코드가 실 API 호출로 정상 교체되었음을 검증. 브라우저 기반 실제 로그인 클릭 테스트는 headless 브라우저 도구가 없어 미실시 — 번들 코드 검증으로 대체 (아래 검증 결과 참조). §4/§11 "로그인 JWT API 연동" 항목 완료 체크, §6 "인증 방식" 진행 상황 갱신, §9 리스크 1건 추가, §8 큐에서 완료 항목 제거(Excel Import만 남음)
 - **프론트엔드 전체 한글 폰트를 Noto Sans KR로 변경 (사용자 요청)** — `frontend/app/layout.tsx`의 본문 폰트를 `next/font/google`의 `Geist`(라틴 전용)에서 `Noto_Sans_KR`(subsets `latin`+`korean`, weight 400/500/600/700)로 교체 — 화면 대부분이 한글이라 한글 글리프를 지원하지 않는 라틴 전용 폰트 대신 한글 최적화 폰트로 전환. CSS 변수명(`--font-geist-sans`)은 그대로 유지해 `globals.css`의 `--font-sans` 매핑 등 다른 파일 변경을 최소화(폴백 폰트명만 `'Geist Fallback'`→`'Noto Sans KR Fallback'`으로 갱신). 코드/숫자용 모노스페이스 폰트(`Geist Mono`)는 변경하지 않음(한글 폰트 요청 범위 밖). **실 서버 컨테이너에서 실제 렌더링 검증**: `sg docker -c "docker compose up -d --build web"`로 재빌드(TypeScript/Next.js 빌드 정상 통과 확인 — 로컬 환경 Node 16 제약으로 못했던 빌드 검증을 실 서버에서 대체 수행), `/login` 200 정상 응답, 실제 서빙된 CSS에서 `font-family: Noto Sans KR, Noto Sans KR Fallback`이 `--font-geist-sans` 변수에 정상 매핑되어 적용됨을 확인, `Geist Mono`는 그대로 유지됨을 확인. 백로그에 해당 전용 체크리스트 항목이 없어 Phase 진행률 변경 없음(§7 완료 내역에만 기록)
 - **대시보드 집계 API — 프론트엔드 목데이터 기반 4개 엔드포인트 추가 (사용자 요청)** — 사용자가 "현재 frontend에 mock 데이터로 구현되어 있는 dashboard를 참고해서 필요한 API를 구현"을 요청. `frontend/app/(app)/dashboard/page.tsx`와 `frontend/lib/mock-data.ts`를 확인한 결과, 화면이 이미 SCR-002 설계서 표에 없던 4개 위젯(데이터 품질 점검·이달 투입 종료 예정 상세 목록·최근 입사자·월별 인력 추이)을 목데이터로 표시하고 있음을 확인 — 앞서 구현한 4개 엔드포인트(설계서 명시분)로는 커버되지 않는 부분이라 추가로 구현. `backend/app/repositories/dashboard.py`에 `get_data_quality`(재직 사원 중 기술/직무 미등록 수, `ALLOC_RT` 합계 100% 초과 사원 수), `get_ending_this_month`(이번 달 종료 예정 투입 상세 목록 — 사원명/부서명/프로젝트명/종료일/투입률), `get_recent_employees`(최근 입사자, `HIRE_DT` 내림차순), `get_headcount_trend`(월별 재직 인원/입사/퇴사 추이, 개월 수 파라미터화) 4개 함수 추가. `backend/app/schemas/dashboard.py`·`backend/app/api/v1/dashboard.py`에 대응 스키마·엔드포인트(`GET /api/v1/dashboard/{data-quality,ending-this-month,recent-employees,headcount-trend}`) 추가, 기존과 동일하게 `require_permission("dashboard", "view")` 적용. 100% 초과 데이터 점검은 등록/수정 API에서 이미 저장 차단하지만(§9 참조) 기존 Excel 이관 데이터 예외(`AVAILABILITY_CALC_SPEC.md` §5)를 대비해 별도로 재점검하도록 구현. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 사원 3명(기술/직무 미등록 1명, 정상 1명 — 레거시 100% 초과 투입 직접 삽입, 이번 달 퇴직 1명)의 임시 데이터로 4개 엔드포인트를 수기 계산과 대조 — 데이터 품질(기술 미등록 1/직무 미등록 1/초과 1), 이달 종료 예정 1건, 최근 입사자 2명(퇴직자 제외), 3개월 인력 추이(입사 1·퇴사 1 반영) 전부 정확히 일치함을 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. §11 "대시보드 집계 API" 항목 설명에 8개 엔드포인트 전체 반영, 별도 리스크 추가 없음(기존 §9 "대시보드 API가 HR_AVAIL_SNAP 대신 실시간 계산 사용" 리스크와 동일 원칙 적용)
 
@@ -628,9 +629,10 @@
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
 - [ ] 1. Excel Import API 구현 (`POST /api/v1/employees/import`, SCR-003 "인력마스터_ResourceTable" 컬럼 매핑 — 팀/직급/역할/기술 명칭→FK 조회, 사번 기준 신규/수정 upsert, 오류 행 처리 정책 확정 필요)
-- [ ] 2. 로그인 JWT API 연동 (`frontend/lib/auth.ts`의 localStorage 임시 마커를 `POST /api/v1/auth/login`·`/refresh`·`/logout` 실제 호출로 교체 — 백엔드 API는 완료·검증됨, 2026-07-03)
 
 > 참고: "Excel Export API 구현(`GET /api/v1/employees/export`)"는 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다. Import는 신규/수정 upsert 로직·FK 조회 오류 처리·부분 실패 정책 등 추가 판단이 필요해 별도 항목으로 분리했다.
+
+> 참고: "로그인 JWT API 연동"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현", "페이지네이션 공통 처리 구현", "OpenAPI 문서 확인", "가동률 계산 API 구현(`HR_AVAIL_SNAP`)", "대시보드 집계 API 구현"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
@@ -667,6 +669,7 @@
 | 페이지네이션 공통화로 OpenAPI 스키마명 변경 | 낮음 | 주의 | `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`를 Pydantic 제네릭 `PaginatedResponse[T]`의 타입 별칭으로 전환하면서, 응답 JSON 형태(`total`/`skip`/`limit`/`items`)는 동일하게 유지되지만 `/openapi.json`에 노출되는 스키마명이 `PaginatedResponse_EmployeeOut_` 형태로 바뀜. 프론트엔드는 현재 목데이터 기반이라 실 API 응답 스키마에 의존하지 않아 당장 영향 없음 — 향후 OpenAPI 기반 타입 자동 생성 도구 도입 시 참고 필요 | 2026-07-03 |
 | 대시보드 API가 `HR_AVAIL_SNAP` 대신 실시간 계산 사용 | 중간 | 주의 | `[DESIGN]HRM_Screen_Design.md` SCR-002는 KPI 카드·부서별 가동률의 데이터 소스를 `HR_AVAIL_SNAP` 테이블로 명시하지만, 스냅샷 생성 배치 `HR_AVAIL_SNAP_GEN`(Phase 7)이 아직 없어 테이블이 항상 비어 있다. 이에 `backend/app/repositories/dashboard.py`는 가동률 계산 API(`compute_availability`)와 동일한 `AVAILABILITY_CALC_SPEC.md` 로직을 사원 단위로 실시간 재계산해 대체 — 결과값은 스펙상 정확하나, Phase 7 배치 도입 후에는 매일 갱신되는 스냅샷 기반 집계로 전환해 매 요청마다 재계산하지 않도록 성능 개선 검토 필요 | 2026-07-03 |
 | Excel Import API 설계 판단 필요 | 중간 | 주의 | `POST /api/v1/employees/import`(SCR-003)는 Export와 달리 (1) 팀/직급/역할/기술을 텍스트 명칭으로 받아 FK로 변환 시 명칭이 마스터에 없는 경우 처리 방식, (2) `EMPL_NO` 기준 신규/수정 upsert 판단 기준, (3) 여러 행 중 일부만 검증 실패했을 때 전체 롤백할지 성공 행만 반영할지 정책이 설계서에 명시되어 있지 않아 임의로 결정하지 않고 별도 백로그 항목(§8)으로 분리해 후속 확인 후 진행 예정 | 2026-07-03 |
+| 프론트엔드 JWT 토큰을 localStorage에 저장 (HttpOnly Cookie 미적용) | 중간 | 주의 | 로그인 JWT API 프론트엔드 연동 시 설계서가 목표로 하는 HttpOnly Cookie 방식 대신, 기존 `lib/auth.ts` 아키텍처(localStorage)를 그대로 유지하고 저장 내용만 세션 마커에서 실제 액세스/리프레시 토큰으로 교체하는 MVP 방식을 채택 — HttpOnly Cookie 전환은 백엔드가 로그인 응답을 `Set-Cookie`로 내려주도록 별도 API 변경이 필요해 이번 범위에서 다루지 않음. localStorage 저장은 XSS 공격 시 토큰 탈취 위험이 HttpOnly Cookie보다 높으므로, 정식 운영 전환 전 HttpOnly Cookie·자동 토큰 리프레시 도입 검토 필요 | 2026-07-03 |
 
 ---
 
@@ -772,7 +775,7 @@
 - [x] Next.js 프로젝트 생성 (`output: 'standalone'` 설정 필수)
 - [x] `NEXT_PUBLIC_API_BASE_URL` 환경변수 설정 (`http://{서버IP}:8000`)
 - [x] 로그인 화면 구현 (`/login`) — MVP 임시 인증(`frontend/lib/auth.ts`), JWT API 연동 전까지 대체
-- [ ] 로그인 JWT API 연동 (`frontend/lib/auth.ts`의 localStorage 임시 마커를 `POST /api/v1/auth/login`·`/refresh`·`/logout` 실제 호출로 교체 — 백엔드는 완료·검증됨, 2026-07-03)
+- [x] 로그인 JWT API 연동 (`frontend/lib/auth.ts`의 localStorage 임시 마커를 `POST /api/v1/auth/login`·`/logout` 실제 호출로 교체) — 실 서버 컨테이너 빌드 및 번들 검증 완료 (2026-07-03). 토큰 저장은 MVP로 localStorage 유지
 - [ ] 공통 레이아웃·네비게이션 구현 (권한별 메뉴 제어) — 레이아웃/네비게이션/미인증 리다이렉트 구현 완료, 권한별 메뉴 제어(`PERM_JSON` 연동)는 미구현
 - [ ] 대시보드 구현 (`/dashboard` — 직무 유형 분포 위젯 포함)
 - [x] 사원 관리 화면 구현 (`/employees` — `JIKMU_ID` 필드·직무 유형 필터 포함) — 목데이터 기반, 실 API(`GET /api/v1/employees`) 연동 미완료
@@ -893,4 +896,5 @@
 | 2026-07-03 | v4.6 | 사용자 요청으로 프론트엔드 전체 한글 폰트를 Noto Sans KR로 변경 — `frontend/app/layout.tsx`에서 `Geist`(라틴 전용)를 `Noto_Sans_KR`(subsets `latin`+`korean`)로 교체, `--font-geist-sans` CSS 변수명은 유지해 영향 범위 최소화. `globals.css` 폴백 폰트명 갱신. `docker compose up -d --build web` 재빌드로 TypeScript/Next.js 빌드 정상 통과 확인(로컬 Node 16 제약 대체 검증), 실 서버에서 `font-family: Noto Sans KR` 적용 및 `/login` 정상 렌더링 확인 | — |
 | 2026-07-03 | v4.7 | §8 다음 작업 1번(Excel Import/Export API) 중 Export만 완료 처리 — SCR-003 컬럼 매핑 그대로 `GET /api/v1/employees/export`(`openpyxl` 신규 의존성) 구현, 보유역할·주요기술·숙련도 N:M 집계 헬퍼 추가. Import는 FK 명칭 조회·upsert·부분 실패 정책 등 설계 판단이 필요해 별도 항목으로 분리(§9 리스크 기록). 실 서버에서 `.xlsx` 실제 내용 검증(10개 컬럼 전부 정확), `excel` 권한 없는 역할 403, 무인증 401, `SYS_AUDIT_LOG` EXPORT 기록 확인. §11 "Excel Import/Export API" 항목을 Export 완료·Import 미구현으로 설명 갱신(체크박스 미완료 유지), §8 큐를 Import 전용 항목으로 재구성 | — |
 | 2026-07-03 | v4.8 | 사용자 요청으로 백로그 문서에 누락되어 있던 "로그인 JWT API 연동" 항목 신규 추가 — 백엔드 JWT 인증 API는 완료되었으나 프론트엔드가 `lib/auth.ts`의 localStorage 임시 마커 대신 실제 API를 호출하도록 연동하는 작업 자체를 가리키는 백로그 항목이 없었음을 확인해 추가. §4 Phase 4 "주요 작업" 표·§11 프론트엔드 체크리스트에 신규 항목(예정) 추가, §8 다음 작업 큐에 2번 항목으로 등록. 코드 변경 없음(문서 정정만 수행) | — |
+| 2026-07-03 | v4.9 | §8 다음 작업 2번(로그인 JWT API 연동) 완료 처리 — `frontend/lib/auth.ts`를 localStorage 세션 마커 방식에서 실제 액세스/리프레시 토큰 저장 방식으로 교체(`login`/`logout`/`getAccessToken` 신규, `isAuthenticated` 시그니처 유지). `login/page.tsx`의 목업 로직을 실제 `POST /api/v1/auth/login` 호출로, `top-nav.tsx`의 로그아웃을 실제 `POST /api/v1/auth/logout` 호출로 교체. 토큰 저장은 MVP로 localStorage 유지(HttpOnly Cookie 전환은 백엔드 API 변경 필요해 별도 후속 과제, §9 리스크 기록). 실 서버 컨테이너 재빌드로 TypeScript/Next.js 빌드 통과 확인, 컴파일된 번들에서 `USER_LGID` 로그인 페이로드 실존 확인(브라우저 클릭 테스트는 headless 도구 부재로 미실시). Phase 4 진행률 25%→31%로 갱신, §4/§6/§11 관련 항목 갱신, §9 리스크 1건 추가, §8 큐에서 완료 항목 제거(Excel Import만 남음) | — |
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Boxes, Lock, User, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { setAuthenticated } from '@/lib/auth'
+import { login } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -28,13 +28,14 @@ export default function LoginPage() {
     }
 
     setLoading(true)
-    // TODO: POST /api/v1/auth/login — JWT 발급 후 /dashboard 이동 (JWT API 구현 전까지는
-    // setAuthenticated()로 임시 세션 마커만 기록한다. lib/auth.ts 참조)
-    setTimeout(() => {
-      setLoading(false)
-      setAuthenticated()
-      router.push('/dashboard')
-    }, 500)
+    const result = await login(loginId, password)
+    setLoading(false)
+
+    if (!result.ok) {
+      setError(result.error ?? '로그인에 실패했습니다.')
+      return
+    }
+    router.push('/dashboard')
   }
 
   return (
@@ -100,10 +101,6 @@ export default function LoginPage() {
               {loading ? '로그인 중입니다...' : '로그인'}
             </Button>
           </form>
-
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            데모 계정: <span className="font-medium text-foreground">admin</span> / 아무 비밀번호
-          </p>
         </div>
 
         <p className="mt-6 text-center text-xs text-nav-muted">
