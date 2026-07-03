@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Boxes, Lock, User, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { setAuthenticated } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,9 +28,11 @@ export default function LoginPage() {
     }
 
     setLoading(true)
-    // TODO: POST /api/v1/auth/login — JWT 발급 후 /dashboard 이동
+    // TODO: POST /api/v1/auth/login — JWT 발급 후 /dashboard 이동 (JWT API 구현 전까지는
+    // setAuthenticated()로 임시 세션 마커만 기록한다. lib/auth.ts 참조)
     setTimeout(() => {
       setLoading(false)
+      setAuthenticated()
       router.push('/dashboard')
     }, 500)
   }

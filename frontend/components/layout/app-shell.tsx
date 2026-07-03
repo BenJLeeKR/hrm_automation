@@ -1,13 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import { Sidebar } from './sidebar'
 import { TopNav } from './top-nav'
 import { cn } from '@/lib/utils'
+import { isAuthenticated } from '@/lib/auth'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  // MVP 임시 인증 가드 — JWT API 연동 전까지 localStorage 세션 마커로 대체 (lib/auth.ts 참조).
+  // 실제 서비스 전환 시 서버 미들웨어/세션 기반 검증으로 교체 필요.
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace('/login')
+      return
+    }
+    setChecked(true)
+  }, [router])
+
+  if (!checked) return null
 
   return (
     <div className="flex min-h-screen bg-background">

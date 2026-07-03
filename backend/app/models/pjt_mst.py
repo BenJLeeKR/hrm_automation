@@ -15,7 +15,9 @@ class PjtMst(AuditMixin, Base):
     """프로젝트 마스터 (ERD `backend/docs/ERD.md` §3.8)"""
 
     __tablename__ = "PJT_MST"
-    __table_args__ = (CheckConstraint(f"PJT_STAT_CD IN {PJT_STAT_CODES}", name="ck_pjt_mst_pjt_stat_cd"),)
+    # CHECK 조건문의 컬럼명은 큰따옴표로 감싸야 한다 — hr_empl_mst.py 주석 참조
+    # (따옴표 없이 쓰면 Postgres가 대소문자를 소문자로 접어 컬럼을 못 찾는다)
+    __table_args__ = (CheckConstraint(f'"PJT_STAT_CD" IN {PJT_STAT_CODES}', name="ck_pjt_mst_pjt_stat_cd"),)
 
     PJT_ID: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     PJT_CD: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)

@@ -15,7 +15,12 @@ config = context.config
 
 # .ini에는 sqlalchemy.url을 비워두고, 여기서 .env 기반 DATABASE_URL로 덮어쓴다
 # (비밀번호 등 민감정보를 alembic.ini에 하드코딩하지 않기 위함)
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# alembic.ini는 내부적으로 ConfigParser(BasicInterpolation)를 사용해 "%"를 보간 문법으로
+# 해석하므로, percent-encoding된 비밀번호(예: %40)가 URL에 포함되면 set_main_option에서
+# "invalid interpolation syntax" 오류가 난다. "%"를 "%%"로 이스케이프해 저장하면
+# get_main_option/engine_from_config에서 조회할 때 다시 "%"로 정상 복원된다 (Alembic 공식
+# 권장 우회 방법).
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

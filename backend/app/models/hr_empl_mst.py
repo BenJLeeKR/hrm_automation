@@ -15,7 +15,13 @@ class HrEmplMst(AuditMixin, Base):
     """사원 마스터 (ERD `backend/docs/ERD.md` §3.5)"""
 
     __tablename__ = "HR_EMPL_MST"
-    __table_args__ = (CheckConstraint(f"EMPL_STAT_CD IN {EMPL_STAT_CODES}", name="ck_hr_empl_mst_empl_stat_cd"),)
+    # CHECK 조건문 안의 컬럼명은 큰따옴표로 감싸야 한다 — SQLAlchemy가 컬럼 자체는
+    # "EMPL_STAT_CD"처럼 따옴표를 씌워 생성하지만, CheckConstraint의 원문 SQL 문자열은
+    # 따옴표를 자동으로 붙여주지 않아 Postgres가 대소문자를 소문자로 접어(empl_stat_cd)
+    # "컬럼 없음" 오류를 낸다.
+    __table_args__ = (
+        CheckConstraint(f'"EMPL_STAT_CD" IN {EMPL_STAT_CODES}', name="ck_hr_empl_mst_empl_stat_cd"),
+    )
 
     EMPL_ID: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     EMPL_NO: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)

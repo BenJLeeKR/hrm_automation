@@ -20,9 +20,26 @@ import {
   teamOptions,
   positionOptions,
   employeeStatusOptions,
-  roleOptions,
+  jobTypeOptions,
 } from '@/lib/options'
 import type { Employee } from '@/lib/types'
+
+// 사원의 `roles`(mock-data.ts)에는 신규 JIKMU_CD(예: DEVELOPER, DEVOPS)와 구 Excel
+// 코드(예: AA, TA, 컨설턴트, 사업관리)가 혼재되어 있다 — ERD `HR_JIKMU_MST` §3.3의
+// "엑셀 코드 → JIKMU_CD 매핑" 규칙과 동일. 직무 유형 필터(jobTypeOptions, JIKMU_CD 기준)를
+// 두 표기 모두에 대해 정상 동작시키기 위한 매핑이며, 사원 데이터가 실제 API로 전환되면
+// JIKMU_ID 단일 값으로 대체되어 이 매핑은 제거 가능하다.
+const JIKMU_CD_ALIASES: Record<string, string[]> = {
+  ARCHITECT: ['ARCHITECT', 'AA'],
+  TECH_LEAD: ['TECH_LEAD', 'TA'],
+  CONSULTANT: ['CONSULTANT', '컨설턴트'],
+  PMO: ['PMO', '사업관리'],
+}
+
+function matchesJobType(employeeRoles: string[], jikmuCd: string) {
+  const aliases = JIKMU_CD_ALIASES[jikmuCd] ?? [jikmuCd]
+  return aliases.some((code) => employeeRoles.includes(code))
+}
 
 const positionName = (code: string) =>
   positions.find((p) => p.code === code)?.name ?? code
@@ -33,7 +50,7 @@ export default function EmployeesPage() {
   const [team, setTeam] = useState('ALL')
   const [position, setPosition] = useState('ALL')
   const [status, setStatus] = useState('ALL')
-  const [role, setRole] = useState('ALL')
+  const [jobType, setJobType] = useState('ALL')
   const [openCreate, setOpenCreate] = useState(false)
 
   const filtered = useMemo(() => {
@@ -43,10 +60,10 @@ export default function EmployeesPage() {
       if (team !== 'ALL' && e.team !== team) return false
       if (position !== 'ALL' && e.position !== position) return false
       if (status !== 'ALL' && e.status !== status) return false
-      if (role !== 'ALL' && !e.roles.includes(role)) return false
+      if (jobType !== 'ALL' && !matchesJobType(e.roles, jobType)) return false
       return true
     })
-  }, [keyword, team, position, status, role])
+  }, [keyword, team, position, status, jobType])
 
   const columns: Column<Employee>[] = [
     {
@@ -133,8 +150,8 @@ export default function EmployeesPage() {
         <FilterField label="직급">
           <Select value={position} onValueChange={setPosition} options={positionOptions} />
         </FilterField>
-        <FilterField label="보유 역할">
-          <Select value={role} onValueChange={setRole} options={roleOptions} />
+        <FilterField label="직무 유형">
+          <Select value={jobType} onValueChange={setJobType} options={jobTypeOptions} />
         </FilterField>
         <FilterField label="재직 상태">
           <Select value={status} onValueChange={setStatus} options={employeeStatusOptions} />

@@ -20,10 +20,12 @@ class PjtAsgnHis(AuditMixin, Base):
     """
 
     __tablename__ = "PJT_ASGN_HIS"
+    # CHECK 조건문의 컬럼명은 큰따옴표로 감싸야 한다 — hr_empl_mst.py 주석 참조
+    # (따옴표 없이 쓰면 Postgres가 대소문자를 소문자로 접어 컬럼을 못 찾는다)
     __table_args__ = (
-        CheckConstraint("ALLOC_RT BETWEEN 0 AND 100", name="ck_pjt_asgn_his_alloc_rt"),
-        CheckConstraint(f"ASGN_TYPE_CD IN {ASGN_TYPE_CODES}", name="ck_pjt_asgn_his_asgn_type_cd"),
-        CheckConstraint(f"ASGN_STAT_CD IN {ASGN_STAT_CODES}", name="ck_pjt_asgn_his_asgn_stat_cd"),
+        CheckConstraint('"ALLOC_RT" BETWEEN 0 AND 100', name="ck_pjt_asgn_his_alloc_rt"),
+        CheckConstraint(f'"ASGN_TYPE_CD" IN {ASGN_TYPE_CODES}', name="ck_pjt_asgn_his_asgn_type_cd"),
+        CheckConstraint(f'"ASGN_STAT_CD" IN {ASGN_STAT_CODES}', name="ck_pjt_asgn_his_asgn_stat_cd"),
     )
 
     ASGN_ID: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

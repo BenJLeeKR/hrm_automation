@@ -93,7 +93,7 @@ def upgrade() -> None:
         sa.Column("REG_USER", sa.String(100), nullable=True),
         sa.Column("UPD_DTTM", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column("UPD_USER", sa.String(100), nullable=True),
-        sa.CheckConstraint("EMPL_STAT_CD IN ('ACTIVE', 'LEAVE', 'RETIRED')", name="ck_hr_empl_mst_empl_stat_cd"),
+        sa.CheckConstraint('"EMPL_STAT_CD" IN (\'ACTIVE\', \'LEAVE\', \'RETIRED\')', name="ck_hr_empl_mst_empl_stat_cd"),
     )
 
     op.create_table(
@@ -110,7 +110,9 @@ def upgrade() -> None:
         sa.Column("REG_USER", sa.String(100), nullable=True),
         sa.Column("UPD_DTTM", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column("UPD_USER", sa.String(100), nullable=True),
-        sa.CheckConstraint("PJT_STAT_CD IN ('PLANNED', 'RUNNING', 'CLOSED', 'HOLD')", name="ck_pjt_mst_pjt_stat_cd"),
+        sa.CheckConstraint(
+            '"PJT_STAT_CD" IN (\'PLANNED\', \'RUNNING\', \'CLOSED\', \'HOLD\')', name="ck_pjt_mst_pjt_stat_cd"
+        ),
     )
 
     op.create_table(
@@ -129,12 +131,13 @@ def upgrade() -> None:
         sa.Column("REG_USER", sa.String(100), nullable=True),
         sa.Column("UPD_DTTM", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column("UPD_USER", sa.String(100), nullable=True),
-        sa.CheckConstraint("ALLOC_RT BETWEEN 0 AND 100", name="ck_pjt_asgn_his_alloc_rt"),
+        sa.CheckConstraint('"ALLOC_RT" BETWEEN 0 AND 100', name="ck_pjt_asgn_his_alloc_rt"),
         sa.CheckConstraint(
-            "ASGN_TYPE_CD IN ('RUNNING', 'COMMITTED', 'PROPOSED')", name="ck_pjt_asgn_his_asgn_type_cd"
+            '"ASGN_TYPE_CD" IN (\'RUNNING\', \'COMMITTED\', \'PROPOSED\')', name="ck_pjt_asgn_his_asgn_type_cd"
         ),
         sa.CheckConstraint(
-            "ASGN_STAT_CD IN ('PLANNED', 'ACTIVE', 'DONE', 'CANCELED')", name="ck_pjt_asgn_his_asgn_stat_cd"
+            '"ASGN_STAT_CD" IN (\'PLANNED\', \'ACTIVE\', \'DONE\', \'CANCELED\')',
+            name="ck_pjt_asgn_his_asgn_stat_cd",
         ),
     )
 
