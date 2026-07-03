@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
@@ -8,7 +9,13 @@ from app.api.deps import require_permission
 from app.core.audit import record_audit
 from app.db.session import get_db
 from app.models.sys_user_mst import SysUserMst
-from app.repositories.hr_empl_mst import create_employee, get_employee, list_employees, update_employee
+from app.repositories.hr_empl_mst import (
+    create_employee,
+    get_employee,
+    list_employees,
+    retire_employee,
+    update_employee,
+)
 from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeListResponse, EmployeeOut, EmployeeUpdate
 
 _TGT_TBL_NM = "HR_EMPL_MST"
@@ -90,6 +97,38 @@ def patch_employee(
         request,
         current_user,
         act_cd="UPDATE",
+        tgt_tbl_nm=_TGT_TBL_NM,
+        tgt_id=employee.EMPL_ID,
+        bfr_val_json=before_snapshot,
+        aft_val_json=EmployeeOut.model_validate(employee).model_dump(mode="json"),
+    )
+    return employee
+
+
+@router.delete("/{empl_id}", response_model=EmployeeOut)
+def delete_employee(
+    empl_id: uuid.UUID,
+    request: Request,
+    retir_dt: date | None = Query(None, description="퇴직일 — 생략 시 오늘 날짜로 기록"),
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("employees", "delete")),
+) -> EmployeeOut:
+    """사원 퇴직 처리 (로드맵 §8 다음 작업 1번) — 로우를 삭제하지 않고
+    `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록만 수행하는 소프트 삭제."""
+    employee = get_employee(db, empl_id)
+    if employee is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사원을 찾을 수 없습니다.")
+    if employee.EMPL_STAT_CD == "RETIRED":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 퇴직 처리된 사원입니다.")
+
+    before_snapshot = EmployeeOut.model_validate(employee).model_dump(mode="json")
+    employee = retire_employee(db, employee, retir_dt)
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="DELETE",
         tgt_tbl_nm=_TGT_TBL_NM,
         tgt_id=employee.EMPL_ID,
         bfr_val_json=before_snapshot,

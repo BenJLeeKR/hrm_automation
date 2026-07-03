@@ -97,7 +97,7 @@
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 67% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 72% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -251,7 +251,7 @@
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 67% |
+| **진행률** | 72% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -266,7 +266,7 @@
 | RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반) | 완료 (인증 의존성 `get_current_user`, 화면×버튼 권한 검사 `require_permission` 구현 및 `employees`/`skills`/`employee-skills`/`projects`/`assignments`/`codes`(부서·직급·직무유형, `codes` 공통 권한 키 신규) 6개 라우터 전체에 적용, 실 서버 curl 검증 완료, 2026-07-03 — 인증 없이 호출 가능한 업무 API는 더 이상 없음) |
 | `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현 | 완료 (로그인 및 5개 라우터(`employees`/`skills`/`employee-skills`/`projects`/`assignments`)의 등록/수정 행위 기록 구현, 실 서버 검증 완료, 2026-07-03. 조회(GET) 감사 로그 조회 API는 별도 미구현) |
 | CORS 설정 (포트 3030 허용) | 완료 (Phase 1, `backend/app/main.py`) |
-| 사원 CRUD API (`HR_EMPL_MST`) | 진행 중 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/employees`, 퇴직 처리용 삭제(DELETE)는 미구현) |
+| 사원 CRUD API (`HR_EMPL_MST`) | 완료 (조회/등록/수정/퇴직 처리 구현 — `GET`/`POST`/`PATCH`/`DELETE /api/v1/employees`, `DELETE`는 로우 삭제가 아닌 `EMPL_STAT_CD='RETIRED'` 전환, 실 서버 검증 완료, 2026-07-03) |
 | 부서/직급/직무 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`) | 완료 (조회 API만 구현 — `GET /api/v1/departments`, `/positions`, `/job-types`, 2026-07-03. 등록/수정은 §11 "직무 유형 CRUD API" 항목으로 별도 관리) |
 | 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/skills`, `/api/v1/employee-skills`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
 | 프로젝트 CRUD API (`PJT_MST`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/projects`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
@@ -487,7 +487,7 @@
 
 | 기능 영역 | 주요 기능 | 상태 | 우선순위 | 관련 모듈 | 비고 |
 |---|---|---|---|---|---|
-| 직원 관리 | `HR_EMPL_MST` CRUD, 퇴직 처리 | 진행 중 (조회/등록/수정 구현, 퇴직 처리 미구현) | 높음 | `employees.py`, `HR_EMPL_MST` | 직무 유형(`JIKMU_ID`) 필드 포함 |
+| 직원 관리 | `HR_EMPL_MST` CRUD, 퇴직 처리 | 완료 (조회/등록/수정/퇴직 처리 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `employees.py`, `HR_EMPL_MST` | 직무 유형(`JIKMU_ID`) 필드 포함 |
 | 팀/조직 관리 | `HR_DEPT_MST` 계층 구조 관리 | 진행 중 (조회 API만 구현 — `GET /api/v1/departments`, 등록/수정/계층 구조 관리 미구현) | 높음 | `codes.py`, `HR_DEPT_MST` | 상위 부서(`PRNT_DEPT_ID`) 지원 |
 | 직급/역할 관리 | `HR_JIKGUP_MST`, `HR_JIKMU_MST` 마스터 관리 | 진행 중 (조회 API만 구현 — `GET /positions`, `/job-types`, 등록/수정 미구현) | 높음 | `codes.py` | 직급·직무 분리 설계 |
 | 기술 스택 관리 | `HR_SKILL_MST` CRUD | 완료 (조회/등록/수정 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `skills.py`, `HR_SKILL_MST` | 기술 그룹(`SKILL_GRP_CD`) 분류 |
@@ -609,6 +609,7 @@
 - **RBAC 권한 미들웨어 구현 — 부분 완료 (§8 다음 작업 1번, 진행 중 유지)** — `backend/app/api/deps.py`(신규) 작성: `get_current_user`(액세스 토큰 검증 + 활성 사용자 조회, `Authorization: Bearer` 헤더 필수), `require_permission(screen, action)`(역할별 `SYS_ROLE_MST.PERM_JSON`의 화면×버튼 권한 검사, 미권한 시 403) 의존성 제공. `PERM_JSON`에 이미 정의된 화면 키(`employees`/`skills`/`projects`/`assignments`)와 정확히 매칭되는 5개 라우터(`employees.py`, `skills.py`, `employee_skills.py`(→`skills` 화면 재사용, 사원기술 연결은 기술 관리 화면의 일부 기능으로 취급), `projects.py`, `assignments.py`)의 조회/등록/수정 엔드포인트에 `dependencies=[Depends(require_permission(...))]`로 적용. `codes.py`(부서/직급/직무 유형)는 `PERM_JSON`에 `job_types` 화면 키만 있고 `departments`/`positions`는 정의되어 있지 않아 임의 추정 대신 이번 적용 범위에서 제외(§9 리스크 기록) — 이 때문에 백로그 항목은 "완료"가 아닌 "진행 중"으로 유지. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 인증 토큰 없이 `GET /employees`/`POST /projects` 호출 시 401, 위조 토큰 401, VIEWER 역할 토큰으로 `GET /employees`(권한 있음) 200·`POST /employees`(권한 없음) 403·`GET /skills`(권한 없음) 403, PM 역할 토큰으로 `GET/POST /projects`(권한 있음) 200/201·`POST /skills`(권한 없음) 403 — `PERMISSION_MATRIX.md`/Seed에 정의된 역할별 권한표와 정확히 일치함을 확인. 검증에 사용한 임시 사용자/프로젝트 데이터는 검증 직후 삭제. Phase 3 진행률은 부분 완료라 56%로 유지(보수적 갱신 원칙)
 - **`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현 (§8 다음 작업 2번)** — 진짜 ASGI 미들웨어 대신 RBAC 구현(§8 1번)과 동일하게 라우터별 명시적 호출 방식으로 구현(도메인마다 BFR/AFT 스냅샷 구조가 달라 범용 ASGI 미들웨어로는 표현이 어려움). `backend/app/repositories/sys_audit_log.py`(신규, `create_audit_log`), `backend/app/core/audit.py`(신규, `record_audit` — 요청의 클라이언트 IP/User-Agent를 자동 포함해 `SYS_AUDIT_LOG`에 기록) 작성. `employees.py`/`skills.py`/`employee_skills.py`/`projects.py`/`assignments.py`의 등록(CREATE)·수정(UPDATE) 엔드포인트에 적용 — 수정 시에는 갱신 전 상태를 각 도메인의 Out 스키마로 스냅샷해 `BFR_VAL_JSON`에, 갱신 후 상태를 `AFT_VAL_JSON`에 기록. `auth.py` 로그인 성공 시에도 `ACT_CD='LOGIN'` 기록 추가(실패한 로그인은 `SYS_AUDIT_LOG.USER_ID`가 NOT NULL FK라 행위자를 특정할 수 없어 기록하지 않음, 사유 주석 명시). RBAC 적용 라우터에서 이미 `require_permission`으로 확보한 `current_user`를 재사용하도록 각 라우터의 `dependencies=[...]` 방식을 `current_user: SysUserMst = Depends(...)` 파라미터 방식으로 일부 변경(권한 검사 로직 자체는 변경 없음). `codes.py`(부서/직급/직무 유형)는 RBAC 미적용 상태와 동일하게 이번 범위에서 제외. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 테스트용 ADMIN 역할 사용자로 로그인 → `POST /api/v1/skills`(등록) → `PATCH /api/v1/skills/{id}`(수정) 실행 후 `SYS_AUDIT_LOG`를 직접 조회해 `LOGIN`/`CREATE`/`UPDATE` 3건이 올바른 `USER_ID`/`TGT_TBL_NM`/`TGT_ID`/`CLNT_IP`/`USER_AGT`로 기록되고, `UPDATE` 건의 `BFR_VAL_JSON`/`AFT_VAL_JSON`이 실제 변경 전후 값(`USE_YN: true→false`)과 일치함을 확인. 검증에 사용한 임시 사용자/기술/감사로그 데이터는 검증 직후 삭제. Phase 3 진행률 56%→61%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~4)
 - **RBAC 권한 미들웨어 — `codes` 화면 권한 신설로 잔여 범위 완료 (§9 리스크 해소)** — 운영팀 확인 결과(2026-07-03), 부서(`departments`)/직급(`positions`)은 MVP에서 독립 화면으로 보지 않고 "공통 코드/기준정보"로 취급하기로 확정. 별도 화면 키를 만들지 않고 `SYS_ROLE_MST.PERM_JSON`에 공통 `codes` 키를 신설 — `codes.view`는 6개 역할 전체 허용, `codes.create`/`update`/`delete`는 ADMIN/HR_MGR만 허용. `backend/app/db/seed/sys_role_mst_seed.py`의 6개 역할 `PERM_JSON`에 `codes` 반영(신규 Seed 소스 기준) 및 Alembic 리비전 `9c1f3a5d2b7e_add_codes_perm_to_sys_role_mst.py`를 이전 head(`370c95546556`) 뒤에 체이닝해 작성 — `SYS_ROLE_MST`는 이미 실 DB에 Seed 적용된 상태라 해당 리비전을 되돌려 수정하지 않고 `jsonb_set`으로 기존 행을 갱신(다운그레이드는 `#-` 연산자로 `codes` 키 제거). `GET /api/v1/job-types` 조회도 직무 유형 관리 화면의 등록/수정/삭제 권한(`job_types.*`, A H 전용)과 별개로 `codes.view` 정책을 함께 적용해 전 역할이 조회 가능하도록 함. `backend/app/api/v1/codes.py`의 `GET /departments`·`/positions`·`/job-types` 3개 엔드포인트에 `require_permission("codes", "view")` 적용 — 이로써 인증 없이 호출 가능하던 마지막 업무 API가 제거됨(`/health`, `/auth/login`·`/refresh`·`/logout`만 명시적 공개 API로 유지). `backend/docs/PERMISSION_MATRIX.md`에 `codes` 권한 섹션(화면 목록 표에는 미포함, 별도 설명과 역할×버튼 매트릭스 추가) 및 §4 `screen_key` 목록 갱신(13종→14종). **실 서버에서 실제 검증**: `alembic upgrade head`로 리비전 적용 후 `SELECT`로 6개 역할의 `PERM_JSON->'screens'->'codes'` 값이 스펙대로(ADMIN/HR_MGR 전권, 나머지 4개 역할 view만) 반영됨을 확인. 인증 없이 `GET /departments`/`/positions`/`/job-types` 호출 시 전부 401로 전환됨을 확인, VIEWER 역할 테스트 사용자로 로그인 후 3개 엔드포인트 전부 200 정상 응답 확인. 검증에 사용한 임시 사용자 데이터는 검증 직후 삭제. Phase 3 진행률 61%→67%로 갱신(RBAC 항목이 "진행 중"에서 "완료"로 전환됨에 따라 완료 항목 수 반영), §11 "RBAC 권한 미들웨어 구현" 완료 체크로 정정, §9 리스크 "departments/positions/job-types 화면 권한 키 미정" "주의→해소" 처리
+- **사원 퇴직 처리 API 구현 (§8 다음 작업 1번)** — `backend/app/repositories/hr_empl_mst.py`에 `retire_employee`(신규) 추가 — 로우 삭제가 아니라 `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록(미지정 시 오늘 날짜)만 수행하는 소프트 삭제로 구현(ERD/설계서 원칙상 사원 이력을 물리적으로 삭제하지 않음). `backend/app/api/v1/employees.py`에 `DELETE /api/v1/employees/{empl_id}` 라우터 추가 — `retir_dt` 쿼리 파라미터로 퇴직일 수동 지정 가능, 이미 퇴직 처리된 사원이면 409, 미존재 시 404, 기존 `employees` 라우터와 동일하게 `require_permission("employees", "delete")`(ADMIN/HR_MGR만 허용, PERM_JSON 기존 값 그대로 재사용) 및 `record_audit`(`ACT_CD='DELETE'`, 변경 전/후 스냅샷)를 적용. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 테스트용 부서·ADMIN 사용자·사원 데이터를 임시 생성해 `DELETE`로 `EMPL_STAT_CD`가 `ACTIVE→RETIRED`, `RETIR_DT`가 오늘 날짜로 정상 전환됨을 확인, 동일 사원 재차 `DELETE` 시 409, 존재하지 않는 `empl_id`에 404, 인증 없이 호출 시 401, `delete` 권한이 없는 VIEWER 역할 토큰으로 호출 시 403 전부 확인. `SYS_AUDIT_LOG`에 `ACT_CD='DELETE'` 건이 `BFR_VAL_JSON.EMPL_STAT_CD='ACTIVE'`/`AFT_VAL_JSON.EMPL_STAT_CD='RETIRED'`로 정확히 기록됨을 `psql`로 직접 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. Phase 3 진행률 67%→72%로 갱신(사원 CRUD API가 "진행 중"에서 "완료"로 전환), §11 "사원 CRUD API" 완료 체크로 정정, §8 큐에서 완료 항목 제거 및 재번호(1~2)
 
 ---
 
@@ -617,11 +618,10 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 사원 퇴직 처리 API 구현 (`DELETE /api/v1/employees/{empl_id}` — `EMPL_STAT_CD='RETIRED'` 전환)
-- [ ] 2. 페이지네이션 공통 처리 구현 (현재 `employees.py`/`projects.py`/`assignments.py`에 한정된 skip/limit을 공통 모듈로 추출)
-- [ ] 3. OpenAPI 문서(`/docs`) 확인
+- [ ] 1. 페이지네이션 공통 처리 구현 (현재 `employees.py`/`projects.py`/`assignments.py`에 한정된 skip/limit을 공통 모듈로 추출)
+- [ ] 2. OpenAPI 문서(`/docs`) 확인
 
-> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: 순서는 §4 Phase 3 "주요 작업" 표 나열 순서를 기준으로 구성했다. 실제 우선순위(예: 인증을 CRUD API보다 먼저)는 착수 전 재확인 가능.
 
@@ -736,7 +736,7 @@
 - [x] CORS 설정 적용 (포트 3030 허용)
 - [x] RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 6개 역할) — 인증/권한 검사 의존성 구현 및 6개 라우터(`employees`/`skills`/`employee-skills`/`projects`/`assignments`/`codes`) 전체 적용 완료, `codes` 공통 권한 키 신규 추가 및 실 서버 검증 완료 (2026-07-03)
 - [x] `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현 — 로그인 및 5개 라우터의 등록/수정 행위 기록 구현, 실 서버 검증 완료 (2026-07-03). 조회(GET) 감사 로그 열람 API는 미구현
-- [ ] 사원 CRUD API (`HR_EMPL_MST` — `JIKMU_ID` 필드 포함) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/employees`, 2026-07-03), 퇴직 처리용 삭제(DELETE)는 미구현
+- [x] 사원 CRUD API (`HR_EMPL_MST` — `JIKMU_ID` 필드 포함) — 조회/등록/수정/퇴직 처리(`DELETE`, `EMPL_STAT_CD='RETIRED'` 전환) 구현, 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [ ] 직무 유형 CRUD API (`HR_JIKMU_MST`) — 조회만 구현(`GET /api/v1/job-types`, 2026-07-03), 등록/수정 미구현
 - [x] 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/skills`, `/api/v1/employee-skills`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 부서/직급 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`) — 조회 API 구현 완료(`GET /api/v1/departments`, `/positions`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
@@ -867,4 +867,5 @@
 | 2026-07-03 | v3.7 | **체크리스트/상태표 정합성 점검(사용자 요청)** — 실 서버 재확인 결과 §11 데이터베이스 체크리스트의 "PostgreSQL Docker 컨테이너 구성"/"바인드 마운트 확인" 2개 항목이 실제로는 Phase 1 완료 시 이미 검증되었음에도 체크 표시가 누락되어 있어 `[x]`로 정정(`docker compose ps` 및 `data/postgres/pgdata` 실존 확인). "Seed 데이터 입력" 항목의 "실 DB 적용 미검증" 문구가 Phase 2 100% 완료 검증(2026-07-03) 이후 갱신되지 않은 것도 발견해 정정. "DB 백업 스크립트+crontab" 항목은 스크립트 작성/수동 실행만 완료(crontab 미완료)임을 명확히 하는 설명을 추가했으나 체크는 보류. "외부 DB 클라이언트 접속 확인" 항목에는 5442 포트가 `127.0.0.1`로만 바인딩되어 있어 문자 그대로의 "외부" 접속은 설계상 불가하다는 점을 주석으로 추가(체크는 보류). 추가로 §5 "기능별 구현 상태"·§6 "기술 구성 요소별 진행 상태" 두 표가 최초 작성 이후 한 번도 갱신되지 않아 이미 완료된 다수 항목(Docker/PostgreSQL/FastAPI/SQLAlchemy/Alembic 등 인프라 전체, 기술/직원기술/프로젝트/투입관리/투입률검증/배포자동화 등 API 기능)이 "예정"으로 남아있던 것을 확인해 실제 상태(완료/진행 중/예정)로 전면 갱신. §3 전체 로드맵 표의 Phase 3 진행률이 33%로 정체되어 있던 것을 §4 상세표 기준 56%로 정정. 실질적인 기능/코드 변경은 없음(문서 정합성 정정만 수행) | — |
 | 2026-07-03 | v3.8 | §8 다음 작업 2번(`SYS_AUDIT_LOG` 감사 로그 미들웨어) 완료 처리 — `backend/app/repositories/sys_audit_log.py`, `backend/app/core/audit.py`(`record_audit`) 신규 작성. 로그인 및 `employees`/`skills`/`employee_skills`/`projects`/`assignments` 5개 라우터의 등록/수정 엔드포인트에 적용(도메인별 Out 스키마로 변경 전/후 스냅샷 기록). `codes.py`는 RBAC 미적용과 동일하게 제외(§9 참조). 실 서버에서 ADMIN 테스트 사용자로 로그인→등록→수정을 실행해 `SYS_AUDIT_LOG`에 `LOGIN`/`CREATE`/`UPDATE` 3건이 정확히 기록됨을 확인(BFR/AFT JSON 값 일치 포함). Phase 3 진행률 56%→61%로 갱신, §11 "SYS_AUDIT_LOG 감사 로그 미들웨어" 완료 체크, §8 큐에서 제거 및 재번호(1~4) | — |
 | 2026-07-03 | v3.9 | **RBAC 잔여 범위 완료 — `codes` 공통 코드 권한 신설(운영팀 확인 반영)** — 부서(`departments`)/직급(`positions`)을 독립 화면이 아닌 "공통 코드/기준정보"로 취급하기로 확정(운영팀 확인). `SYS_ROLE_MST.PERM_JSON`에 `codes` 키 신설(`codes.view` 전 역할 허용, `codes.create/update/delete`는 ADMIN/HR_MGR만 허용) — `sys_role_mst_seed.py` Seed 소스 갱신 및 Alembic 리비전 `9c1f3a5d2b7e`(head `370c95546556` 뒤 체이닝, `jsonb_set`으로 기존 DB 행 갱신)로 실 DB 반영. `GET /api/v1/job-types` 조회에도 `codes.view` 정책 병행 적용(관리 화면 등록/수정/삭제는 기존 `job_types.*` A H 전용 유지). `backend/app/api/v1/codes.py` 3개 GET 엔드포인트에 `require_permission("codes", "view")` 적용 — 인증 없이 호출 가능하던 마지막 업무 API 제거. `backend/docs/PERMISSION_MATRIX.md`에 `codes` 권한 섹션 및 화면 키 목록(14종) 갱신. 실 서버에서 `alembic upgrade head` 적용 후 6개 역할 `PERM_JSON` 값 확인, 인증 없이 코드 API 호출 시 401 전환 확인, VIEWER 테스트 사용자로 3개 엔드포인트 정상 조회(200) 확인. Phase 3 진행률 61%→67%로 갱신, §11 "RBAC 권한 미들웨어 구현" 진행 중→완료로 정정, §9 리스크 "departments/positions/job-types 화면 권한 키 미정" 주의→해소 처리(처리일자 2026-07-03) | — |
+| 2026-07-03 | v4.0 | §8 다음 작업 1번(사원 퇴직 처리 API) 완료 처리 — `backend/app/repositories/hr_empl_mst.py`에 `retire_employee`(신규, `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록) 추가, `backend/app/api/v1/employees.py`에 `DELETE /api/v1/employees/{empl_id}` 라우터 추가(`retir_dt` 쿼리 파라미터 지원, 기존 `employees.delete` 권한·감사 로그 재사용). 실 서버에서 임시 사원 데이터로 정상 퇴직 전환, 재퇴직 시도 409, 미존재 404, 무인증 401, 권한 없는 역할 403, `SYS_AUDIT_LOG`에 `ACT_CD='DELETE'`(변경 전/후 상태 포함) 기록까지 전부 확인 후 테스트 데이터 삭제. Phase 3 진행률 67%→72%로 갱신, §5·§11 "사원 CRUD API"/"직원 관리" 완료 체크로 정정, §8 큐에서 완료 항목 제거 및 재번호(1~2) | — |
 

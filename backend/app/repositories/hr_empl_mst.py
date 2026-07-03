@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -55,6 +56,16 @@ def update_employee(db: Session, employee: HrEmplMst, data: dict) -> HrEmplMst:
     """전달된 필드만 갱신 (부분 업데이트)."""
     for field, value in data.items():
         setattr(employee, field, value)
+    db.commit()
+    db.refresh(employee)
+    return employee
+
+
+def retire_employee(db: Session, employee: HrEmplMst, retir_dt: date | None = None) -> HrEmplMst:
+    """퇴직 처리 — 로우 삭제가 아니라 `EMPL_STAT_CD='RETIRED'`로 전환하는 소프트 삭제.
+    `RETIR_DT` 미지정 시 오늘 날짜로 기록한다 (로드맵 §8 다음 작업 1번)."""
+    employee.EMPL_STAT_CD = "RETIRED"
+    employee.RETIR_DT = retir_dt or date.today()
     db.commit()
     db.refresh(employee)
     return employee
