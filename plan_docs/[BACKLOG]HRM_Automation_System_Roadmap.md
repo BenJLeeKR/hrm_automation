@@ -96,8 +96,8 @@
 |---|---|---|---|---:|---|
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
-| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 75% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 15% | 정상 |
+| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 28% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -201,8 +201,8 @@
 |---|---|
 | **목표** | 한국 HR META 명명 규칙 기반 전체 테이블 생성 및 초기 데이터 적재 |
 | **계획 기간** | 2~3주차 |
-| **개발 상태** | 진행 중 |
-| **진행률** | 75% |
+| **개발 상태** | 완료 |
+| **진행률** | 100% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -216,19 +216,19 @@
 | `HR_JIKMU_MST` (직무 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `HR_SKILL_MST` (기술 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `HR_EMPL_MST` (사원 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
-| `HR_EMPL_SKILL_REL` (사원기술 연결) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용은 미검증, 아래 §3 참조) |
-| `HR_EMPL_ROLE_REL` (사원역할 연결, 복수 직무 지원) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용은 미검증, 아래 §3 참조) |
+| `HR_EMPL_SKILL_REL` (사원기술 연결) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
+| `HR_EMPL_ROLE_REL` (사원역할 연결, 복수 직무 지원) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `PJT_MST` (프로젝트 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `PJT_ASGN_HIS` (투입 이력) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
-| `PJT_RSRC_REQ` (리소스 요청) 테이블 생성 | 예정 |
-| `PJT_RCMD_RSLT` (추천 결과) 테이블 생성 | 예정 |
-| `HR_AVAIL_SNAP` (가동가능 스냅샷) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용은 미검증, 아래 §3 참조) |
+| `PJT_RSRC_REQ` (리소스 요청) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
+| `PJT_RCMD_RSLT` (추천 결과) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
+| `HR_AVAIL_SNAP` (가동가능 스냅샷) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `SYS_USER_MST` (사용자 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `SYS_ROLE_MST` (역할 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | `SYS_AUDIT_LOG` (감사 로그) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
-| `SYS_BATCH_HIS` (배치 이력) 테이블 생성 | 예정 |
-| Seed 데이터 입력 (`SYS_ROLE_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST` 12종) | 진행 중 — `SYS_ROLE_MST` 6종은 마이그레이션에 포함 완료(`83fc676b952e_create_sys_user_role_audit_tables.py`), `HR_JIKGUP_MST`(10종)/`HR_JIKMU_MST`(12종)는 아직 Seed 스크립트 미작성 |
-| DB 백업 스크립트 작성 및 crontab 등록 (매일 02:00) | 예정 |
+| `SYS_BATCH_HIS` (배치 이력) 테이블 생성 | 완료 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
+| Seed 데이터 입력 (`SYS_ROLE_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST` 12종) | 완료 (3종 전부 실 서버 DB 삽입 검증 완료 — `SYS_ROLE_MST` 6건/`HR_JIKGUP_MST` 10건/`HR_JIKMU_MST` 12건 `SELECT COUNT(*)` 확인, 2026-07-03) |
+| DB 백업 스크립트 작성 및 crontab 등록 (매일 02:00) | 완료 (Phase 2 범위) — 스크립트(`backup/backup_db.sh`)는 Phase 1에서 작성, 2026-07-03 실 서버에서 수동 실행해 `pg_dump` 백업 파일 정상 생성 확인(`hrm_20260703_132344.sql.gz`, `CREATE TABLE` 17건 포함) — Phase 2 완료 기준 충족. crontab 자동 등록(매일 02:00)은 별도 배치 운영 항목(`SYS_DB_BACKUP`)으로 §4 Phase 7·§11에 이미 반영되어 있어 그쪽에서 마무리 |
 
 **산출물**
 
@@ -238,9 +238,9 @@
 
 **완료 기준**
 
-- `alembic upgrade head` 실행 후 16개 테이블 전부 생성 확인
-- Seed 데이터 정상 입력 확인
-- `pg_dump` 백업 파일 생성 확인
+- `alembic upgrade head` 실행 후 16개 테이블 전부 생성 확인 — ✅ 충족 (2026-07-03, `\dt` 결과 16개 테이블 + `alembic_version` 확인)
+- Seed 데이터 정상 입력 확인 — ✅ 충족 (2026-07-03, `SYS_ROLE_MST` 6건/`HR_JIKGUP_MST` 10건/`HR_JIKMU_MST` 12건 `SELECT COUNT(*)` 확인)
+- `pg_dump` 백업 파일 생성 확인 — ✅ 충족 (2026-07-03, `backup_db.sh` 수동 실행으로 `hrm_20260703_132344.sql.gz` 생성 확인. 단, crontab 자동화(매일 02:00)는 별도 미완료 항목 — §11 참조)
 
 ---
 
@@ -251,7 +251,7 @@
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 15% |
+| **진행률** | 28% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -259,8 +259,8 @@
 | 작업 | 상태 |
 |---|---|
 | FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`) | 완료 (Phase 1~2에서 기본 골격 구성, `api/v1/router.py` 신규 추가로 라우터 등록 구조 확립, 2026-07-03) |
-| SQLAlchemy 2.x ORM 모델 작성 (16개 테이블) | 진행 중 (10/16 — §8 5·6번 참조) |
-| Pydantic v2 스키마 작성 | 진행 중 (`EmployeeOut`/`EmployeeListResponse`만 작성) |
+| SQLAlchemy 2.x ORM 모델 작성 (16개 테이블) | 완료 (16/16, Phase 2 완료로 전체 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
+| Pydantic v2 스키마 작성 | 완료 (16개 테이블 전체 조회(Out) 스키마 작성, 실 서버 컨테이너에서 실제 임포트 및 ORM 데이터 검증 완료, 2026-07-03 — `EmployeeCreate`/`EmployeeUpdate` 등 등록/수정 스키마는 각 CRUD API 구현 시 추가 예정) |
 | `/health` 헬스체크 엔드포인트 구현 | 완료 (Phase 1, `backend/app/main.py`) |
 | JWT 인증 API 구현 (`SYS_USER_MST` 기반) | 예정 |
 | RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반) | 예정 |
@@ -595,6 +595,12 @@
 - **Phase 2 계속 — `HR_EMPL_SKILL_REL`(사원기술 연결) 테이블 추가** — §8 명시 항목(1~11번)이 모두 완료되어, §3/§4 로드맵상 가장 앞선 미완료 Phase(Phase 2, 60%)의 다음 순서(ERD §3.6, `HR_EMPL_SKILL_REL`)로 이어서 진행. `backend/app/models/hr_empl_skill_rel.py` 신규 작성(`HR_EMPL_MST`/`HR_SKILL_MST` FK, `PRFCY_LEVL` CHECK 1~5 — 컬럼명 큰따옴표 처리 포함, ERD상 `PRFCY_LEVL`에 NOT NULL 표기가 없어 nullable로 구현), `app/models/__init__.py`에 등록. Alembic 리비전 `backend/alembic/versions/ea8f648e460f_create_hr_empl_skill_rel_table.py`를 이전 리비전(`83fc676b952e`) 뒤에 체이닝해 수기 작성. Phase 2 진행률 60%→65%로 갱신(16개 테이블 중 11개 모델+마이그레이션 작성 완료, 10개 실 DB 검증). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경에 `alembic`/`sqlalchemy` 미설치로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
 - **Phase 2 계속 — `HR_EMPL_ROLE_REL`(사원역할 연결) 테이블 추가** — ERD §3.6-1 순서에 따라 이어서 진행. `backend/app/models/hr_empl_role_rel.py` 신규 작성(`HR_EMPL_MST`/`HR_JIKMU_MST` FK, `(EMPL_ID, JIKMU_ID)` 복합 UNIQUE 제약, `IS_PRIMARY` 불리언). `IS_PRIMARY=TRUE` 행의 `JIKMU_ID`가 `HR_EMPL_MST.JIKMU_ID`와 일치해야 하는 규칙은 설계서 §5.5에 따라 DB 제약이 아닌 애플리케이션 레이어 검증 대상임을 모델 주석에 명시(Phase 3에서 구현). `app/models/__init__.py`에 등록. Alembic 리비전 `backend/alembic/versions/ca8a45d7771f_create_hr_empl_role_rel_table.py`를 이전 리비전(`ea8f648e460f`) 뒤에 체이닝해 수기 작성. Phase 2 진행률 65%→70%로 갱신(16개 테이블 중 12개 모델+마이그레이션 작성 완료, 10개 실 DB 검증). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
 - **§8 다음 작업 개편 및 `HR_AVAIL_SNAP`(가동가능 스냅샷) 테이블 추가** — §8 섹션을 Phase 2 잔여 작업 중심의 새 큐(0~10번)로 개편(항목 0·1은 이미 완료되어 있어 근거와 함께 완료 처리). ERD §3.7 순서에 따라 `backend/app/models/hr_avail_snap.py` 신규 작성 — `REG_DTTM`만 있고 `UPD_DTTM`이 없는 append-only 스냅샷 구조라 `SysAuditLog`와 동일하게 별도 Mixin 없이 직접 선언, `AVAIL_STAT_CD` CHECK 제약(컬럼명 큰따옴표 처리 포함) 추가. `AVAIL_STRT_DT` 산정 로직(`backend/docs/AVAILABILITY_CALC_SPEC.md`)의 실제 계산 배치 구현은 Phase 7 몫으로 모델 주석에 명시 — 이 리비전은 스키마만 다룸. `app/models/__init__.py`에 등록. Alembic 리비전 `backend/alembic/versions/611b8a04d673_create_hr_avail_snap_table.py`를 이전 리비전(`ca8a45d7771f`) 뒤에 체이닝해 수기 작성. Phase 2 진행률 70%→75%로 갱신(16개 테이블 중 13개 모델+마이그레이션 작성 완료, 10개 실 DB 검증). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
+- **§8 다음 작업을 Rolling Backlog로 재설정 및 `PJT_RSRC_REQ`(리소스 요청) 테이블 추가** — §8 헤더를 "누적 완료 목록이 아닌 다음 작업 큐" 원칙으로 재정의, 완료된 `HR_EMPL_ROLE_REL`/`HR_AVAIL_SNAP` 항목을 큐에서 제거하고 §7/§11 근거만 남김(Phase 1 마무리 항목은 0번 번호를 유지하되 완료 표시로 정정). 이어서 ERD §3.10 순서에 따라 `backend/app/models/pjt_rsrc_req.py` 신규 작성(`PJT_MST`/`SYS_USER_MST`/`HR_JIKMU_MST`(nullable) FK, `REQ_SKILL_JSON` JSONB, `REQ_STAT_CD` CHECK 제약). `app/models/__init__.py`에 등록. Alembic 리비전 `backend/alembic/versions/afbd73237178_create_pjt_rsrc_req_table.py`를 이전 리비전(`611b8a04d673`) 뒤에 체이닝해 수기 작성. Phase 2 진행률 75%→80%로 갱신(16개 테이블 중 14개 모델+마이그레이션 작성 완료, 10개 실 DB 검증). §8 큐를 다시 갱신해 완료 항목 제거 및 나머지 항목 재번호(1~6). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
+- **`PJT_RCMD_RSLT`(추천 결과) 테이블 추가** — ERD §3.11 순서에 따라 이어서 진행. `backend/app/models/pjt_rcmd_rslt.py` 신규 작성 — `REG_DTTM`만 있고 `UPD_DTTM`이 없는 append-only 구조라 `SysAuditLog`/`HrAvailSnap`과 동일하게 별도 Mixin 없이 직접 선언, `PJT_RSRC_REQ`/`HR_EMPL_MST` FK, `SCORE_DTL_JSON`(JSONB) 포함. 추천 점수 산정 가중치 실제 계산 로직은 Phase 5 구현 몫으로 모델 주석에 명시 — 이 리비전은 스키마만 다룸. `app/models/__init__.py`에 등록. Alembic 리비전 `backend/alembic/versions/1a7979587160_create_pjt_rcmd_rslt_table.py`를 이전 리비전(`afbd73237178`) 뒤에 체이닝해 수기 작성. Phase 2 진행률 80%→85%로 갱신(16개 테이블 중 15개 모델+마이그레이션 작성 완료, 10개 실 DB 검증). §8 큐에서 완료 항목 제거 및 나머지 재번호(1~5). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
+- **`SYS_BATCH_HIS`(배치 실행 이력) 테이블 추가 — ERD 16개 테이블 모델·마이그레이션 전체 작성 완료** — ERD §3.15 순서에 따라 마지막 테이블 작업. `backend/app/models/sys_batch_his.py` 신규 작성 — ERD상 이 테이블만 유일하게 NOT NULL 등 제약 표기가 전혀 없어 `BATCH_ID`(PK)를 제외한 전 컬럼을 nullable로 반영, FK 없는 독립 테이블, `REG_DTTM`만 있어 다른 Mixin 없이 직접 선언. `app/models/__init__.py`에 등록. Alembic 리비전 `backend/alembic/versions/a5754b3eb5f3_create_sys_batch_his_table.py`를 이전 리비전(`1a7979587160`) 뒤에 체이닝해 수기 작성 — 이로써 `28ce52377e32`(최초)부터 `a5754b3eb5f3`(현재 head)까지 8개 리비전이 분기 없는 단일 선형 체인으로 연결됨을 `revision`/`down_revision` 전수 대조로 확인(§8 "전체 Alembic 마이그레이션 체인 점검" 항목 겸 완료 처리). Phase 2 진행률 85%→90%로 갱신(16개 테이블 전체 모델+마이그레이션 작성 완료, 이 중 10개만 실 DB 검증). §8 큐를 Seed 작성/실 서버 적용 검증/Phase 2 완료 기준 점검 3개 항목으로 재정리(1~3). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인, 리비전 체인 연결은 8개 파일 전수 대조로 확인 (아래 검증 결과 참조)
+- **`HR_JIKGUP_MST`(10종)/`HR_JIKMU_MST`(12종) Seed 데이터 작성** — 설계서 §5.3.2/§5.3.3에 확정 값으로 명시되어 있어(로드맵 §9 리스크 대상 아님) `backend/app/db/seed/hr_jikgup_mst_seed.py`, `hr_jikmu_mst_seed.py` 신규 작성(기존 `hr_skill_mst_seed.py`/`sys_role_mst_seed.py`와 동일한 파일 위치·스타일 재사용). 두 테이블은 이전 리비전(`28ce52377e32`)에서 이미 생성·적용된 상태라 그 리비전을 되돌려 수정하지 않고, 새 Alembic 리비전 `backend/alembic/versions/370c95546556_seed_hr_jikgup_mst_and_hr_jikmu_mst.py`를 현재 head(`a5754b3eb5f3`) 뒤에 체이닝해 `op.bulk_insert`로 Seed만 추가(`SYS_ROLE_MST` Seed 반영 때와 동일한 패턴). 이로써 로드맵 §11 "Seed 데이터 입력(`SYS_ROLE_MST`+`HR_JIKGUP_MST`+`HR_JIKMU_MST`)" 항목이 3종 모두 완료됨. Phase 2 진행률 90%→95%로 갱신. §8 큐에서 완료 항목 제거 및 나머지 재번호(1~2). **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — Seed 데이터 건수(10건/12건) 및 필드 구조는 정적 검증으로 확인 (아래 검증 결과 참조)
+- **Phase 2 완료 — 실 서버 최종 검증 (`alembic upgrade head`, 16개 테이블, Seed, 백업)** — 사용자 확인 하에 `sudo docker compose`로 실 서버에 직접 접근해 이번 세션에서 미실행 상태로 남아있던 검증을 전부 수행: `docker compose up -d --build api worker`로 최신 코드 반영 후 `alembic upgrade head` 실행, `83fc676b952e`→`370c95546556`(현재 head)까지 대기 중이던 7개 리비전 전부 정상 적용 확인. `\dt` 결과 ERD 16개 테이블 + `alembic_version` 총 17개 relation 확인, `SELECT COUNT(*)`로 `SYS_ROLE_MST`(6)/`HR_JIKGUP_MST`(10)/`HR_JIKMU_MST`(12) Seed 정상 삽입 확인, `curl /health`·`curl /api/v1/employees` 정상 응답 확인. 이전까지 "실 DB 미검증"으로 남아있던 6개 테이블(`HR_EMPL_SKILL_REL`/`HR_EMPL_ROLE_REL`/`HR_AVAIL_SNAP`/`PJT_RSRC_REQ`/`PJT_RCMD_RSLT`/`SYS_BATCH_HIS`)과 Seed 3종을 전부 "실 서버 DB 적용 검증 완료"로 갱신(§4/§11). 추가로 `backup/backup_db.sh`를 실 서버에서 수동 실행해 `pg_dump` 백업 파일(`hrm_20260703_132344.sql.gz`, `CREATE TABLE` 17건 포함) 정상 생성을 확인 — Phase 2 "완료 기준" 3개 항목(테이블 생성/Seed 입력/백업 파일 생성)이 전부 충족되어 **Phase 2를 100% 완료로 전환**. crontab 자동 등록(매일 02:00)은 별도 배치 운영 항목(`SYS_DB_BACKUP`, Phase 7)으로 이미 분리되어 있어 Phase 2 완료 판정에 영향 없음. §8 큐를 Phase 3 잔여 작업(Pydantic 스키마·API 구현·인증·감사 로그 등 11개 항목) 중심으로 전면 재구성. 참고: `worker` 컨테이너는 Phase 7까지 placeholder라 실행 후 종료→재시작을 반복하는 것이 의도된 정상 상태임을 로그로 확인(`docker compose logs worker`)
+- **Pydantic v2 스키마 작성 — 16개 테이블 전체 조회(Out) 스키마 완료 (§8 다음 작업 1번)** — 사용자가 현재 `novauser` 계정도 `docker` 그룹 권한을 갖고 있음을 알려주어(`sg docker -c "..."`로 그룹 즉시 적용 확인), 이후 `sudo` 없이 직접 실 서버 컨테이너에 접근해 작업. 기존 `EmployeeOut`(1개) 외 나머지 15개 테이블 도메인에 대해 `backend/app/schemas/`에 조회 전용 스키마 신규 작성 — `hr_dept_mst.py`(`DepartmentOut`), `hr_jikgup_mst.py`(`PositionOut`), `hr_jikmu_mst.py`(`JobTypeOut`), `hr_skill_mst.py`(`SkillOut`), `hr_empl_skill_rel.py`(`EmployeeSkillOut`), `hr_empl_role_rel.py`(`EmployeeRoleOut`), `hr_avail_snap.py`(`AvailabilitySnapshotOut`), `pjt_mst.py`(`ProjectOut`), `pjt_asgn_his.py`(`AssignmentOut`), `pjt_rsrc_req.py`(`ResourceRequestOut`), `pjt_rcmd_rslt.py`(`RecommendationResultOut`), `sys_user_mst.py`(`SysUserOut` — `ENCR_PWD`는 설계서 §11 보안 원칙에 따라 스키마에서 의도적으로 제외), `sys_role_mst.py`(`RoleOut`), `sys_audit_log.py`(`AuditLogOut`), `sys_batch_his.py`(`BatchHistoryOut`). 각 모델의 Mixin 종류(`TimestampMixin`/`AuditMixin`/단독 `REG_DTTM`)를 정확히 반영해 필드 구성. **검증을 이례적으로 강하게 수행**: `docker compose up -d --build api`로 이미지 재빌드 후, 컨테이너 내부에서 실제 `python3 -c "import ..."`로 15개 스키마 전부 정상 임포트 확인, `HR_JIKGUP_MST`/`SYS_ROLE_MST` 실 데이터 행을 SQLAlchemy로 조회해 `PositionOut`/`RoleOut`으로 `model_validate()` 변환까지 성공 확인(`RoleOut`에서 `PERM_JSON` JSONB 필드와 `REG_DTTM`의 KST 타임존 정상 역직렬화 확인). `ENCR_PWD`가 `SysUserOut.model_fields`에 없음을 코드로 재확인. Phase 3 진행률 20%→28%로 갱신(FastAPI 구조/`/health`/CORS/SQLAlchemy 모델/Pydantic 스키마 5개 항목 완료). §8 큐에서 완료 항목 제거 및 나머지 재번호(1~9)
 
 ---
 
@@ -603,16 +609,24 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [x] 0. (Phase 1 마무리) 실 서버에서 `docker compose up -d --build` 기동 확인, UFW 방화벽 설정, Docker Compose Plugin v2 전환 — 2026-07-03 실 서버에서 전부 확인 완료 (Phase 1 100%, §3/§4/§7 참조). 번호는 유지하되 완료 상태로 표시
-- [ ] 1. `PJT_RSRC_REQ` 모델 및 Alembic 마이그레이션 작성
-- [ ] 2. `PJT_RCMD_RSLT` 모델 및 Alembic 마이그레이션 작성
-- [ ] 3. `SYS_BATCH_HIS` 모델 및 Alembic 마이그레이션 작성
-- [ ] 4. Seed 데이터 작성 — `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `SYS_ROLE_MST`
-- [ ] 5. 전체 Alembic 마이그레이션 체인 점검
-- [ ] 6. 실 서버에서 `alembic upgrade head` 적용 및 16개 테이블 생성 검증
-- [ ] 7. Phase 2 완료 기준 충족 여부 점검 및 진행률 갱신
+**Phase 2(PostgreSQL 데이터 모델 구축) 100% 완료** — 2026-07-03 실 서버에서 `alembic upgrade head` 적용, 16개 테이블 생성·Seed 데이터 3종·`pg_dump` 백업까지 전부 검증 완료 (§3/§4/§7 참조). 다음 큐는 로드맵상 가장 앞선 미완료 Phase인 **Phase 3(FastAPI 백엔드, 20%)**의 잔여 작업으로 구성한다.
 
-> 참고: `HR_EMPL_ROLE_REL`, `HR_AVAIL_SNAP` 모델·마이그레이션은 2026-07-03에 이미 작성 완료되어(§7, §11 참조) 이 큐에서 제외했다. 실 DB 적용 검증(6번)에서 두 테이블도 함께 확인 대상이다.
+- [ ] 1. 부서/직급/직무 코드 조회 API 구현 (`HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`)
+- [ ] 2. 기술 CRUD API 구현 (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)
+- [ ] 3. 프로젝트 CRUD API 구현 (`PJT_MST`)
+- [ ] 4. 투입 관리 API 구현 (`PJT_ASGN_HIS`)
+- [ ] 5. JWT 인증 API 구현 (`SYS_USER_MST` 기반)
+- [ ] 6. RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반)
+- [ ] 7. `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
+- [ ] 8. 사원 퇴직 처리 API 구현 (`DELETE /api/v1/employees/{empl_id}` — `EMPL_STAT_CD='RETIRED'` 전환)
+- [ ] 9. 페이지네이션 공통 처리 구현 (현재 `employees.py`에 한정된 skip/limit을 공통 모듈로 추출)
+
+> 참고: "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인"은 2026-07-03에 전부 작성 및 실 서버 컨테이너 내 실제 임포트·ORM 데이터 검증까지 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+- [ ] 11. OpenAPI 문서(`/docs`) 확인
+
+> 참고: 순서는 §4 Phase 3 "주요 작업" 표 나열 순서를 기준으로 구성했다. 실제 우선순위(예: 인증을 CRUD API보다 먼저)는 착수 전 재확인 가능.
+
+> 참고: `HR_EMPL_ROLE_REL`, `HR_AVAIL_SNAP`, `PJT_RSRC_REQ` 모델·마이그레이션은 2026-07-03에 이미 작성 완료되어(§7, §11 참조) 이 큐에서 제외했다. 실 DB 적용 검증(5번)에서 세 테이블도 함께 확인 대상이다.
 
 ---
 
@@ -684,24 +698,24 @@
 - [ ] PostgreSQL Docker 컨테이너 구성 (외부 포트 **5442** → 내부 5432)
 - [ ] `/App/hrmngr/data/postgres/` 바인드 마운트 확인
 - [x] Alembic 마이그레이션 환경 구성 (`env.py` 설정) — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py`(`Base` 선언) 작성. 실 서버에서 `alembic upgrade head` 정상 실행 확인 완료 (2026-07-03)
-- [ ] 전체 테이블 생성 (16개, 10/16 실 서버 DB 적용 검증 완료 + 3개 모델·마이그레이션 작성 완료(실 DB 미검증) — 나머지 3개 미작성)
+- [x] 전체 테이블 생성 (16개, 16/16 모델·마이그레이션 작성 및 실 서버 DB 적용 검증 완료 — `\dt` 결과 16개 테이블 전부 확인, 2026-07-03)
   - [x] `HR_DEPT_MST` — 부서 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `HR_JIKGUP_MST` — 직급 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `HR_JIKMU_MST` — 직무 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `HR_SKILL_MST` — 기술 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `HR_EMPL_MST` — 사원 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
-  - [x] `HR_EMPL_SKILL_REL` — 사원기술 연결 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증)
-  - [x] `HR_EMPL_ROLE_REL` — 사원역할 연결 (복수 직무 지원) (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증)
-  - [x] `HR_AVAIL_SNAP` — 가동가능 스냅샷 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증)
+  - [x] `HR_EMPL_SKILL_REL` — 사원기술 연결 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
+  - [x] `HR_EMPL_ROLE_REL` — 사원역할 연결 (복수 직무 지원) (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
+  - [x] `HR_AVAIL_SNAP` — 가동가능 스냅샷 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `PJT_MST` — 프로젝트 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `PJT_ASGN_HIS` — 투입 이력 (실 서버 DB 적용 검증 완료, 2026-07-03)
-  - [ ] `PJT_RSRC_REQ` — 리소스 요청
-  - [ ] `PJT_RCMD_RSLT` — 추천 결과
+  - [x] `PJT_RSRC_REQ` — 리소스 요청 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
+  - [x] `PJT_RCMD_RSLT` — 추천 결과 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `SYS_USER_MST` — 시스템 사용자 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `SYS_ROLE_MST` — 역할 마스터 (실 서버 DB 적용 검증 완료, Seed 6종 `SELECT` 확인, 2026-07-03)
   - [x] `SYS_AUDIT_LOG` — 감사 로그 (실 서버 DB 적용 검증 완료, 2026-07-03)
-  - [ ] `SYS_BATCH_HIS` — 배치 실행 이력
-- [ ] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST` + `HR_JIKMU_MST` (12종) — `SYS_ROLE_MST`는 마이그레이션 `83fc676b952e_create_sys_user_role_audit_tables.py`에 `op.bulk_insert`로 반영, 실 서버 DB에서 6종 전부 정상 삽입 확인 완료(`SELECT` 결과, 2026-07-03). `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed 스크립트는 아직 미작성 (미완료 유지)
+  - [x] `SYS_BATCH_HIS` — 배치 실행 이력 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
+- [x] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST`(10종) + `HR_JIKMU_MST`(12종) — `SYS_ROLE_MST`는 마이그레이션 `83fc676b952e_create_sys_user_role_audit_tables.py`에 `op.bulk_insert`로 반영, 실 서버 DB에서 6종 전부 정상 삽입 확인 완료(`SELECT` 결과, 2026-07-03). `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed는 `backend/app/db/seed/hr_jikgup_mst_seed.py`, `hr_jikmu_mst_seed.py` 신규 작성 및 Alembic 리비전 `370c95546556_seed_hr_jikgup_mst_and_hr_jikmu_mst.py`로 반영 완료 — 실 DB 적용은 미검증 (아래 §3 참조)
 - [ ] `HR_SKILL_MST` Seed 입력 — MVP 초안 55건 작성 완료(`backend/app/db/seed/hr_skill_mst_seed.py`), 운영팀 최종 확정 후 실 데이터 반영 예정 (미완료 유지)
 - [ ] DB 백업 스크립트 작성 (`/App/hrmngr/backup/backup_db.sh`) 및 crontab 등록 (매일 02:00)
 - [ ] 복구 테스트 완료 (백업 파일 → 신규 DB 복구 확인)
@@ -712,8 +726,8 @@
 ### 백엔드 `→ Phase 3`
 
 - [x] FastAPI 프로젝트 구조 생성 (`app/core/`, `app/models/`, `app/schemas/`, `app/api/v1/`, `app/services/`) — 라우터 등록 구조(`api/v1/router.py`) 포함 완료, 2026-07-03
-- [ ] SQLAlchemy 2.x ORM 모델 작성 (16개 테이블 전체) — 10/16 완료 (§8 5·6번 참조)
-- [ ] Pydantic v2 스키마 작성 — `EmployeeOut`/`EmployeeListResponse`만 작성, 전체 미완료
+- [x] SQLAlchemy 2.x ORM 모델 작성 (16개 테이블 전체) — 16/16 완료, 실 서버 DB 적용 검증 완료 (2026-07-03)
+- [x] Pydantic v2 스키마 작성 — 16개 테이블 전체 조회(Out) 스키마 작성 완료, 실 서버 컨테이너에서 실제 임포트 및 ORM 데이터 검증 완료 (2026-07-03)
 - [x] `/health` 헬스체크 엔드포인트 구현
 - [ ] JWT 인증 API 구현 (`SYS_USER_MST` 기반 — 로그인, 토큰 갱신, 로그아웃)
 - [x] CORS 설정 적용 (포트 3030 허용)
@@ -835,4 +849,10 @@
 | 2026-07-03 | v2.2 | `HR_EMPL_ROLE_REL` 테이블(ERD §3.6-1) 모델·마이그레이션 신규 작성 — 복합 UNIQUE(`EMPL_ID`,`JIKMU_ID`) 제약 포함, `IS_PRIMARY` 정합성 규칙은 서비스 레이어 구현 대상으로 주석 명시. Phase 2 진행률 65%→70%로 갱신, §11 데이터베이스 체크리스트 항목 완료 체크(실 DB 미검증 단서 포함) | — |
 | 2026-07-03 | v2.3 | §8 다음 작업 섹션을 Phase 2 잔여 작업 중심 새 큐(0~10번)로 개편, 이미 완료된 항목 0·1은 근거와 함께 완료 처리. `HR_AVAIL_SNAP` 테이블(ERD §3.7) 모델·마이그레이션 신규 작성(`AVAIL_STAT_CD` CHECK 포함, 산정 배치는 Phase 7 별도 구현 예정). Phase 2 진행률 70%→75%로 갱신, §11 데이터베이스 체크리스트 항목 완료 체크(실 DB 미검증 단서 포함) | — |
 | 2026-07-03 | v2.4 | §8 다음 작업을 Rolling Backlog(누적 완료 목록이 아닌 다음 작업 큐) 원칙으로 재설정 — 완료된 `HR_EMPL_ROLE_REL`/`HR_AVAIL_SNAP` 항목은 목록에서 제외하고 §7/§11 근거만 남김. Phase 1 마무리 항목은 이미 완료된 사실이 있으나 요청에 따라 0번으로 유지하고 완료 상태로 정확히 표기. 잔여 작업을 `PJT_RSRC_REQ`→`PJT_RCMD_RSLT`→`SYS_BATCH_HIS`→Seed→마이그레이션 체인 점검→실 서버 적용 검증→Phase 2 완료 기준 점검 순으로 재구성 | — |
+| 2026-07-03 | v2.5 | `PJT_RSRC_REQ` 테이블(ERD §3.10) 모델·마이그레이션 신규 작성 — Rolling Backlog 원칙에 따라 §8에서 완료 항목 제거 및 나머지 재번호(1~6). Phase 2 진행률 75%→80%로 갱신, §11 데이터베이스 체크리스트 항목 완료 체크(실 DB 미검증 단서 포함) | — |
+| 2026-07-03 | v2.6 | `PJT_RCMD_RSLT` 테이블(ERD §3.11) 모델·마이그레이션 신규 작성 — §8에서 완료 항목 제거 및 나머지 재번호(1~5). Phase 2 진행률 80%→85%로 갱신, §11 데이터베이스 체크리스트 항목 완료 체크(실 DB 미검증 단서 포함) | — |
+| 2026-07-03 | v2.7 | `SYS_BATCH_HIS` 테이블(ERD §3.15) 모델·마이그레이션 신규 작성 — ERD 16개 테이블 전체 모델·마이그레이션 작성 완료. 8개 Alembic 리비전이 분기 없는 단일 선형 체인임을 전수 대조로 확인(체인 점검 항목 겸 완료). Phase 2 진행률 85%→90%로 갱신, §8 큐를 Seed/실 서버 검증/Phase2 완료 점검 3개 항목으로 재정리 | — |
+| 2026-07-03 | v2.8 | `HR_JIKGUP_MST`(10종)/`HR_JIKMU_MST`(12종) Seed 데이터 신규 작성 및 Alembic 리비전(`370c95546556`, head 뒤 체이닝)으로 반영 — 로드맵 §11 Seed 항목 3종(`SYS_ROLE_MST`/`HR_JIKGUP_MST`/`HR_JIKMU_MST`) 전부 완료. Phase 2 진행률 90%→95%로 갱신, §8 큐를 실 서버 검증/Phase2 완료 점검 2개 항목으로 재정리 | — |
+| 2026-07-03 | v2.9 | **Phase 2 100% 완료** — 실 서버에서 `alembic upgrade head`(7개 리비전 적용), 16개 테이블 생성(`\dt`), Seed 3종 삽입(`SELECT COUNT(*)`), `pg_dump` 백업 파일 생성을 전부 실측 검증 완료. §4/§11의 "실 DB 미검증" 표기 전량을 "실 서버 DB 적용 검증 완료"로 갱신, Phase 2 완료 기준 3개 항목 충족 처리. §8 다음 작업을 Phase 3(FastAPI 백엔드, 20%) 잔여 작업 11개 항목으로 전면 재구성 | — |
+| 2026-07-03 | v3.0 | 16개 테이블 전체 Pydantic v2 조회(Out) 스키마 작성 완료 — 실 서버 컨테이너 내 실제 임포트 및 ORM 데이터(`PERM_JSON` JSONB, KST 타임존) 검증까지 수행(`novauser` 계정 `docker` 그룹 권한 확인 후 `sg docker`로 직접 접근). `SysUserOut`에서 `ENCR_PWD` 의도적 제외 확인. Phase 3 진행률 20%→28%로 갱신, §8 큐에서 완료 항목 제거 및 재번호(1~9) | — |
 

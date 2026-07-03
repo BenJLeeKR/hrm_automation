@@ -20,7 +20,11 @@ from app.models.hr_avail_snap import HrAvailSnap
 from app.models.hr_empl_role_rel import HrEmplRoleRel
 from app.models.hr_empl_skill_rel import HrEmplSkillRel
 
-# 남은 3개(PJT_RSRC_REQ, PJT_RCMD_RSLT, SYS_BATCH_HIS)는 이후 작업에서 추가 예정.
+from app.models.pjt_rcmd_rslt import PjtRcmdRslt
+from app.models.pjt_rsrc_req import PjtRsrcReq
+from app.models.sys_batch_his import SysBatchHis
+
+# ERD 16개 테이블 전체 모델 작성 완료.
 
 __all__ = [
     "HrDeptMst",
@@ -36,4 +40,7 @@ __all__ = [
     "HrEmplSkillRel",
     "HrEmplRoleRel",
     "HrAvailSnap",
+    "PjtRsrcReq",
+    "PjtRcmdRslt",
+    "SysBatchHis",
 ]
