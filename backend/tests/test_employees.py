@@ -82,3 +82,55 @@ def test_viewer_can_view_employees(client, viewer_token):
     resp = client.get("/api/v1/employees", headers=headers)
 
     assert resp.status_code == 200
+
+
+def test_get_employee_detail(client, admin_token, dept, jikgup):
+    """사원 상세 조회 (SCR-004) — 등록한 사원의 GET /employees/{empl_id} 응답 확인"""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTEST{uuid.uuid4().hex[:6]}"
+
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=headers,
+        json={
+            "EMPL_NO": empl_no,
+            "EMPL_NM": "상세조회테스트",
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    assert create_resp.status_code == 201
+    empl_id = create_resp.json()["EMPL_ID"]
+
+    detail_resp = client.get(f"/api/v1/employees/{empl_id}", headers=headers)
+    assert detail_resp.status_code == 200
+    assert detail_resp.json()["EMPL_NO"] == empl_no
+    assert detail_resp.json()["EMPL_NM"] == "상세조회테스트"
+
+
+def test_get_employee_detail_not_found_returns_404(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.get(f"/api/v1/employees/{uuid.uuid4()}", headers=headers)
+
+    assert resp.status_code == 404
+
+
+def test_viewer_can_view_employee_detail(client, viewer_token, admin_token, dept, jikgup):
+    """VIEWER 역할도 employees.view 권한으로 사원 상세를 조회할 수 있어야 한다."""
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=admin_headers,
+        json={
+            "EMPL_NO": f"PYTEST{uuid.uuid4().hex[:6]}",
+            "EMPL_NM": "뷰어조회테스트",
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    empl_id = create_resp.json()["EMPL_ID"]
+
+    viewer_headers = {"Authorization": f"Bearer {viewer_token}"}
+    resp = client.get(f"/api/v1/employees/{empl_id}", headers=viewer_headers)
+
+    assert resp.status_code == 200

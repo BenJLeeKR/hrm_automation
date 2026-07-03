@@ -53,6 +53,17 @@ def get_employees(
     return EmployeeListResponse(total=total, skip=pagination.skip, limit=pagination.limit, items=items)
 
 
+@router.get(
+    "/{empl_id}", response_model=EmployeeOut, dependencies=[Depends(require_permission("employees", "view"))]
+)
+def get_employee_detail(empl_id: uuid.UUID, db: Session = Depends(get_db)) -> EmployeeOut:
+    """사원 상세 조회 (로드맵 §8 다음 작업 1번, SCR-004 "사원 상세" 기본 정보)"""
+    employee = get_employee(db, empl_id)
+    if employee is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사원을 찾을 수 없습니다.")
+    return employee
+
+
 @router.post("", response_model=EmployeeOut, status_code=status.HTTP_201_CREATED)
 def post_employee(
     payload: EmployeeCreate,
