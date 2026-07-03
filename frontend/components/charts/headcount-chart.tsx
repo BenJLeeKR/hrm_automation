@@ -12,13 +12,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { headcountTrend } from '@/lib/mock-data'
 
-export function HeadcountChart() {
+export interface HeadcountTrendPoint {
+  month: string
+  total: number
+  hires: number
+  exits: number
+}
+
+export function HeadcountChart({ data }: { data: HeadcountTrendPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart
-        data={headcountTrend}
+        data={data}
         margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#eef1f5" vertical={false} />

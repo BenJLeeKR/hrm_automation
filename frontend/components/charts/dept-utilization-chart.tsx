@@ -10,7 +10,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { deptUtilization } from '@/lib/mock-data'
 
 function barColor(v: number) {
   if (v >= 80) return '#004799'
@@ -18,7 +17,12 @@ function barColor(v: number) {
   return '#8ab4e8'
 }
 
-export function DeptUtilizationChart() {
+export interface DeptUtilizationPoint {
+  team: string
+  value: number
+}
+
+export function DeptUtilizationChart({ data: deptUtilization }: { data: DeptUtilizationPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart

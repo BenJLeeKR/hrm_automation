@@ -1,7 +1,6 @@
 'use client'
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { jobTypeDistribution } from '@/lib/mock-data'
 
 const COLORS = [
   '#004799',
@@ -13,7 +12,12 @@ const COLORS = [
   '#b91c1c',
 ]
 
-export function JobTypeDonut() {
+export interface JobTypeDistributionPoint {
+  name: string
+  value: number
+}
+
+export function JobTypeDonut({ data: jobTypeDistribution }: { data: JobTypeDistributionPoint[] }) {
   const total = jobTypeDistribution.reduce((s, d) => s + d.value, 0)
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">

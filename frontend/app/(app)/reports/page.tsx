@@ -12,7 +12,7 @@ import { SkillBarChart } from '@/components/charts/skill-bar-chart'
 import { HeadcountChart } from '@/components/charts/headcount-chart'
 import { DeptUtilizationChart } from '@/components/charts/dept-utilization-chart'
 import { UtilizationMatrix } from '@/components/reports/utilization-matrix'
-import { dashboardKpis, orgUtilization } from '@/lib/mock-data'
+import { dashboardKpis, orgUtilization, headcountTrend, deptUtilization } from '@/lib/mock-data'
 
 const PERIOD_OPTIONS = [
   { value: 'RECENT_12M', label: '최근 12개월' },
@@ -96,7 +96,7 @@ export default function ReportsPage() {
               <CardTitle>인력 증감 추이</CardTitle>
             </CardHeader>
             <CardContent>
-              <HeadcountChart />
+              <HeadcountChart data={headcountTrend} />
             </CardContent>
           </Card>
           <Card>
@@ -104,7 +104,7 @@ export default function ReportsPage() {
               <CardTitle>조직별 가동률</CardTitle>
             </CardHeader>
             <CardContent>
-              <DeptUtilizationChart />
+              <DeptUtilizationChart data={deptUtilization} />
             </CardContent>
           </Card>
         </div>
