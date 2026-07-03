@@ -1,9 +1,14 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist_Mono, Noto_Sans_KR } from 'next/font/google'
 import './globals.css'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
+// 화면 대부분이 한글이라 라틴 전용 Geist 대신 Noto Sans KR로 전면 교체 (사용자 요청)
+const notoSansKr = Noto_Sans_KR({
+  variable: '--font-geist-sans',
+  subsets: ['latin', 'korean'],
+  weight: ['400', '500', '600', '700'],
+})
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
@@ -48,7 +53,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} bg-background`}
+      className={`${notoSansKr.variable} ${geistMono.variable} bg-background`}
     >
       <body className="font-sans antialiased">
         {children}
