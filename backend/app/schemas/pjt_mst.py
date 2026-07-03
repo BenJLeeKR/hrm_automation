@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from app.models.pjt_mst import PJT_STAT_CODES
+from app.schemas.pagination import PaginatedResponse
 
 PjtStatCd = Literal[PJT_STAT_CODES]  # type: ignore[valid-type]
 
@@ -52,11 +53,5 @@ class ProjectOut(BaseModel):
     UPD_USER: str | None
 
 
-class ProjectListResponse(BaseModel):
-    """프로젝트 목록 조회 응답 — 공통 페이지네이션 처리(로드맵 §11 "페이지네이션 공통 처리 구현")는
-    Phase 3 후속 작업 예정이라, `employees.py`와 동일하게 skip/limit 기반 최소 형태로 구현한다."""
-
-    total: int
-    skip: int
-    limit: int
-    items: list[ProjectOut]
+ProjectListResponse = PaginatedResponse[ProjectOut]
+"""프로젝트 목록 조회 응답 — 공통 페이지네이션 스키마(`app/schemas/pagination.py`) 재사용."""

@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.pjt_asgn_his import ASGN_STAT_CODES, ASGN_TYPE_CODES
+from app.schemas.pagination import PaginatedResponse
 
 AsgnTypeCd = Literal[ASGN_TYPE_CODES]  # type: ignore[valid-type]
 AsgnStatCd = Literal[ASGN_STAT_CODES]  # type: ignore[valid-type]
@@ -60,11 +61,5 @@ class AssignmentOut(BaseModel):
     UPD_USER: str | None
 
 
-class AssignmentListResponse(BaseModel):
-    """투입 이력 목록 조회 응답 — `employees.py`/`projects.py`와 동일하게 skip/limit 기반
-    최소 형태로 구현한다 (공통 페이지네이션 처리는 로드맵 §11 후속 작업 예정)."""
-
-    total: int
-    skip: int
-    limit: int
-    items: list[AssignmentOut]
+AssignmentListResponse = PaginatedResponse[AssignmentOut]
+"""투입 이력 목록 조회 응답 — 공통 페이지네이션 스키마(`app/schemas/pagination.py`) 재사용."""

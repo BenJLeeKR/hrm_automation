@@ -97,7 +97,7 @@
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 72% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 83% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -251,7 +251,7 @@
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 72% |
+| **진행률** | 83% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -274,8 +274,8 @@
 | 가동률 계산 API (`HR_AVAIL_SNAP`) | 예정 |
 | 대시보드 집계 API | 예정 |
 | Excel Import/Export API | 예정 |
-| 페이지네이션 공통 처리 구현 | 예정 |
-| OpenAPI 문서 확인 (`/docs`) | 예정 |
+| 페이지네이션 공통 처리 구현 | 완료 (`app/core/pagination.py`(`PaginationParams`), `app/schemas/pagination.py`(`PaginatedResponse` 제네릭)로 추출, `employees`/`projects`/`assignments` 3개 라우터 적용, 실 서버 검증 완료, 2026-07-03) |
+| OpenAPI 문서 확인 (`/docs`) | 완료 (실 서버 `/docs`·`/redoc`·`/openapi.json` 정상 응답 확인, 22개 엔드포인트 전부 태그·설명·응답 코드 정상 노출, `HTTPBearer` 보안 스키마 자동 반영 확인, 2026-07-03) |
 
 **산출물**
 
@@ -610,6 +610,8 @@
 - **`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현 (§8 다음 작업 2번)** — 진짜 ASGI 미들웨어 대신 RBAC 구현(§8 1번)과 동일하게 라우터별 명시적 호출 방식으로 구현(도메인마다 BFR/AFT 스냅샷 구조가 달라 범용 ASGI 미들웨어로는 표현이 어려움). `backend/app/repositories/sys_audit_log.py`(신규, `create_audit_log`), `backend/app/core/audit.py`(신규, `record_audit` — 요청의 클라이언트 IP/User-Agent를 자동 포함해 `SYS_AUDIT_LOG`에 기록) 작성. `employees.py`/`skills.py`/`employee_skills.py`/`projects.py`/`assignments.py`의 등록(CREATE)·수정(UPDATE) 엔드포인트에 적용 — 수정 시에는 갱신 전 상태를 각 도메인의 Out 스키마로 스냅샷해 `BFR_VAL_JSON`에, 갱신 후 상태를 `AFT_VAL_JSON`에 기록. `auth.py` 로그인 성공 시에도 `ACT_CD='LOGIN'` 기록 추가(실패한 로그인은 `SYS_AUDIT_LOG.USER_ID`가 NOT NULL FK라 행위자를 특정할 수 없어 기록하지 않음, 사유 주석 명시). RBAC 적용 라우터에서 이미 `require_permission`으로 확보한 `current_user`를 재사용하도록 각 라우터의 `dependencies=[...]` 방식을 `current_user: SysUserMst = Depends(...)` 파라미터 방식으로 일부 변경(권한 검사 로직 자체는 변경 없음). `codes.py`(부서/직급/직무 유형)는 RBAC 미적용 상태와 동일하게 이번 범위에서 제외. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 테스트용 ADMIN 역할 사용자로 로그인 → `POST /api/v1/skills`(등록) → `PATCH /api/v1/skills/{id}`(수정) 실행 후 `SYS_AUDIT_LOG`를 직접 조회해 `LOGIN`/`CREATE`/`UPDATE` 3건이 올바른 `USER_ID`/`TGT_TBL_NM`/`TGT_ID`/`CLNT_IP`/`USER_AGT`로 기록되고, `UPDATE` 건의 `BFR_VAL_JSON`/`AFT_VAL_JSON`이 실제 변경 전후 값(`USE_YN: true→false`)과 일치함을 확인. 검증에 사용한 임시 사용자/기술/감사로그 데이터는 검증 직후 삭제. Phase 3 진행률 56%→61%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~4)
 - **RBAC 권한 미들웨어 — `codes` 화면 권한 신설로 잔여 범위 완료 (§9 리스크 해소)** — 운영팀 확인 결과(2026-07-03), 부서(`departments`)/직급(`positions`)은 MVP에서 독립 화면으로 보지 않고 "공통 코드/기준정보"로 취급하기로 확정. 별도 화면 키를 만들지 않고 `SYS_ROLE_MST.PERM_JSON`에 공통 `codes` 키를 신설 — `codes.view`는 6개 역할 전체 허용, `codes.create`/`update`/`delete`는 ADMIN/HR_MGR만 허용. `backend/app/db/seed/sys_role_mst_seed.py`의 6개 역할 `PERM_JSON`에 `codes` 반영(신규 Seed 소스 기준) 및 Alembic 리비전 `9c1f3a5d2b7e_add_codes_perm_to_sys_role_mst.py`를 이전 head(`370c95546556`) 뒤에 체이닝해 작성 — `SYS_ROLE_MST`는 이미 실 DB에 Seed 적용된 상태라 해당 리비전을 되돌려 수정하지 않고 `jsonb_set`으로 기존 행을 갱신(다운그레이드는 `#-` 연산자로 `codes` 키 제거). `GET /api/v1/job-types` 조회도 직무 유형 관리 화면의 등록/수정/삭제 권한(`job_types.*`, A H 전용)과 별개로 `codes.view` 정책을 함께 적용해 전 역할이 조회 가능하도록 함. `backend/app/api/v1/codes.py`의 `GET /departments`·`/positions`·`/job-types` 3개 엔드포인트에 `require_permission("codes", "view")` 적용 — 이로써 인증 없이 호출 가능하던 마지막 업무 API가 제거됨(`/health`, `/auth/login`·`/refresh`·`/logout`만 명시적 공개 API로 유지). `backend/docs/PERMISSION_MATRIX.md`에 `codes` 권한 섹션(화면 목록 표에는 미포함, 별도 설명과 역할×버튼 매트릭스 추가) 및 §4 `screen_key` 목록 갱신(13종→14종). **실 서버에서 실제 검증**: `alembic upgrade head`로 리비전 적용 후 `SELECT`로 6개 역할의 `PERM_JSON->'screens'->'codes'` 값이 스펙대로(ADMIN/HR_MGR 전권, 나머지 4개 역할 view만) 반영됨을 확인. 인증 없이 `GET /departments`/`/positions`/`/job-types` 호출 시 전부 401로 전환됨을 확인, VIEWER 역할 테스트 사용자로 로그인 후 3개 엔드포인트 전부 200 정상 응답 확인. 검증에 사용한 임시 사용자 데이터는 검증 직후 삭제. Phase 3 진행률 61%→67%로 갱신(RBAC 항목이 "진행 중"에서 "완료"로 전환됨에 따라 완료 항목 수 반영), §11 "RBAC 권한 미들웨어 구현" 완료 체크로 정정, §9 리스크 "departments/positions/job-types 화면 권한 키 미정" "주의→해소" 처리
 - **사원 퇴직 처리 API 구현 (§8 다음 작업 1번)** — `backend/app/repositories/hr_empl_mst.py`에 `retire_employee`(신규) 추가 — 로우 삭제가 아니라 `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록(미지정 시 오늘 날짜)만 수행하는 소프트 삭제로 구현(ERD/설계서 원칙상 사원 이력을 물리적으로 삭제하지 않음). `backend/app/api/v1/employees.py`에 `DELETE /api/v1/employees/{empl_id}` 라우터 추가 — `retir_dt` 쿼리 파라미터로 퇴직일 수동 지정 가능, 이미 퇴직 처리된 사원이면 409, 미존재 시 404, 기존 `employees` 라우터와 동일하게 `require_permission("employees", "delete")`(ADMIN/HR_MGR만 허용, PERM_JSON 기존 값 그대로 재사용) 및 `record_audit`(`ACT_CD='DELETE'`, 변경 전/후 스냅샷)를 적용. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 테스트용 부서·ADMIN 사용자·사원 데이터를 임시 생성해 `DELETE`로 `EMPL_STAT_CD`가 `ACTIVE→RETIRED`, `RETIR_DT`가 오늘 날짜로 정상 전환됨을 확인, 동일 사원 재차 `DELETE` 시 409, 존재하지 않는 `empl_id`에 404, 인증 없이 호출 시 401, `delete` 권한이 없는 VIEWER 역할 토큰으로 호출 시 403 전부 확인. `SYS_AUDIT_LOG`에 `ACT_CD='DELETE'` 건이 `BFR_VAL_JSON.EMPL_STAT_CD='ACTIVE'`/`AFT_VAL_JSON.EMPL_STAT_CD='RETIRED'`로 정확히 기록됨을 `psql`로 직접 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. Phase 3 진행률 67%→72%로 갱신(사원 CRUD API가 "진행 중"에서 "완료"로 전환), §11 "사원 CRUD API" 완료 체크로 정정, §8 큐에서 완료 항목 제거 및 재번호(1~2)
+- **페이지네이션 공통 처리 구현 (§8 다음 작업 1번)** — `backend/app/core/pagination.py`(신규, `PaginationParams` — FastAPI "classes as dependencies" 패턴으로 `skip`/`limit` Query 파라미터를 하나로 추출), `backend/app/schemas/pagination.py`(신규, `PaginatedResponse[T]` Pydantic 제네릭 — `total`/`skip`/`limit`/`items` 구조 재사용) 작성. 기존 `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`가 각자 동일 구조를 중복 정의하던 것을 `PaginatedResponse[EmployeeOut]` 등 타입 별칭으로 대체(응답 JSON 형태는 기존과 동일하게 유지). `employees.py`/`projects.py`/`assignments.py`의 목록 조회 라우터에서 개별 `Query(0, ge=0)`/`Query(20, ge=1, le=200)` 선언을 `pagination: PaginationParams = Depends()`로 교체. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 3개 엔드포인트 모두 기본값(`skip=0, limit=20`) 및 커스텀 값(`skip=5&limit=10`) 정상 응답, `limit=0`/`limit=300`(범위 밖) 시 422 검증 그대로 유지됨을 확인 — 응답 JSON 키(`total`/`skip`/`limit`/`items`) 변경 없음. 단, `/openapi.json`의 스키마명이 `EmployeeListResponse` 등에서 `PaginatedResponse_EmployeeOut_` 형태로 바뀌는 부수 효과 발견해 §9 리스크로 기록(응답 바디 자체는 무영향, 프론트엔드는 현재 목데이터 기반이라 당장 영향 없음). Phase 3 진행률 72%→78%로 갱신, §11 "페이지네이션 공통 처리 구현" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1)
+- **OpenAPI 문서(`/docs`) 확인 (§8 다음 작업 1번)** — 코드 변경 없이 실 서버에서 실제 검증만 수행. `curl`로 `/docs`(Swagger UI), `/redoc`, `/openapi.json` 전부 200 정상 응답 확인. `/openapi.json` 파싱 결과 현재까지 구현된 22개 엔드포인트(auth 3개, employees 4개, skills 3개, employee-skills 3개, projects 3개, assignments 3개, codes 3개)가 각자 올바른 태그·설명(각 함수 docstring이 `description`으로 자동 반영됨)·응답 코드로 노출됨을 확인. `HTTPBearer` 보안 스키마가 `components.securitySchemes`에 자동 등록되어 있고, 인증이 필요한 엔드포인트(예: `GET /employees`)에는 `security: [{"HTTPBearer": []}]`가, 공개 엔드포인트(`POST /auth/login`)에는 `security` 필드가 없음을 확인 — RBAC 적용 범위가 OpenAPI 스펙에도 정확히 반영되어 있음을 재확인. Phase 3 진행률 78%→83%로 갱신, §11 "OpenAPI 문서 확인" 완료 체크, §8 큐가 비어 §4 Phase 3 "주요 작업" 표에서 아직 미착수인 3개 항목(가동률 계산 API, 대시보드 집계 API, Excel Import/Export API)으로 새 큐 구성
 
 ---
 
@@ -618,10 +620,13 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 페이지네이션 공통 처리 구현 (현재 `employees.py`/`projects.py`/`assignments.py`에 한정된 skip/limit을 공통 모듈로 추출)
-- [ ] 2. OpenAPI 문서(`/docs`) 확인
+- [ ] 1. 가동률 계산 API 구현 (`HR_AVAIL_SNAP` 기반 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 산정 기준 참조)
+- [ ] 2. 대시보드 집계 API 구현
+- [ ] 3. Excel Import/Export API 구현
 
-> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현", "페이지네이션 공통 처리 구현", "OpenAPI 문서 확인"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+
+> 참고: §8 큐가 이전 항목 완료로 비어, §4 Phase 3 "주요 작업" 표에서 아직 "예정"으로 남은 항목 3개(표 나열 순서 그대로)를 새 큐로 구성했다. 실제 착수 전 우선순위(예: Phase 4 프론트엔드 착수를 먼저 할지)는 재확인 가능.
 
 > 참고: 순서는 §4 Phase 3 "주요 작업" 표 나열 순서를 기준으로 구성했다. 실제 우선순위(예: 인증을 CRUD API보다 먼저)는 착수 전 재확인 가능.
 
@@ -651,6 +656,7 @@
 | JWT 로그아웃 서버 측 즉시 무효화 미구현 | 낮음 | 주의 | 현재 JWT는 stateless라 `POST /api/v1/auth/logout`이 클라이언트 측 토큰 폐기만 유도하고, 이미 발급된 액세스/리프레시 토큰은 만료 시각(각 60분/7일)까지 유효하다. RBAC 권한 미들웨어(§8 다음 작업 1번) 구현 시 모든 요청에서 토큰을 검증하는 경로가 생기므로, 그 시점에 Redis(이미 `REDIS_URL`로 연결 가능) 기반 토큰 블랙리스트 도입 여부를 함께 검토 예정 | 2026-07-03 |
 | passlib 1.7.4 / bcrypt 최신 버전 비호환 | 높음 | 해소 | `passlib[bcrypt]==1.7.4`가 `bcrypt>=4.1`의 `bcrypt.__about__.__version__` 제거로 인해 비밀번호 해싱 시 `AttributeError`/`ValueError`로 실패하는 상위 호환성 버그 발견 — `backend/requirements.txt`에 `bcrypt==4.0.1` 고정 추가로 해결, 실 서버 컨테이너 재빌드 후 해싱/검증 정상 동작 확인 | 2026-07-03 |
 | `departments`/`positions`/`job-types` 화면 권한 키 미정 | 중간 | 해소 | 운영팀 확인 완료(2026-07-03) — 부서(`departments`)/직급(`positions`)은 독립 화면이 아닌 "공통 코드/기준정보"로 취급하기로 확정, 별도 화면 키 대신 `SYS_ROLE_MST.PERM_JSON`에 공통 `codes` 키 추가(`codes.view`는 전 역할 허용, `codes.create`/`update`/`delete`는 ADMIN/HR_MGR만 허용). `GET /api/v1/job-types` 조회도 `codes.view` 정책과 동일하게 전 역할 허용(단, 직무 유형 관리 화면의 등록/수정/삭제는 기존 `job_types.*`(A H 전용) 유지). `backend/app/db/seed/sys_role_mst_seed.py` Seed 갱신 및 Alembic 리비전 `9c1f3a5d2b7e`로 기존 DB의 `PERM_JSON`도 갱신 완료, `backend/app/api/v1/codes.py`(부서/직급/직무 유형 조회 API) 3개 엔드포인트에 `require_permission("codes", "view")` 적용 완료 — 인증 없이 호출 가능하던 상태 제거. `backend/docs/PERMISSION_MATRIX.md`에 `codes` 권한 섹션 추가 | 2026-07-03 |
+| 페이지네이션 공통화로 OpenAPI 스키마명 변경 | 낮음 | 주의 | `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`를 Pydantic 제네릭 `PaginatedResponse[T]`의 타입 별칭으로 전환하면서, 응답 JSON 형태(`total`/`skip`/`limit`/`items`)는 동일하게 유지되지만 `/openapi.json`에 노출되는 스키마명이 `PaginatedResponse_EmployeeOut_` 형태로 바뀜. 프론트엔드는 현재 목데이터 기반이라 실 API 응답 스키마에 의존하지 않아 당장 영향 없음 — 향후 OpenAPI 기반 타입 자동 생성 도구 도입 시 참고 필요 | 2026-07-03 |
 
 ---
 
@@ -746,8 +752,8 @@
 - [ ] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`)
 - [ ] 대시보드 집계 API (직무 유형별 분포 포함)
 - [ ] Excel Import/Export API
-- [ ] 페이지네이션 공통 처리 구현
-- [ ] OpenAPI 문서 확인 (`http://{서버IP}:8000/docs`)
+- [x] 페이지네이션 공통 처리 구현 — `PaginationParams`/`PaginatedResponse` 공통 모듈로 추출, 3개 라우터 적용 및 실 서버 검증 완료 (2026-07-03)
+- [x] OpenAPI 문서 확인 (`http://{서버IP}:8000/docs`) — 실 서버 `/docs`·`/redoc`·`/openapi.json` 정상 확인, 22개 엔드포인트 전부 등록 확인 (2026-07-03)
 
 ---
 
@@ -868,4 +874,6 @@
 | 2026-07-03 | v3.8 | §8 다음 작업 2번(`SYS_AUDIT_LOG` 감사 로그 미들웨어) 완료 처리 — `backend/app/repositories/sys_audit_log.py`, `backend/app/core/audit.py`(`record_audit`) 신규 작성. 로그인 및 `employees`/`skills`/`employee_skills`/`projects`/`assignments` 5개 라우터의 등록/수정 엔드포인트에 적용(도메인별 Out 스키마로 변경 전/후 스냅샷 기록). `codes.py`는 RBAC 미적용과 동일하게 제외(§9 참조). 실 서버에서 ADMIN 테스트 사용자로 로그인→등록→수정을 실행해 `SYS_AUDIT_LOG`에 `LOGIN`/`CREATE`/`UPDATE` 3건이 정확히 기록됨을 확인(BFR/AFT JSON 값 일치 포함). Phase 3 진행률 56%→61%로 갱신, §11 "SYS_AUDIT_LOG 감사 로그 미들웨어" 완료 체크, §8 큐에서 제거 및 재번호(1~4) | — |
 | 2026-07-03 | v3.9 | **RBAC 잔여 범위 완료 — `codes` 공통 코드 권한 신설(운영팀 확인 반영)** — 부서(`departments`)/직급(`positions`)을 독립 화면이 아닌 "공통 코드/기준정보"로 취급하기로 확정(운영팀 확인). `SYS_ROLE_MST.PERM_JSON`에 `codes` 키 신설(`codes.view` 전 역할 허용, `codes.create/update/delete`는 ADMIN/HR_MGR만 허용) — `sys_role_mst_seed.py` Seed 소스 갱신 및 Alembic 리비전 `9c1f3a5d2b7e`(head `370c95546556` 뒤 체이닝, `jsonb_set`으로 기존 DB 행 갱신)로 실 DB 반영. `GET /api/v1/job-types` 조회에도 `codes.view` 정책 병행 적용(관리 화면 등록/수정/삭제는 기존 `job_types.*` A H 전용 유지). `backend/app/api/v1/codes.py` 3개 GET 엔드포인트에 `require_permission("codes", "view")` 적용 — 인증 없이 호출 가능하던 마지막 업무 API 제거. `backend/docs/PERMISSION_MATRIX.md`에 `codes` 권한 섹션 및 화면 키 목록(14종) 갱신. 실 서버에서 `alembic upgrade head` 적용 후 6개 역할 `PERM_JSON` 값 확인, 인증 없이 코드 API 호출 시 401 전환 확인, VIEWER 테스트 사용자로 3개 엔드포인트 정상 조회(200) 확인. Phase 3 진행률 61%→67%로 갱신, §11 "RBAC 권한 미들웨어 구현" 진행 중→완료로 정정, §9 리스크 "departments/positions/job-types 화면 권한 키 미정" 주의→해소 처리(처리일자 2026-07-03) | — |
 | 2026-07-03 | v4.0 | §8 다음 작업 1번(사원 퇴직 처리 API) 완료 처리 — `backend/app/repositories/hr_empl_mst.py`에 `retire_employee`(신규, `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록) 추가, `backend/app/api/v1/employees.py`에 `DELETE /api/v1/employees/{empl_id}` 라우터 추가(`retir_dt` 쿼리 파라미터 지원, 기존 `employees.delete` 권한·감사 로그 재사용). 실 서버에서 임시 사원 데이터로 정상 퇴직 전환, 재퇴직 시도 409, 미존재 404, 무인증 401, 권한 없는 역할 403, `SYS_AUDIT_LOG`에 `ACT_CD='DELETE'`(변경 전/후 상태 포함) 기록까지 전부 확인 후 테스트 데이터 삭제. Phase 3 진행률 67%→72%로 갱신, §5·§11 "사원 CRUD API"/"직원 관리" 완료 체크로 정정, §8 큐에서 완료 항목 제거 및 재번호(1~2) | — |
+| 2026-07-03 | v4.1 | §8 다음 작업 1번(페이지네이션 공통 처리) 완료 처리 — `backend/app/core/pagination.py`(`PaginationParams`), `backend/app/schemas/pagination.py`(`PaginatedResponse[T]` 제네릭) 신규 작성. `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`를 제네릭 타입 별칭으로 전환(응답 JSON 형태 동일 유지), `employees`/`projects`/`assignments` 3개 라우터의 개별 skip/limit `Query` 선언을 `Depends(PaginationParams)`로 교체. 실 서버 재빌드 후 기본값/커스텀 값/422 검증 범위가 기존과 동일하게 동작함을 확인. `/openapi.json` 스키마명이 `PaginatedResponse_XOut_` 형태로 바뀌는 부수 효과를 §9 리스크로 기록(응답 바디 무영향). Phase 3 진행률 72%→78%로 갱신, §11 "페이지네이션 공통 처리 구현" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1) | — |
+| 2026-07-03 | v4.2 | §8 다음 작업 1번(OpenAPI 문서 확인) 완료 처리 — 코드 변경 없이 실 서버에서 `/docs`·`/redoc`·`/openapi.json` 정상 응답 및 22개 엔드포인트 태그·설명·응답 코드·`HTTPBearer` 보안 스키마 반영을 확인. Phase 3 진행률 78%→83%로 갱신, §11 "OpenAPI 문서 확인" 완료 체크, §8 큐를 §4 Phase 3 미착수 항목(가동률 계산 API, 대시보드 집계 API, Excel Import/Export API) 3개로 재구성 | — |
 

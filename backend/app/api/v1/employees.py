@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
 from app.core.audit import record_audit
+from app.core.pagination import PaginationParams
 from app.db.session import get_db
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.hr_empl_mst import (
@@ -25,8 +26,7 @@ router = APIRouter(prefix="/employees", tags=["employees"])
 
 @router.get("", response_model=EmployeeListResponse, dependencies=[Depends(require_permission("employees", "view"))])
 def get_employees(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=200),
+    pagination: PaginationParams = Depends(),
     dept_id: uuid.UUID | None = Query(None, description="부서 ID로 필터링 (HR_DEPT_MST.DEPT_ID)"),
     jikmu_id: uuid.UUID | None = Query(None, description="직무 유형 ID로 필터링 (HR_JIKMU_MST.JIKMU_ID)"),
     empl_stat_cd: str | None = Query(None, description="재직 상태 코드 (ACTIVE/LEAVE/RETIRED)"),
@@ -34,9 +34,14 @@ def get_employees(
 ) -> EmployeeListResponse:
     """사원 목록 조회 (로드맵 §8 다음 작업 7번)"""
     items, total = list_employees(
-        db, skip=skip, limit=limit, dept_id=dept_id, jikmu_id=jikmu_id, empl_stat_cd=empl_stat_cd
+        db,
+        skip=pagination.skip,
+        limit=pagination.limit,
+        dept_id=dept_id,
+        jikmu_id=jikmu_id,
+        empl_stat_cd=empl_stat_cd,
     )
-    return EmployeeListResponse(total=total, skip=skip, limit=limit, items=items)
+    return EmployeeListResponse(total=total, skip=pagination.skip, limit=pagination.limit, items=items)
 
 
 @router.post("", response_model=EmployeeOut, status_code=status.HTTP_201_CREATED)
