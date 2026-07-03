@@ -97,7 +97,7 @@
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 진행 중 | 60% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 60% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 예정 | 0% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 15% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -250,23 +250,23 @@
 |---|---|
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
-| **개발 상태** | 예정 |
-| **진행률** | 0% |
+| **개발 상태** | 진행 중 |
+| **진행률** | 15% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
 
 | 작업 | 상태 |
 |---|---|
-| FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`) | 예정 |
-| SQLAlchemy 2.x ORM 모델 작성 (16개 테이블) | 예정 |
-| Pydantic v2 스키마 작성 | 예정 |
-| `/health` 헬스체크 엔드포인트 구현 | 예정 |
+| FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`) | 완료 (Phase 1~2에서 기본 골격 구성, `api/v1/router.py` 신규 추가로 라우터 등록 구조 확립, 2026-07-03) |
+| SQLAlchemy 2.x ORM 모델 작성 (16개 테이블) | 진행 중 (10/16 — §8 5·6번 참조) |
+| Pydantic v2 스키마 작성 | 진행 중 (`EmployeeOut`/`EmployeeListResponse`만 작성) |
+| `/health` 헬스체크 엔드포인트 구현 | 완료 (Phase 1, `backend/app/main.py`) |
 | JWT 인증 API 구현 (`SYS_USER_MST` 기반) | 예정 |
 | RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반) | 예정 |
 | `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현 | 예정 |
-| CORS 설정 (포트 3030 허용) | 예정 |
-| 사원 CRUD API (`HR_EMPL_MST`) | 예정 |
+| CORS 설정 (포트 3030 허용) | 완료 (Phase 1, `backend/app/main.py`) |
+| 사원 CRUD API (`HR_EMPL_MST`) | 진행 중 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/employees`, 퇴직 처리용 삭제(DELETE)는 미구현) |
 | 부서/직급/직무 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`) | 예정 |
 | 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) | 예정 |
 | 프로젝트 CRUD API (`PJT_MST`) | 예정 |
@@ -487,7 +487,7 @@
 
 | 기능 영역 | 주요 기능 | 상태 | 우선순위 | 관련 모듈 | 비고 |
 |---|---|---|---|---|---|
-| 직원 관리 | `HR_EMPL_MST` CRUD, 퇴직 처리 | 예정 | 높음 | `employees.py`, `HR_EMPL_MST` | 직무 유형(`JIKMU_ID`) 필드 포함 |
+| 직원 관리 | `HR_EMPL_MST` CRUD, 퇴직 처리 | 진행 중 (조회/등록/수정 구현, 퇴직 처리 미구현) | 높음 | `employees.py`, `HR_EMPL_MST` | 직무 유형(`JIKMU_ID`) 필드 포함 |
 | 팀/조직 관리 | `HR_DEPT_MST` 계층 구조 관리 | 예정 | 높음 | `departments.py`, `HR_DEPT_MST` | 상위 부서(`PRNT_DEPT_ID`) 지원 |
 | 직급/역할 관리 | `HR_JIKGUP_MST`, `HR_JIKMU_MST` 마스터 관리 | 예정 | 높음 | `positions.py`, `job_types.py` | 직급·직무 분리 설계 |
 | 기술 스택 관리 | `HR_SKILL_MST` CRUD | 예정 | 높음 | `skills.py`, `HR_SKILL_MST` | 기술 그룹(`SKILL_GRP_CD`) 분류 |
@@ -580,6 +580,8 @@
 - §9 리스크 및 차단 이슈 표 구조 변경 — `처리일자` 컬럼 신규 추가, `상태` 열 값을 상태값 단일 표기(차단/주의/해소)로 정리하고 날짜는 `처리일자`로 분리. 이슈·대응 방안 실질 내용은 변경 없음
 - (§8 다음 작업 5번) `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 7개 테이블 생성 — `backend/app/db/base.py` 기준 SQLAlchemy 2.x ORM 모델 7종을 `backend/app/models/`에 신규 작성(`hr_dept_mst.py`, `hr_jikgup_mst.py`, `hr_jikmu_mst.py`, `hr_skill_mst.py`, `hr_empl_mst.py`, `pjt_mst.py`, `pjt_asgn_his.py`), 공통 `REG_DTTM`/`UPD_DTTM`(+`REG_USER`/`UPD_USER`) 컬럼을 위한 `TimestampMixin`/`AuditMixin`을 `app/models/mixins.py`에 추가. 스키마는 `backend/docs/ERD.md` §3.1~3.5, 3.8~3.9 그대로 반영(컬럼 타입·PK/FK·CHECK 제약 포함). `app/models/__init__.py`에 7개 모델 import 등록. Alembic 리비전 `backend/alembic/versions/28ce52377e32_create_core_hr_pjt_tables.py`를 수기 작성(로컬 환경에 `alembic` 패키지 미설치로 `--autogenerate` 실행 불가하여 모델 정의 기준으로 직접 작성). `PJT_ASGN_HIS.ALLOC_RT` 100% 초과 방지 등 테이블 간 데이터 정합성 규칙은 DB 제약만으로 표현 불가하여 서비스 레이어 구현(Phase 3) 몫으로 모델 주석에 명시. **부분 완료**: ERD 16개 테이블 중 7개만 처리, 나머지 9개(`HR_EMPL_SKILL_REL`, `HR_EMPL_ROLE_REL`, `HR_AVAIL_SNAP`, `PJT_RSRC_REQ`, `PJT_RCMD_RSLT`, `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG`, `SYS_BATCH_HIS`)는 §8 6번 이후 작업. **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경에 `alembic`/`psycopg`/`pip` 미설치로 미실시** — Python 구문 검증만 완료 (아래 검증 결과 참조)
 - (§8 다음 작업 6번) `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 3개 테이블 생성 및 Seed 데이터 입력 — SQLAlchemy 모델 3종(`sys_role_mst.py`, `sys_user_mst.py`, `sys_audit_log.py`)을 `backend/docs/ERD.md` §3.12~3.14 기준으로 신규 작성. `SYS_ROLE_MST`는 REG_DTTM/UPD_DTTM 컬럼이 없어(설계서 원본 그대로) Mixin 미적용, `SYS_AUDIT_LOG`는 REG_DTTM만 있어(append-only 로그 성격) 별도 Mixin 없이 직접 선언. `ENCR_PWD` 해싱·`BFR_VAL_JSON`/`AFT_VAL_JSON` 마스킹 등 보안 처리는 Phase 3 구현 몫으로 모델 주석에 명시. Alembic 리비전 `backend/alembic/versions/83fc676b952e_create_sys_user_role_audit_tables.py`를 이전 리비전(`28ce52377e32`) 뒤에 체이닝해 수기 작성, 기존 `app/db/seed/sys_role_mst_seed.py`를 재사용해 `SYS_ROLE_MST` 6종 Seed를 `op.bulk_insert`로 함께 반영. **부분 완료**: `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed(10/12종)는 아직 스크립트 미작성 — §11 Seed 체크리스트 항목은 미완료 유지. **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
+- (§8 다음 작업 7번) 사원 목록 조회 API 구현(`GET /api/v1/employees`) — `backend/app/db/session.py`(SQLAlchemy 동기 세션·`get_db` 의존성 신규 작성, 기존 `DATABASE_URL` 설정 재사용), `backend/app/schemas/hr_empl_mst.py`(`EmployeeOut`/`EmployeeListResponse`), `backend/app/repositories/hr_empl_mst.py`(부서/직무 유형/재직상태 필터 + skip/limit 페이지네이션 쿼리, 화면 설계서 SCR-003 직무 유형 필터 요건 반영), `backend/app/api/v1/employees.py`(라우터) 신규 작성. 향후 엔드포인트 추가에 대비해 `backend/app/api/v1/router.py`(API 라우터 집합)를 신규 도입하고 `backend/app/main.py`에 `/api/v1` prefix로 등록. 공통 페이지네이션 유틸리티(로드맵 §11 "페이지네이션 공통 처리 구현")는 아직 별도 구현하지 않고 이 엔드포인트에 한해 skip/limit을 직접 적용 — 향후 재사용 필요 시 별도 모듈로 추출 예정. **실 서버 기동 후 엔드포인트 호출 검증은 로컬 환경에 `fastapi`/`pydantic`/`sqlalchemy` 미설치로 미실시** — 모델·스키마 필드 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
+- (§8 다음 작업 8번) 사원 등록/수정 API 구현(`POST`, `PATCH /api/v1/employees`) — `backend/app/schemas/hr_empl_mst.py`에 `EmployeeCreate`/`EmployeeUpdate` 추가(`EMPL_STAT_CD`는 모델의 `EMPL_STAT_CODES` 상수를 그대로 재사용해 `Literal` 타입으로 검증, DB CHECK 제약과 값 목록이 어긋나지 않도록 함), `backend/app/repositories/hr_empl_mst.py`에 `get_employee`/`create_employee`/`update_employee` 추가, `backend/app/api/v1/employees.py`에 `POST /api/v1/employees`(201 Created), `PATCH /api/v1/employees/{empl_id}`(부분 업데이트, 미존재 시 404) 라우터 추가. `EMPL_NO`/`EMAIL_ADDR` UNIQUE 위반 및 `DEPT_ID`/`JIKGUP_ID`/`JIKMU_ID` FK 위반은 `IntegrityError`를 잡아 409로 변환. **부분 완료**: 퇴직 처리(DELETE, `EMPL_STAT_CD='RETIRED'` 전환)는 §8 목록에 없어 이번 범위에서 제외 — 사원 CRUD API는 계속 "진행 중" 유지. JWT 인증·RBAC·`SYS_AUDIT_LOG` 감사 로그 연동은 미구현(§8 목록에 아직 없는 별도 작업). **실 서버 기동 후 엔드포인트 호출 검증은 로컬 환경 제약으로 미실시** — 모델-스키마 필드 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
 
 ---
 
@@ -595,8 +597,8 @@
 - [x] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정) → `backend/alembic.ini`, `backend/alembic/env.py` (실 DB 연결 `alembic upgrade` 검증은 미실행 — 아래 검증 결과 참조)
 - [x] 5. `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 테이블 생성 → SQLAlchemy 모델(`backend/app/models/`) + Alembic 마이그레이션(`backend/alembic/versions/28ce52377e32_create_core_hr_pjt_tables.py`) 작성 완료. 실 DB 연결 기반 `alembic upgrade head` 적용 검증은 미실행 (아래 검증 결과 참조)
 - [x] 6. `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 테이블 생성 및 Seed 데이터 입력 → SQLAlchemy 모델(`backend/app/models/`) + Alembic 마이그레이션(`backend/alembic/versions/83fc676b952e_create_sys_user_role_audit_tables.py`, `SYS_ROLE_MST` 6종 Seed 포함) 작성 완료. 실 DB 적용 검증은 미실행 (아래 §3 검증 결과 참조)
-- [ ] 7. 사원 목록 조회 API 구현 (`GET /api/v1/employees`)
-- [ ] 8. 사원 등록/수정 API 구현 (`POST`, `PATCH /api/v1/employees`)
+- [x] 7. 사원 목록 조회 API 구현 (`GET /api/v1/employees`) → `backend/app/api/v1/employees.py`, `backend/app/repositories/hr_empl_mst.py`, `backend/app/schemas/hr_empl_mst.py`, `backend/app/db/session.py` 작성 완료(부서/직무 유형/재직상태 필터 + skip/limit 페이지네이션). 실 서버 기동 후 엔드포인트 호출 검증은 미실행 (아래 §3 참조)
+- [x] 8. 사원 등록/수정 API 구현 (`POST`, `PATCH /api/v1/employees`) → `backend/app/api/v1/employees.py`에 `POST /api/v1/employees`, `PATCH /api/v1/employees/{empl_id}` 추가, `EmployeeCreate`/`EmployeeUpdate` 스키마 및 리포지토리 함수 작성 완료. 실 서버 기동 후 엔드포인트 호출 검증은 미실행 (아래 §3 참조)
 - [ ] 9. Next.js 기본 레이아웃 구성 (로그인 화면, 공통 네비게이션)
 - [ ] 10. 사원 목록 화면 구현 (`/employees` — 직무 유형 필터 포함)
 - [ ] 11. 프로젝트 투입 현황 화면 구현 (`/assignments`)
@@ -696,15 +698,15 @@
 
 ### 백엔드 `→ Phase 3`
 
-- [ ] FastAPI 프로젝트 구조 생성 (`app/core/`, `app/models/`, `app/schemas/`, `app/api/v1/`, `app/services/`)
-- [ ] SQLAlchemy 2.x ORM 모델 작성 (16개 테이블 전체)
-- [ ] Pydantic v2 스키마 작성
-- [ ] `/health` 헬스체크 엔드포인트 구현
+- [x] FastAPI 프로젝트 구조 생성 (`app/core/`, `app/models/`, `app/schemas/`, `app/api/v1/`, `app/services/`) — 라우터 등록 구조(`api/v1/router.py`) 포함 완료, 2026-07-03
+- [ ] SQLAlchemy 2.x ORM 모델 작성 (16개 테이블 전체) — 10/16 완료 (§8 5·6번 참조)
+- [ ] Pydantic v2 스키마 작성 — `EmployeeOut`/`EmployeeListResponse`만 작성, 전체 미완료
+- [x] `/health` 헬스체크 엔드포인트 구현
 - [ ] JWT 인증 API 구현 (`SYS_USER_MST` 기반 — 로그인, 토큰 갱신, 로그아웃)
-- [ ] CORS 설정 적용 (포트 3030 허용)
+- [x] CORS 설정 적용 (포트 3030 허용)
 - [ ] RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 6개 역할)
 - [ ] `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
-- [ ] 사원 CRUD API (`HR_EMPL_MST` — `JIKMU_ID` 필드 포함)
+- [ ] 사원 CRUD API (`HR_EMPL_MST` — `JIKMU_ID` 필드 포함) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/employees`, 2026-07-03), 퇴직 처리용 삭제(DELETE)는 미구현
 - [ ] 직무 유형 CRUD API (`HR_JIKMU_MST`)
 - [ ] 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)
 - [ ] 부서/직급 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`)
@@ -810,4 +812,6 @@
 | 2026-07-03 | v1.2 | §9 리스크 및 차단 이슈 표 구조 변경 — `처리일자` 컬럼 신규 추가. `상태` 열에 섞여 있던 날짜·부가 설명(예: "해결 (MVP, 2026-07-02 갱신)", "주의 (2026-07-03 하향, 기존 차단)")을 `상태`(차단/주의/정상/해소/보류 단일 값)와 `처리일자`(`YYYY-MM-DD` 또는 미처리 시 `-`)로 분리. 상태값 표기를 "해결"→"해소"로 통일(대응 방안 본문 내 동일 표현 포함). 이슈·대응 방안의 실질 내용은 변경하지 않음 | — |
 | 2026-07-03 | v1.3 | §8 다음 작업 5번(핵심 7개 테이블 생성) 완료 처리 — `backend/app/models/`에 SQLAlchemy 2.x ORM 모델 7종 및 공통 Mixin(`mixins.py`) 신규 작성, Alembic 리비전 `28ce52377e32_create_core_hr_pjt_tables.py` 수기 작성(로컬 `alembic` 패키지 미설치로 autogenerate 불가). Phase 2 진행률 10%→45%로 갱신. §11 데이터베이스 체크리스트에 완료 7개 테이블 체크 표시(전체 16개 중 7개, 부분 완료). 실 DB 적용 검증은 로컬 환경 제약으로 미실시 | — |
 | 2026-07-03 | v1.4 | §8 다음 작업 6번(`SYS_USER_MST`/`SYS_ROLE_MST`/`SYS_AUDIT_LOG` 테이블 생성 및 Seed 입력) 완료 처리 — 모델 3종 신규 작성, Alembic 리비전 `83fc676b952e_create_sys_user_role_audit_tables.py`(이전 리비전 뒤 체이닝)에 `SYS_ROLE_MST` 6종 Seed(`op.bulk_insert`, 기존 `sys_role_mst_seed.py` 재사용) 포함 작성. Phase 2 진행률 45%→60%로 갱신. §11 데이터베이스 체크리스트에 완료 3개 테이블 체크(전체 16개 중 10개) 및 Seed 항목 부분 완료(HR_JIKGUP_MST/HR_JIKMU_MST Seed 미작성) 반영. 실 DB 적용 검증은 로컬 환경 제약으로 미실시 | — |
+| 2026-07-03 | v1.5 | §8 다음 작업 7번(사원 목록 조회 API) 완료 처리 — `backend/app/db/session.py`(DB 세션 의존성), `backend/app/schemas/hr_empl_mst.py`, `backend/app/repositories/hr_empl_mst.py`, `backend/app/api/v1/employees.py`, `backend/app/api/v1/router.py` 신규 작성, `backend/app/main.py`에 `/api/v1` 라우터 등록. Phase 3 상태를 "예정→진행 중"(0%→15%)으로 갱신 — 이미 완료돼 있던 FastAPI 기본 구조/`/health`/CORS를 반영. §5 기능별 구현 상태 "직원 관리" 행을 "진행 중(목록 조회만)"으로 갱신, §11 백엔드 체크리스트 3개 항목 완료 체크(FastAPI 구조, `/health`, CORS) 및 사원 CRUD API 부분 완료 명시. 실 서버 기동 기반 엔드포인트 호출 검증은 로컬 환경 제약(`fastapi`/`sqlalchemy` 미설치)으로 미실시 | — |
+| 2026-07-03 | v1.6 | §8 다음 작업 8번(사원 등록/수정 API) 완료 처리 — `EmployeeCreate`/`EmployeeUpdate` 스키마, `create_employee`/`update_employee`/`get_employee` 리포지토리 함수, `POST`/`PATCH /api/v1/employees` 라우터 추가(UNIQUE/FK 위반 시 409 반환). §4/§5/§11의 "사원 CRUD API" 관련 서술을 "조회/등록/수정 구현, 퇴직 처리 미구현"으로 갱신(Phase 3 진행률은 보수적으로 15% 유지 — 완전한 CRUD 미완성). 실 서버 기동 기반 엔드포인트 호출 검증은 로컬 환경 제약으로 미실시 | — |
 
