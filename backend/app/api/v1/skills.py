@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.hr_skill_mst import create_skill, get_skill, list_skills, update_skill
 from app.schemas.hr_skill_mst import SkillCreate, SkillOut, SkillUpdate
@@ -11,7 +12,7 @@ from app.schemas.hr_skill_mst import SkillCreate, SkillOut, SkillUpdate
 router = APIRouter(prefix="/skills", tags=["skills"])
 
 
-@router.get("", response_model=list[SkillOut])
+@router.get("", response_model=list[SkillOut], dependencies=[Depends(require_permission("skills", "view"))])
 def get_skills(
     skill_grp_cd: str | None = Query(None, description="기술 그룹 코드로 필터링 (BACKEND/FRONTEND 등)"),
     use_yn: bool | None = Query(True, description="사용 여부 필터 — 생략 시 True(사용 중인 기술만)"),
@@ -21,7 +22,12 @@ def get_skills(
     return list_skills(db, skill_grp_cd=skill_grp_cd, use_yn=use_yn)
 
 
-@router.post("", response_model=SkillOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=SkillOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("skills", "create"))],
+)
 def post_skill(payload: SkillCreate, db: Session = Depends(get_db)) -> SkillOut:
     """기술 등록"""
     try:
@@ -32,7 +38,9 @@ def post_skill(payload: SkillCreate, db: Session = Depends(get_db)) -> SkillOut:
     return skill
 
 
-@router.patch("/{skill_id}", response_model=SkillOut)
+@router.patch(
+    "/{skill_id}", response_model=SkillOut, dependencies=[Depends(require_permission("skills", "update"))]
+)
 def patch_skill(skill_id: uuid.UUID, payload: SkillUpdate, db: Session = Depends(get_db)) -> SkillOut:
     """기술 수정 — 전달된 필드만 갱신"""
     skill = get_skill(db, skill_id)

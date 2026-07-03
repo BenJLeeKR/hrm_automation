@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.hr_empl_mst import create_employee, get_employee, list_employees, update_employee
 from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeListResponse, EmployeeOut, EmployeeUpdate
@@ -11,7 +12,7 @@ from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeListResponse, Employ
 router = APIRouter(prefix="/employees", tags=["employees"])
 
 
-@router.get("", response_model=EmployeeListResponse)
+@router.get("", response_model=EmployeeListResponse, dependencies=[Depends(require_permission("employees", "view"))])
 def get_employees(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=200),
@@ -27,7 +28,12 @@ def get_employees(
     return EmployeeListResponse(total=total, skip=skip, limit=limit, items=items)
 
 
-@router.post("", response_model=EmployeeOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=EmployeeOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("employees", "create"))],
+)
 def post_employee(payload: EmployeeCreate, db: Session = Depends(get_db)) -> EmployeeOut:
     """사원 등록 (로드맵 §8 다음 작업 8번)"""
     try:
@@ -42,7 +48,9 @@ def post_employee(payload: EmployeeCreate, db: Session = Depends(get_db)) -> Emp
     return employee
 
 
-@router.patch("/{empl_id}", response_model=EmployeeOut)
+@router.patch(
+    "/{empl_id}", response_model=EmployeeOut, dependencies=[Depends(require_permission("employees", "update"))]
+)
 def patch_employee(empl_id: uuid.UUID, payload: EmployeeUpdate, db: Session = Depends(get_db)) -> EmployeeOut:
     """사원 수정 (로드맵 §8 다음 작업 8번) — 전달된 필드만 갱신"""
     employee = get_employee(db, empl_id)

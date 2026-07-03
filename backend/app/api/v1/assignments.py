@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.pjt_asgn_his import (
     create_assignment,
@@ -19,7 +20,9 @@ router = APIRouter(prefix="/assignments", tags=["assignments"])
 _FK_ERROR_DETAIL = "사원/프로젝트 ID가 유효하지 않습니다."
 
 
-@router.get("", response_model=AssignmentListResponse)
+@router.get(
+    "", response_model=AssignmentListResponse, dependencies=[Depends(require_permission("assignments", "view"))]
+)
 def get_assignments(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=200),
@@ -33,7 +36,12 @@ def get_assignments(
     return AssignmentListResponse(total=total, skip=skip, limit=limit, items=items)
 
 
-@router.post("", response_model=AssignmentOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=AssignmentOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("assignments", "create"))],
+)
 def post_assignment(payload: AssignmentCreate, db: Session = Depends(get_db)) -> AssignmentOut:
     """투입 이력 등록 — 동일 사원·겹치는 기간의 유효(`PLANNED`/`ACTIVE`) ALLOC_RT 합계가
     100%를 초과하면 409로 거부한다 (ERD §3.9 / 설계서 §5.5 정합성 규칙)."""
@@ -55,7 +63,9 @@ def post_assignment(payload: AssignmentCreate, db: Session = Depends(get_db)) ->
     return assignment
 
 
-@router.patch("/{asgn_id}", response_model=AssignmentOut)
+@router.patch(
+    "/{asgn_id}", response_model=AssignmentOut, dependencies=[Depends(require_permission("assignments", "update"))]
+)
 def patch_assignment(asgn_id: uuid.UUID, payload: AssignmentUpdate, db: Session = Depends(get_db)) -> AssignmentOut:
     """투입 이력 수정 — 전달된 필드만 갱신. ALLOC_RT/기간/상태 변경 시 100% 초과 여부를 재검증한다."""
     assignment = get_assignment(db, asgn_id)

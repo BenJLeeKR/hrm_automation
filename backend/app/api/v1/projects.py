@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.pjt_mst import create_project, get_project, list_projects, update_project
 from app.schemas.pjt_mst import ProjectCreate, ProjectListResponse, ProjectOut, ProjectUpdate
@@ -11,7 +12,9 @@ from app.schemas.pjt_mst import ProjectCreate, ProjectListResponse, ProjectOut, 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-@router.get("", response_model=ProjectListResponse)
+@router.get(
+    "", response_model=ProjectListResponse, dependencies=[Depends(require_permission("projects", "view"))]
+)
 def get_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=200),
@@ -23,7 +26,12 @@ def get_projects(
     return ProjectListResponse(total=total, skip=skip, limit=limit, items=items)
 
 
-@router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ProjectOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("projects", "create"))],
+)
 def post_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> ProjectOut:
     """프로젝트 등록"""
     try:
@@ -34,7 +42,9 @@ def post_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> Proje
     return project
 
 
-@router.patch("/{pjt_id}", response_model=ProjectOut)
+@router.patch(
+    "/{pjt_id}", response_model=ProjectOut, dependencies=[Depends(require_permission("projects", "update"))]
+)
 def patch_project(pjt_id: uuid.UUID, payload: ProjectUpdate, db: Session = Depends(get_db)) -> ProjectOut:
     """프로젝트 수정 — 전달된 필드만 갱신"""
     project = get_project(db, pjt_id)

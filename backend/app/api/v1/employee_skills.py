@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.hr_empl_skill_rel import (
     create_employee_skill,
@@ -13,10 +14,13 @@ from app.repositories.hr_empl_skill_rel import (
 )
 from app.schemas.hr_empl_skill_rel import EmployeeSkillCreate, EmployeeSkillOut, EmployeeSkillUpdate
 
+# "skills" 화면 권한을 재사용한다 — PERM_JSON에 사원기술 연결 전용 화면 키가 별도로
+# 정의되어 있지 않고(설계서 §5.3.13/PERMISSION_MATRIX.md 기준), 화면 설계서상 사원기술
+# 연결 관리는 기술 관리 화면의 일부 기능이라 동일 권한으로 취급한다.
 router = APIRouter(prefix="/employee-skills", tags=["employee-skills"])
 
 
-@router.get("", response_model=list[EmployeeSkillOut])
+@router.get("", response_model=list[EmployeeSkillOut], dependencies=[Depends(require_permission("skills", "view"))])
 def get_employee_skills(
     empl_id: uuid.UUID | None = Query(None, description="사원 ID로 필터링 (HR_EMPL_MST.EMPL_ID)"),
     skill_id: uuid.UUID | None = Query(None, description="기술 ID로 필터링 (HR_SKILL_MST.SKILL_ID)"),
@@ -26,7 +30,12 @@ def get_employee_skills(
     return list_employee_skills(db, empl_id=empl_id, skill_id=skill_id)
 
 
-@router.post("", response_model=EmployeeSkillOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=EmployeeSkillOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("skills", "create"))],
+)
 def post_employee_skill(payload: EmployeeSkillCreate, db: Session = Depends(get_db)) -> EmployeeSkillOut:
     """사원기술 연결 등록"""
     try:
@@ -40,7 +49,11 @@ def post_employee_skill(payload: EmployeeSkillCreate, db: Session = Depends(get_
     return employee_skill
 
 
-@router.patch("/{empl_skill_id}", response_model=EmployeeSkillOut)
+@router.patch(
+    "/{empl_skill_id}",
+    response_model=EmployeeSkillOut,
+    dependencies=[Depends(require_permission("skills", "update"))],
+)
 def patch_employee_skill(
     empl_skill_id: uuid.UUID, payload: EmployeeSkillUpdate, db: Session = Depends(get_db)
 ) -> EmployeeSkillOut:
