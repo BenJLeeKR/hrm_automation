@@ -104,7 +104,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-nav-muted">
-          © 2026 HRM 자동화 시스템. All rights reserved.
+          © 2025 Blueward. All rights reserved.
         </p>
       </div>
     </div>

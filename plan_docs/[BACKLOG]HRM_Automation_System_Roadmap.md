@@ -97,7 +97,7 @@
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 94% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 100%(주요 작업 기준, Pytest 커버리지 미충족) | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 31% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -250,8 +250,8 @@
 |---|---|
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
-| **개발 상태** | 진행 중 |
-| **진행률** | 94% |
+| **개발 상태** | 진행 중 (주요 작업 항목 전체 완료, "완료 기준"의 Pytest 단위 테스트 커버리지만 미충족 — 하단 참조) |
+| **진행률** | 100% (주요 작업 기준 — Phase 완료 선언은 "완료 기준" 4개 항목 전부 충족 후 진행) |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -273,7 +273,7 @@
 | 투입 관리 API (`PJT_ASGN_HIS`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/assignments`, 동일 사원·겹치는 기간 ALLOC_RT 합계 100% 초과 검증 포함, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
 | 가동률 계산 API (`HR_AVAIL_SNAP`) | 완료 (`GET /api/v1/availability/{empl_id}` — `AVAILABILITY_CALC_SPEC.md` §2/§4 로직으로 즉시 계산, `HR_AVAIL_SNAP` 테이블에는 저장하지 않음(스냅샷 저장은 Phase 7 배치 `HR_AVAIL_SNAP_GEN` 전담), 실 서버 검증 완료, 2026-07-03) |
 | 대시보드 집계 API | 완료 (SCR-002 설계서 명시 4개 + 프론트엔드 목데이터 기반 4개, 총 8개 엔드포인트 — `GET /api/v1/dashboard/{summary,dept-utilization,job-type-distribution,utilization-by-type,data-quality,ending-this-month,recent-employees,headcount-trend}` 구현, 실 서버 검증 완료, 2026-07-03. `HR_AVAIL_SNAP` 배치 미구현으로 실시간 계산 로직으로 대체 — 하단 비고 참조) |
-| Excel Import/Export API | 진행 중 (Export만 구현 — `GET /api/v1/employees/export`, SCR-003 "인력마스터_ResourceTable" 컬럼 매핑 그대로 적용, 실 서버 검증 완료, 2026-07-03. Import(`POST /employees/import`)는 팀/직급/역할/기술 명칭→FK 조회, 신규/수정 upsert, 오류 행 처리 등 검토할 사항이 많아 별도 작업으로 분리 — 하단 비고 참조) |
+| Excel Import/Export API | 완료 (`GET /api/v1/employees/export` + `POST /api/v1/employees/import`, SCR-003 "인력마스터_ResourceTable" 컬럼 매핑 그대로 구현, 실 서버 검증 완료, 2026-07-03. Import 정책: 마스터 미존재 시 전체 실패, `EMPL_NO` 기준 Upsert, 일부 실패 시 전체 롤백 — 사용자 확정, 하단 비고 참조) |
 | 페이지네이션 공통 처리 구현 | 완료 (`app/core/pagination.py`(`PaginationParams`), `app/schemas/pagination.py`(`PaginatedResponse` 제네릭)로 추출, `employees`/`projects`/`assignments` 3개 라우터 적용, 실 서버 검증 완료, 2026-07-03) |
 | OpenAPI 문서 확인 (`/docs`) | 완료 (실 서버 `/docs`·`/redoc`·`/openapi.json` 정상 응답 확인, 22개 엔드포인트 전부 태그·설명·응답 코드 정상 노출, `HTTPBearer` 보안 스키마 자동 반영 확인, 2026-07-03) |
 
@@ -284,10 +284,10 @@
 
 **완료 기준**
 
-- 핵심 CRUD 엔드포인트 전부 응답 확인 (Postman 또는 `/docs` 기준)
-- JWT 인증·RBAC 권한 필터 동작 확인
-- `SYS_AUDIT_LOG` 변경 이력 기록 확인
-- Pytest 단위 테스트 핵심 API 커버
+- 핵심 CRUD 엔드포인트 전부 응답 확인 (Postman 또는 `/docs` 기준) — ✅ 충족 (실 서버 `curl` 검증, §7 각 항목 참조)
+- JWT 인증·RBAC 권한 필터 동작 확인 — ✅ 충족 (2026-07-03)
+- `SYS_AUDIT_LOG` 변경 이력 기록 확인 — ✅ 충족 (2026-07-03)
+- Pytest 단위 테스트 핵심 API 커버 — ❌ 미충족 (자동화 테스트 스위트 미작성 — `backend/requirements.txt`에 `pytest` 자체가 없음. 지금까지의 검증은 실 서버 `curl` 수기 테스트로만 수행. Phase 3 "완료" 선언은 이 항목 충족 후 진행 — §9 리스크 참조)
 
 ---
 
@@ -618,6 +618,7 @@
 - **Excel Export API 구현 — Import는 별도 분리 (§8 다음 작업 1번)** — `[DESIGN]HRM_Screen_Design.md` SCR-003(사원 목록) "Excel Import/Export 컬럼 매핑" 및 "연동 API" 표에 명시된 `GET /api/v1/employees/export`를 구현. `backend/app/repositories/hr_empl_mst.py`에 `list_employees_for_export`(신규, 필터는 `list_employees`와 동일하나 페이지네이션 없이 전체 반환) 및 보유역할(`HR_EMPL_ROLE_REL`+`HR_JIKMU_MST.JIKMU_CD`)·주요기술+숙련도(`HR_EMPL_SKILL_REL`+`HR_SKILL_MST`)를 사원별로 `string_agg`로 집계하는 헬퍼 2종 추가(N:M 관계라 콤마로 이어붙임 — 숙련도는 원본 Excel 서식 자체가 "전체 기술에 동일 숙련도" 한 칸만 두는 손실 매핑이라 여러 기술 중 최댓값을 대표로 사용, 사유 주석 명시). `backend/app/api/v1/employees.py`에 `GET /employees/export`(신규) 추가 — `openpyxl`(신규 의존성, `requirements.txt`에 추가)로 설계서 컬럼 순서(사번/성명/팀/직급/보유역할/주요기술/숙련도/입사일/재직상태/휴대폰번호) 그대로 `.xlsx` 생성, `StreamingResponse`로 다운로드 응답. 재직상태는 `EMPL_STAT_CD`(ACTIVE/LEAVE/RETIRED)를 재직/휴직/퇴직으로 매핑(설계서는 재직/퇴직 2종만 예시로 들었으나 실제 코드 값이 3종이라 합리적으로 확장, 사유 주석 명시). `require_permission("employees", "excel")`을 재사용(기존 PERM_JSON `employees.excel`이 이미 ADMIN/HR_MGR만 허용 — 설계서의 "Excel 가져오기 권한: A H" 원칙과 동일하게 적용), `record_audit`으로 `ACT_CD='EXPORT'` 기록(내보낸 행 수 포함). **Import는 이번 범위에서 제외**: 팀/직급/역할/기술을 명칭으로 조회해 FK로 변환, `EMPL_NO` 기준 신규/수정 upsert, 행 단위 검증 실패 시 전체 롤백 vs 부분 성공 처리 등 여러 설계 판단이 필요해 백로그 별도 항목으로 분리(§9 참고). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 부서·기술·역할이 연결된 임시 사원 1명으로 `.xlsx` 다운로드 후 `openpyxl`로 실제 내용을 열어 10개 컬럼 전부 정확한 값(팀명/직급명/기술명/숙련도/재직상태 한글 라벨 등)으로 채워짐을 확인, `excel` 권한 없는 VIEWER 역할 403, 무인증 401, `SYS_AUDIT_LOG`에 `ACT_CD='EXPORT'` 기록 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. §11 "Excel Import/Export API" 항목을 "Export만 완료, Import 미구현"으로 설명 갱신(체크박스는 미완료 유지 — 항목 전체가 완료된 것은 아니므로), §9 리스크 1건 추가(Import 설계 판단 필요), §8 큐를 Import 전용 항목으로 재구성
 - **백로그 문서 정정 — "로그인 JWT API 연동" 항목 신규 추가 (사용자 요청)** — 사용자가 "백로그 구현 리스트에 항목이 없다면 로그인 JWT API 연동 내용을 추가해달라"고 요청. §4 Phase 4·§11 프론트엔드 체크리스트·§8 다음 작업 큐 전체를 확인한 결과, 백엔드 JWT 인증 API(`POST /api/v1/auth/{login,refresh,logout}`)는 2026-07-03에 이미 완료·검증되었으나 프론트엔드가 이를 실제로 호출하도록 연동하는 작업 자체를 가리키는 백로그 항목이 어디에도 없었음을 확인(§6 "인증 방식" 행과 §11 "로그인 화면 구현" 항목 비고에 "JWT API 연동 전까지 대체"라는 언급만 있었고, 별도 추적 항목은 부재) — 신규 발견된 누락 항목으로 추가. §4 Phase 4 "주요 작업" 표에 "로그인 JWT API 연동" 행 신규 추가(예정), §11 프론트엔드 체크리스트에 동일 항목 미완료로 신규 추가, §8 다음 작업 큐에 2번 항목으로 추가(1번 Excel Import 다음 순서). 실질적인 코드 변경은 없음(백로그 문서 정정만 수행)
 - **로그인 JWT API 연동 구현 (§8 다음 작업 2번)** — 앞서 백로그에 신규 추가한 항목을 이어서 구현. `frontend/lib/auth.ts`를 localStorage 세션 마커(`'1'`) 저장 방식에서 실제 액세스/리프레시 토큰 저장 방식으로 전면 교체 — `login(userLoginId, password)`(신규, `POST /api/v1/auth/login` 호출, 401 시 "아이디 또는 비밀번호가 올바르지 않습니다" 안내, 네트워크 오류 별도 안내), `logout()`(신규, `POST /api/v1/auth/logout`을 최선 노력으로 호출 후 클라이언트 세션 삭제 — 실패해도 사용자 경험에 영향 없도록 처리), `getAccessToken()`(신규, 향후 인증이 필요한 API 호출에 재사용 가능) 추가. `isAuthenticated()`는 기존과 동일한 시그니처를 유지해 `app-shell.tsx`의 인증 가드 코드는 변경하지 않음(영향 범위 최소화). `frontend/app/login/page.tsx`의 `setTimeout` 목업 로직을 `login()` 실제 호출로 교체, 더 이상 사실이 아닌 "데모 계정: admin / 아무 비밀번호" 안내 문구 제거. `frontend/components/layout/top-nav.tsx`의 로그아웃 메뉴를 `logout()` 비동기 호출로 교체. **중요한 설계 결정**: 토큰 저장 방식은 설계서가 목표로 하는 HttpOnly Cookie 대신 기존 아키텍처(localStorage)를 그대로 유지 — HttpOnly Cookie 전환은 백엔드가 로그인 응답을 `Set-Cookie`로 내려주도록 별도 API 변경이 필요해 이번 최소 단위 범위에서 다루지 않고 §9 리스크로 기록(XSS 시 토큰 탈취 위험이 HttpOnly Cookie보다 높음을 명시). **실 서버 컨테이너에서 실제 렌더링 검증**: `sg docker -c "docker compose up -d --build web"`로 재빌드해 TypeScript/Next.js 빌드 정상 통과 확인(로컬 Node 16 제약 대체 검증), `/login` 200 정상 응답, 컴파일된 클라이언트 번들에서 `USER_LGID` 필드가 포함된 로그인 요청 페이로드가 실제로 존재함을 확인해 목업 코드가 실 API 호출로 정상 교체되었음을 검증. 브라우저 기반 실제 로그인 클릭 테스트는 headless 브라우저 도구가 없어 미실시 — 번들 코드 검증으로 대체 (아래 검증 결과 참조). §4/§11 "로그인 JWT API 연동" 항목 완료 체크, §6 "인증 방식" 진행 상황 갱신, §9 리스크 1건 추가, §8 큐에서 완료 항목 제거(Excel Import만 남음)
+- **Excel Import API 구현 — 사용자 확정 정책 반영 (§8 다음 작업 1번)** — 사용자가 Import 정책을 확정: (1) 팀/직급/역할/기술 명칭이 마스터에 없으면 자동 생성·행 스킵 없이 전체 Import를 실패 처리(행 번호/컬럼/입력값/사유 상세 반환), (2) `EMPL_NO` 기준 Upsert(파일 내부 중복 시 전체 실패), (3) 검증 오류가 1건이라도 있으면 DB 변경 없이 실패 응답, 전체 통과 시에만 단일 트랜잭션으로 반영. `backend/app/services/employee_import.py`(신규) — `parse_and_validate`(Excel 헤더/필수 컬럼/파일 내 사번 중복/부서·직급·역할(JIKMU_CD)·기술 명칭의 마스터 존재 여부/숙련도 범위(1~5)/입사일 형식/재직상태 라벨을 전부 검사해 오류가 하나라도 있으면 `EmployeeImportValidationError` 발생 — 이 시점까지 DB에는 아무것도 쓰지 않음), `apply_import`(검증 통과 행만 받아 사번 기준 Upsert, 보유역할·기술스택은 사원별로 Import 파일 기준으로 전체 동기화(파일에 없는 기존 관계 삭제) 후 단일 트랜잭션 커밋, 예외 발생 시 rollback). `backend/app/api/v1/employees.py`에 `POST /employees/import`(신규, `UploadFile`, `require_permission("employees", "excel")` 재사용) 추가 — 검증 실패 시 422(총 행 수/오류 건수/행별 오류 목록), 성공 시 200(총 행 수/신규·수정·역할·기술 처리 건수), `record_audit`으로 `ACT_CD='IMPORT'` 기록. `python-multipart`(신규 의존성, 파일 업로드에 필요) 추가. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 4가지 시나리오 전부 확인 — ① 정상 파일(신규 사원 1명, 역할·기술 연결 포함) 등록 성공, ② 존재하지 않는 부서명 포함 파일 422(오류 상세 정확), ③ 파일 내 사번 중복 422, ④ 기존 사번 재업로드 시 이름/전화번호 수정 + 역할·기술 연결이 새 파일 기준으로 정확히 동기화(비어있는 파일 재업로드 시 기존 연결 0건으로 삭제)됨을 `psql`로 직접 확인. `excel` 권한 없는 VIEWER 403, 무인증 401, `SYS_AUDIT_LOG`에 `ACT_CD='IMPORT'` 2건(성공한 두 번의 업로드) 정상 기록 확인. 실패한 두 시나리오(②③)는 DB에 아무 흔적도 남지 않음을 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. §4 "Excel Import/Export API" 완료로 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거. **Phase 3 재점검**: "주요 작업" 표 전 항목이 완료되어 진행률을 100%로 갱신했으나, §4 Phase 3 "완료 기준" 4개 항목 중 "Pytest 단위 테스트 핵심 API 커버"가 전혀 작성되지 않아 미충족 상태임을 재확인 — Phase 3을 "완료"로 선언하지 않고 §8 다음 작업 1순위를 "Pytest 단위 테스트 스위트 구축"으로 재구성, §9 리스크 1건 추가
 - **프론트엔드 전체 한글 폰트를 Noto Sans KR로 변경 (사용자 요청)** — `frontend/app/layout.tsx`의 본문 폰트를 `next/font/google`의 `Geist`(라틴 전용)에서 `Noto_Sans_KR`(subsets `latin`+`korean`, weight 400/500/600/700)로 교체 — 화면 대부분이 한글이라 한글 글리프를 지원하지 않는 라틴 전용 폰트 대신 한글 최적화 폰트로 전환. CSS 변수명(`--font-geist-sans`)은 그대로 유지해 `globals.css`의 `--font-sans` 매핑 등 다른 파일 변경을 최소화(폴백 폰트명만 `'Geist Fallback'`→`'Noto Sans KR Fallback'`으로 갱신). 코드/숫자용 모노스페이스 폰트(`Geist Mono`)는 변경하지 않음(한글 폰트 요청 범위 밖). **실 서버 컨테이너에서 실제 렌더링 검증**: `sg docker -c "docker compose up -d --build web"`로 재빌드(TypeScript/Next.js 빌드 정상 통과 확인 — 로컬 환경 Node 16 제약으로 못했던 빌드 검증을 실 서버에서 대체 수행), `/login` 200 정상 응답, 실제 서빙된 CSS에서 `font-family: Noto Sans KR, Noto Sans KR Fallback`이 `--font-geist-sans` 변수에 정상 매핑되어 적용됨을 확인, `Geist Mono`는 그대로 유지됨을 확인. 백로그에 해당 전용 체크리스트 항목이 없어 Phase 진행률 변경 없음(§7 완료 내역에만 기록)
 - **대시보드 집계 API — 프론트엔드 목데이터 기반 4개 엔드포인트 추가 (사용자 요청)** — 사용자가 "현재 frontend에 mock 데이터로 구현되어 있는 dashboard를 참고해서 필요한 API를 구현"을 요청. `frontend/app/(app)/dashboard/page.tsx`와 `frontend/lib/mock-data.ts`를 확인한 결과, 화면이 이미 SCR-002 설계서 표에 없던 4개 위젯(데이터 품질 점검·이달 투입 종료 예정 상세 목록·최근 입사자·월별 인력 추이)을 목데이터로 표시하고 있음을 확인 — 앞서 구현한 4개 엔드포인트(설계서 명시분)로는 커버되지 않는 부분이라 추가로 구현. `backend/app/repositories/dashboard.py`에 `get_data_quality`(재직 사원 중 기술/직무 미등록 수, `ALLOC_RT` 합계 100% 초과 사원 수), `get_ending_this_month`(이번 달 종료 예정 투입 상세 목록 — 사원명/부서명/프로젝트명/종료일/투입률), `get_recent_employees`(최근 입사자, `HIRE_DT` 내림차순), `get_headcount_trend`(월별 재직 인원/입사/퇴사 추이, 개월 수 파라미터화) 4개 함수 추가. `backend/app/schemas/dashboard.py`·`backend/app/api/v1/dashboard.py`에 대응 스키마·엔드포인트(`GET /api/v1/dashboard/{data-quality,ending-this-month,recent-employees,headcount-trend}`) 추가, 기존과 동일하게 `require_permission("dashboard", "view")` 적용. 100% 초과 데이터 점검은 등록/수정 API에서 이미 저장 차단하지만(§9 참조) 기존 Excel 이관 데이터 예외(`AVAILABILITY_CALC_SPEC.md` §5)를 대비해 별도로 재점검하도록 구현. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 사원 3명(기술/직무 미등록 1명, 정상 1명 — 레거시 100% 초과 투입 직접 삽입, 이번 달 퇴직 1명)의 임시 데이터로 4개 엔드포인트를 수기 계산과 대조 — 데이터 품질(기술 미등록 1/직무 미등록 1/초과 1), 이달 종료 예정 1건, 최근 입사자 2명(퇴직자 제외), 3개월 인력 추이(입사 1·퇴사 1 반영) 전부 정확히 일치함을 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. §11 "대시보드 집계 API" 항목 설명에 8개 엔드포인트 전체 반영, 별도 리스크 추가 없음(기존 §9 "대시보드 API가 HR_AVAIL_SNAP 대신 실시간 계산 사용" 리스크와 동일 원칙 적용)
 
@@ -628,11 +629,11 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. Excel Import API 구현 (`POST /api/v1/employees/import`, SCR-003 "인력마스터_ResourceTable" 컬럼 매핑 — 팀/직급/역할/기술 명칭→FK 조회, 사번 기준 신규/수정 upsert, 오류 행 처리 정책 확정 필요)
+- [ ] 1. Pytest 단위 테스트 스위트 구축 (Phase 3 "완료 기준" 미충족 항목 — `pytest`/`httpx`(또는 `TestClient`) 의존성 추가, 핵심 API(사원/기술/프로젝트/투입/인증/RBAC) 단위 테스트 커버)
 
-> 참고: "Excel Export API 구현(`GET /api/v1/employees/export`)"는 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다. Import는 신규/수정 upsert 로직·FK 조회 오류 처리·부분 실패 정책 등 추가 판단이 필요해 별도 항목으로 분리했다.
+> 참고: "Excel Export API 구현(`GET /api/v1/employees/export`)", "Excel Import API 구현(`POST /api/v1/employees/import`)", "로그인 JWT API 연동"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다. Import 정책은 사용자 확정 사항(마스터 미존재 시 전체 실패, `EMPL_NO` 기준 Upsert, 부분 실패 시 전체 롤백)을 그대로 반영했다.
 
-> 참고: "로그인 JWT API 연동"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+> 참고: Phase 3 "주요 작업" 표의 모든 항목은 완료되었으나, §4 Phase 3 "완료 기준"에 명시된 4개 항목 중 "Pytest 단위 테스트 핵심 API 커버"만 미충족 상태라 Phase 3 전체를 "완료"로 선언하지 않고 이 항목을 다음 작업 1순위로 유지한다.
 
 > 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현", "페이지네이션 공통 처리 구현", "OpenAPI 문서 확인", "가동률 계산 API 구현(`HR_AVAIL_SNAP`)", "대시보드 집계 API 구현"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
@@ -670,6 +671,7 @@
 | 대시보드 API가 `HR_AVAIL_SNAP` 대신 실시간 계산 사용 | 중간 | 주의 | `[DESIGN]HRM_Screen_Design.md` SCR-002는 KPI 카드·부서별 가동률의 데이터 소스를 `HR_AVAIL_SNAP` 테이블로 명시하지만, 스냅샷 생성 배치 `HR_AVAIL_SNAP_GEN`(Phase 7)이 아직 없어 테이블이 항상 비어 있다. 이에 `backend/app/repositories/dashboard.py`는 가동률 계산 API(`compute_availability`)와 동일한 `AVAILABILITY_CALC_SPEC.md` 로직을 사원 단위로 실시간 재계산해 대체 — 결과값은 스펙상 정확하나, Phase 7 배치 도입 후에는 매일 갱신되는 스냅샷 기반 집계로 전환해 매 요청마다 재계산하지 않도록 성능 개선 검토 필요 | 2026-07-03 |
 | Excel Import API 설계 판단 필요 | 중간 | 주의 | `POST /api/v1/employees/import`(SCR-003)는 Export와 달리 (1) 팀/직급/역할/기술을 텍스트 명칭으로 받아 FK로 변환 시 명칭이 마스터에 없는 경우 처리 방식, (2) `EMPL_NO` 기준 신규/수정 upsert 판단 기준, (3) 여러 행 중 일부만 검증 실패했을 때 전체 롤백할지 성공 행만 반영할지 정책이 설계서에 명시되어 있지 않아 임의로 결정하지 않고 별도 백로그 항목(§8)으로 분리해 후속 확인 후 진행 예정 | 2026-07-03 |
 | 프론트엔드 JWT 토큰을 localStorage에 저장 (HttpOnly Cookie 미적용) | 중간 | 주의 | 로그인 JWT API 프론트엔드 연동 시 설계서가 목표로 하는 HttpOnly Cookie 방식 대신, 기존 `lib/auth.ts` 아키텍처(localStorage)를 그대로 유지하고 저장 내용만 세션 마커에서 실제 액세스/리프레시 토큰으로 교체하는 MVP 방식을 채택 — HttpOnly Cookie 전환은 백엔드가 로그인 응답을 `Set-Cookie`로 내려주도록 별도 API 변경이 필요해 이번 범위에서 다루지 않음. localStorage 저장은 XSS 공격 시 토큰 탈취 위험이 HttpOnly Cookie보다 높으므로, 정식 운영 전환 전 HttpOnly Cookie·자동 토큰 리프레시 도입 검토 필요 | 2026-07-03 |
+| Phase 3 완료 기준 중 Pytest 단위 테스트 미충족 | 중간 | 주의 | §4 Phase 3 "완료 기준" 4개 항목 중 "Pytest 단위 테스트 핵심 API 커버"만 충족하지 못한 상태 — `backend/requirements.txt`에 `pytest` 자체가 없고 자동화 테스트 스위트가 전혀 작성되지 않음. 지금까지 모든 API 검증은 실 서버 컨테이너에서 `curl`/`psql`로 수기 확인하는 방식으로만 진행되어, 회귀 테스트 자동화가 없어 향후 변경 시 기존 기능이 깨지는지 자동으로 감지할 수 없음. Phase 3을 "완료"로 선언하지 않고 §8 다음 작업 1순위로 유지 | 2026-07-03 |
 
 ---
 
@@ -764,7 +766,7 @@
 - [x] 가동률 계산 API (`HR_AVAIL_SNAP`) — `GET /api/v1/availability/{empl_id}` 즉시 계산 API 구현, 실 서버 검증 완료 (2026-07-03). 스냅샷 저장·배치 자동화는 Phase 7 `HR_AVAIL_SNAP_GEN` 몫으로 별도 유지
 - [ ] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`)
 - [x] 대시보드 집계 API (직무 유형별 분포 포함) — SCR-002 설계서 명시 4개 엔드포인트 및 프론트엔드 목데이터(`lib/mock-data.ts`) 기반 4개 엔드포인트(데이터 품질, 이달 종료 예정, 최근 입사자, 월별 인력 추이) 총 8개 전부 구현, 실 서버 검증 완료 (2026-07-03)
-- [ ] Excel Import/Export API — 진행 중: Export만 구현(`GET /api/v1/employees/export`), 실 서버 검증 완료 (2026-07-03). Import는 미구현
+- [x] Excel Import/Export API — Export(`GET /api/v1/employees/export`) + Import(`POST /api/v1/employees/import`) 전부 구현, 실 서버 검증 완료 (2026-07-03). Import 정책(마스터 미존재 시 전체 실패/`EMPL_NO` Upsert/부분 실패 시 전체 롤백)은 사용자 확정 사항 반영
 - [x] 페이지네이션 공통 처리 구현 — `PaginationParams`/`PaginatedResponse` 공통 모듈로 추출, 3개 라우터 적용 및 실 서버 검증 완료 (2026-07-03)
 - [x] OpenAPI 문서 확인 (`http://{서버IP}:8000/docs`) — 실 서버 `/docs`·`/redoc`·`/openapi.json` 정상 확인, 22개 엔드포인트 전부 등록 확인 (2026-07-03)
 
@@ -897,4 +899,5 @@
 | 2026-07-03 | v4.7 | §8 다음 작업 1번(Excel Import/Export API) 중 Export만 완료 처리 — SCR-003 컬럼 매핑 그대로 `GET /api/v1/employees/export`(`openpyxl` 신규 의존성) 구현, 보유역할·주요기술·숙련도 N:M 집계 헬퍼 추가. Import는 FK 명칭 조회·upsert·부분 실패 정책 등 설계 판단이 필요해 별도 항목으로 분리(§9 리스크 기록). 실 서버에서 `.xlsx` 실제 내용 검증(10개 컬럼 전부 정확), `excel` 권한 없는 역할 403, 무인증 401, `SYS_AUDIT_LOG` EXPORT 기록 확인. §11 "Excel Import/Export API" 항목을 Export 완료·Import 미구현으로 설명 갱신(체크박스 미완료 유지), §8 큐를 Import 전용 항목으로 재구성 | — |
 | 2026-07-03 | v4.8 | 사용자 요청으로 백로그 문서에 누락되어 있던 "로그인 JWT API 연동" 항목 신규 추가 — 백엔드 JWT 인증 API는 완료되었으나 프론트엔드가 `lib/auth.ts`의 localStorage 임시 마커 대신 실제 API를 호출하도록 연동하는 작업 자체를 가리키는 백로그 항목이 없었음을 확인해 추가. §4 Phase 4 "주요 작업" 표·§11 프론트엔드 체크리스트에 신규 항목(예정) 추가, §8 다음 작업 큐에 2번 항목으로 등록. 코드 변경 없음(문서 정정만 수행) | — |
 | 2026-07-03 | v4.9 | §8 다음 작업 2번(로그인 JWT API 연동) 완료 처리 — `frontend/lib/auth.ts`를 localStorage 세션 마커 방식에서 실제 액세스/리프레시 토큰 저장 방식으로 교체(`login`/`logout`/`getAccessToken` 신규, `isAuthenticated` 시그니처 유지). `login/page.tsx`의 목업 로직을 실제 `POST /api/v1/auth/login` 호출로, `top-nav.tsx`의 로그아웃을 실제 `POST /api/v1/auth/logout` 호출로 교체. 토큰 저장은 MVP로 localStorage 유지(HttpOnly Cookie 전환은 백엔드 API 변경 필요해 별도 후속 과제, §9 리스크 기록). 실 서버 컨테이너 재빌드로 TypeScript/Next.js 빌드 통과 확인, 컴파일된 번들에서 `USER_LGID` 로그인 페이로드 실존 확인(브라우저 클릭 테스트는 headless 도구 부재로 미실시). Phase 4 진행률 25%→31%로 갱신, §4/§6/§11 관련 항목 갱신, §9 리스크 1건 추가, §8 큐에서 완료 항목 제거(Excel Import만 남음) | — |
+| 2026-07-03 | v5.0 | Excel Import 정책 확정 반영: 마스터 미존재 시 전체 실패, `EMPL_NO` 기준 Upsert, 일부 실패 시 전체 롤백 (사용자 확정) — `POST /api/v1/employees/import` 신규 구현(`backend/app/services/employee_import.py`: 파싱·검증·Upsert·역할/기술 동기화, `python-multipart` 신규 의존성). 실 서버에서 정상/마스터 미존재/파일 내 사번 중복/기존 사번 수정 4개 시나리오 및 권한/인증/감사 로그 전부 검증 완료, 실패 시나리오는 DB 무변경 확인. §4 "Excel Import/Export API" 완료 처리, §11 항목 완료 체크. **Phase 3 재점검**: 주요 작업 전 항목 완료로 진행률 100% 갱신했으나, "완료 기준"의 "Pytest 단위 테스트 핵심 API 커버"가 미충족임을 확인해 Phase 3을 "완료"로 선언하지 않음 — §8 다음 작업을 "Pytest 단위 테스트 스위트 구축"으로 재구성, §9 리스크 1건 추가 | — |
 

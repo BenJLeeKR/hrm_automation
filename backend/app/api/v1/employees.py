@@ -2,7 +2,7 @@ import io
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from sqlalchemy.exc import IntegrityError
@@ -22,6 +22,7 @@ from app.repositories.hr_empl_mst import (
     update_employee,
 )
 from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeListResponse, EmployeeOut, EmployeeUpdate
+from app.services.employee_import import EmployeeImportValidationError, apply_import, parse_and_validate
 
 _TGT_TBL_NM = "HR_EMPL_MST"
 
@@ -200,3 +201,35 @@ def export_employees(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post("/import")
+async def import_employees(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("employees", "excel")),
+) -> dict:
+    """사원 목록 Excel 가져오기 (SCR-003 "인력마스터_ResourceTable" 시트 형식).
+
+    정책(로드맵 §7/§9 확정 사항):
+    - 팀/직급/역할/기술 명칭이 마스터에 없으면 자동 생성하지 않고 전체 Import를 실패
+      처리한다(오타·비표준 명칭 유입 방지). 행 번호/컬럼/입력값/사유를 상세히 반환한다.
+    - `EMPL_NO` 기준 Upsert. 단, 파일 내부에 `EMPL_NO`가 중복되면 전체 실패 처리한다.
+    - 일부 행만 검증 실패해도 부분 반영하지 않는다 — 검증 오류가 1건이라도 있으면
+      DB 변경 없이 422로 응답하고, 전체 통과 시에만 하나의 트랜잭션으로 반영한다.
+    """
+    content = await file.read()
+
+    try:
+        rows = parse_and_validate(db, content)
+    except EmployeeImportValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"total_rows": exc.total_rows, "error_count": len(exc.errors), "errors": exc.errors},
+        ) from None
+
+    result = apply_import(db, rows)
+
+    record_audit(db, request, current_user, act_cd="IMPORT", tgt_tbl_nm=_TGT_TBL_NM, aft_val_json=result)
+    return result
