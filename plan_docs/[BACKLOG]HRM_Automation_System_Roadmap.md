@@ -96,7 +96,7 @@
 |---|---|---|---|---:|---|
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 진행 중 | 60% | 정상 |
-| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 5% | 정상 |
+| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 10% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
@@ -201,7 +201,7 @@
 | **목표** | 한국 HR META 명명 규칙 기반 전체 테이블 생성 및 초기 데이터 적재 |
 | **계획 기간** | 2~3주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 5% |
+| **진행률** | 10% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -209,7 +209,7 @@
 | 작업 | 상태 |
 |---|---|
 | ERD 최종 확정 | 완료 (`backend/docs/ERD.md`, 2026-07-02) |
-| Alembic 마이그레이션 환경 구성 | 예정 |
+| Alembic 마이그레이션 환경 구성 | 완료 (`backend/alembic.ini`, `backend/alembic/env.py`, 2026-07-03 — 실 DB 연결 검증은 미실행, 아래 §3 참조) |
 | `HR_DEPT_MST` (부서 마스터) 테이블 생성 | 예정 |
 | `HR_JIKGUP_MST` (직급 마스터) 테이블 생성 | 예정 |
 | `HR_JIKMU_MST` (직무 마스터) 테이블 생성 | 예정 |
@@ -347,7 +347,7 @@
 
 | 작업 | 상태 |
 |---|---|
-| 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반) | 예정 |
+| 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조) | 예정 |
 | 즉시 투입 가능 인력 조회 API 구현 | 예정 |
 | 직무 유형·기술·숙련도 복합 필터 검색 API 구현 | 예정 |
 | 추천 점수 산정 로직 구현 (직무 일치 15% + 기술 35% + 숙련도 25% + 가동일 15% + 경험 10%) | 예정 |
@@ -495,7 +495,7 @@
 | 프로젝트 투입 관리 | `PJT_ASGN_HIS` 등록·수정·취소 | 예정 | 높음 | `assignments.py`, `PJT_ASGN_HIS` | 투입 역할(`PRJT_ROLE_NM`) 포함 |
 | 투입률 관리 | `ALLOC_RT` 합계 검증 및 표시 | 예정 | 높음 | `availability_service.py` | 동일 기간 합계 100% 초과 방지 |
 | 종료 예정일 관리 | `ASGN_END_DT` 조회·알림 | 예정 | 높음 | `PJT_ASGN_HIS`, `PJT_ASGN_END_ALERT` 배치 | 30일 이내 종료 예정 알림 |
-| 가동 가능일 자동 계산 | `HR_AVAIL_SNAP` 기반 산정 | 예정 | 높음 | `availability_service.py`, `HR_AVAIL_SNAP_GEN` 배치 | 투입률 0%=오늘, <100%=부분, ≥100%=MAX(종료일)+1 |
+| 가동 가능일 자동 계산 | `HR_AVAIL_SNAP` 기반 산정 | 예정 | 높음 | `availability_service.py`, `HR_AVAIL_SNAP_GEN` 배치 | 투입률 0%=AVAILABLE(기준일), 1~99%=PARTIAL(기준일), ≥100%=FULL(MAX(종료일)+1, 종료일 NULL 시 품질경고) — `PROPOSED` 제외, 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` |
 | 즉시 투입 가능 인력 조회 | `AVAIL_STAT_CD='AVAILABLE'` 필터 | 예정 | 높음 | `GET /api/v1/availability` | 직무 유형 필터 포함 |
 | 기술 기반 인력 검색 | 기술·숙련도·직무 복합 검색 | 예정 | 높음 | `recommendations.py` | `HR_EMPL_SKILL_REL` + `HR_JIKMU_MST` 조인 |
 | 프로젝트 종료 예정자 조회 | 이번 달/30일 이내 종료 예정자 | 예정 | 높음 | `reports.py`, `PJT_ASGN_HIS` | |
@@ -571,6 +571,13 @@
 
 ---
 
+### 2026-07-03
+
+- 가동 가능일 MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 신규 작성. 기준일=`HR_AVAIL_SNAP.SNAP_DT`(배치 실행일), 투입률 합계 산정 대상 조건(`ASGN_STAT_CD='ACTIVE'`, `ASGN_STRT_DT<=기준일`, `ASGN_END_DT IS NULL OR ASGN_END_DT>=기준일`, `ASGN_TYPE_CD IN ('RUNNING','COMMITTED')`), `PROPOSED` 기본 제외(대시보드/리포트 "전체(+제안중)" 지표로 별도 표시), 0%/1~99%/≥100% 3단계 `AVAIL_STAT_CD`·`AVAIL_STRT_DT` 산정식(종료일 NULL 시 데이터 품질 경고 처리 포함), 100% 초과 데이터의 저장 차단 원칙 및 기존 Excel 이관 데이터 예외(품질 점검 경고 대상) 확정. §9 리스크 "가동 가능일 계산 기준 미정" 상태를 "차단→주의"로 하향, §11 MVP 체크리스트 관련 항목 설명 갱신
+- (§8 다음 작업 4번) PostgreSQL 초기 마이그레이션 구성(Alembic `env.py` 설정) 완료 — `backend/alembic.ini`(민감정보 미포함, `DATABASE_URL`은 `.env` 기반으로 `env.py`에서 로드), `backend/alembic/env.py`(offline/online 마이그레이션 모드 지원, `app.db.base.Base.metadata`를 target_metadata로 사용), `backend/alembic/script.py.mako`(리비전 템플릿), `backend/alembic/versions/`(빈 디렉토리) 신규 작성. `backend/app/db/base.py`에 공통 `Base` 선언 추가, `app/models/__init__.py`에 Phase 2 모델 등록 안내 주석 추가. README.md에 Alembic 사용법(리비전 생성/적용/롤백) 섹션 추가. **실 DB 연결 기반 `alembic upgrade head` 실행은 로컬 환경에 `alembic`/`pip` 미설치로 미검증** — 구문·설정 파일 유효성만 확인 (아래 검증 결과 참조)
+
+---
+
 ## 8. 다음 작업
 
 > 개발자가 Phase 1~2 시작 시 즉시 수행할 수 있는 작업 단위.
@@ -580,7 +587,7 @@
 - [x] 1. PostgreSQL ERD 최종 확정 (`HR_EMPL_MST` 등 16개 테이블 관계 검토, `HR_EMPL_ROLE_REL` 포함 확정) → `backend/docs/ERD.md`
 - [x] 2. Docker Compose 개발환경 구성 (`docker-compose.yml` 작성 — api / web / db / redis / worker)
 - [x] 3. FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`, `core/`)
-- [ ] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정)
+- [x] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정) → `backend/alembic.ini`, `backend/alembic/env.py` (실 DB 연결 `alembic upgrade` 검증은 미실행 — 아래 검증 결과 참조)
 - [ ] 5. `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 테이블 생성
 - [ ] 6. `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 테이블 생성 및 Seed 데이터 입력
 - [ ] 7. 사원 목록 조회 API 구현 (`GET /api/v1/employees`)
@@ -596,7 +603,7 @@
 | 이슈 | 영향도 | 상태 | 대응 방안 |
 |---|---|---|---|
 | 직원 기술 스택 표준화 기준 미정 | 높음 | 주의 (2026-07-02 하향, 기존 차단) | `HR_SKILL_MST` MVP 초안 55건(BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN 6개 그룹) 작성 완료 — `backend/app/db/seed/hr_skill_mst_seed.py`, `backend/docs/ERD.md` §3.4 참조. 초안이 마련되어 Phase 2 Alembic Seed 작업 착수는 가능하나, 운영팀 최종 확정 전까지는 MVP 표기 유지 및 실 데이터 반영 보류 — 확정 후 "해결"로 재변경 |
-| 가동 가능일 계산 기준 미정 | 높음 | 차단 | `HR_AVAIL_SNAP` 산정 로직 (투입률 0%=오늘, <100%=부분, ≥100%=MAX 종료일+1) 초안 확정 후 관계자 검토 필요 |
+| 가동 가능일 계산 기준 미정 | 높음 | 주의 (2026-07-03 하향, 기존 차단) | MVP 산정 기준 확정 완료 — 기준일은 `HR_AVAIL_SNAP.SNAP_DT`(배치 실행일), 투입률 합계는 `ASGN_STAT_CD='ACTIVE' AND ASGN_STRT_DT<=기준일 AND (ASGN_END_DT IS NULL OR ASGN_END_DT>=기준일) AND ASGN_TYPE_CD IN ('RUNNING','COMMITTED')` 조건의 `PJT_ASGN_HIS`만 집계(`PROPOSED`는 기본 산정에서 제외, 대시보드/리포트 "전체(+제안중)" 지표로만 별도 표시). 0%=`AVAILABLE`(기준일), 1~99%=`PARTIAL`(기준일), ≥100%=`FULL`(`MAX(ASGN_END_DT)+1일`, 단 종료일 NULL 존재 시 `AVAIL_STRT_DT=NULL`+데이터 품질 경고). 100% 초과는 원칙적으로 저장 차단하되 기존 Excel 이관 데이터는 품질 점검 경고 대상으로 예외 처리. 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조. 운영팀 최종 확정 전까지 MVP 표기 유지 |
 | 인증/권한 범위 미정 | 높음 | 해결 (MVP, 2026-07-02 갱신) | `SYS_ROLE_MST` 6개 역할 및 화면×버튼(조회/등록/수정/삭제/Excel/관리자 기능) 권한 매트릭스 MVP 확정 완료 — `backend/docs/PERMISSION_MATRIX.md`(매트릭스 근거), `backend/app/db/seed/sys_role_mst_seed.py`(Seed), `backend/docs/ERD.md` §3.13 참조. 화면 설계서에 명시 없는 일부 버튼 권한은 추정치이며 `PERMISSION_MATRIX.md` §5에 운영팀 확인 필요 사항으로 별도 정리 |
 | AI 질의응답 연동 범위 미정 | 중간 | 주의 | MVP는 OpenAI/Anthropic API 연동, 보안 요건에 따라 사내 LLM 전환 — Phase 5 완료 후 결정 |
 | 기존 Excel/SharePoint 데이터 마이그레이션 방식 미정 | 높음 | 주의 | Excel Import 기능 구현 (Phase 3) 후 데이터 정제 절차 수립 — Phase 8 전 완료 목표 |
@@ -655,7 +662,7 @@
 
 - [ ] PostgreSQL Docker 컨테이너 구성 (외부 포트 **5442** → 내부 5432)
 - [ ] `/App/hrmngr/data/postgres/` 바인드 마운트 확인
-- [ ] Alembic 마이그레이션 환경 구성 (`env.py` 설정)
+- [x] Alembic 마이그레이션 환경 구성 (`env.py` 설정) — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py`(`Base` 선언) 작성 완료. 실 DB 연결 기반 `alembic upgrade head` 실행 검증은 미실시 (아래 §3 검증 결과 참조)
 - [ ] 전체 테이블 생성 (16개)
   - [ ] `HR_DEPT_MST` — 부서 마스터
   - [ ] `HR_JIKGUP_MST` — 직급 마스터
@@ -730,7 +737,7 @@
 
 ### 리소스 검색 및 추천 `→ Phase 5`
 
-- [ ] 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반)
+- [ ] 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — 기준일 `SNAP_DT` 기준 `ACTIVE`+`RUNNING/COMMITTED` 투입만 집계, `PROPOSED` 제외, 0%=`AVAILABLE`/1~99%=`PARTIAL`/≥100%=`FULL`(`MAX(ASGN_END_DT)+1`); 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조)
 - [ ] 즉시 투입 가능 인력 조회 API 구현 (`AVAIL_STAT_CD='AVAILABLE'`)
 - [ ] 직무 유형·기술·숙련도 복합 필터 검색 API 구현
 - [ ] 추천 점수 산정 로직 구현
@@ -791,4 +798,6 @@
 | 2026-07-02 | v0.6 | `HR_SKILL_MST` 초기 Seed MVP 초안 작성(55건, 6개 그룹) 및 §9 리스크 "직원 기술 스택 표준화 기준 미정" 상태를 "차단→주의"로 하향 — 운영팀 최종 확정 전까지 MVP 표기 유지, §11 데이터베이스 체크리스트에 항목 추가 (미완료 유지) | — |
 | 2026-07-02 | v0.7 | `SYS_ROLE_MST` 초기 Seed MVP 확정(ROLE_CD 6종, ROLE_NM/ROLE_DESC/화면 단위 `PERM_JSON`) — `backend/app/db/seed/sys_role_mst_seed.py` 작성, `backend/docs/ERD.md` §3.13 갱신. §9 리스크 "인증/권한 범위 미정", "`SYS_ROLE_MST` 세부 값 미정" 2건 "해결(MVP)"로 처리 | — |
 | 2026-07-02 | v0.8 | MVP 권한 매트릭스(화면 접근 + 버튼 권한 조회/등록/수정/삭제/Excel/관리자 기능) 작성 — `backend/docs/PERMISSION_MATRIX.md` 신규, `sys_role_mst_seed.py`의 `PERM_JSON`을 화면×버튼 세부 구조(v2)로 갱신. §9 리스크 2건 해결 내용을 v2 매트릭스 기준으로 갱신 | — |
+| 2026-07-03 | v0.9 | 가동 가능일 MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 신규 작성(기준일/집계조건/`PROPOSED` 제외/3단계 산정식/100% 초과 예외 처리). §9 리스크 "가동 가능일 계산 기준 미정" 상태를 "차단→주의"로 하향, §4 Phase 5·§5 기능별 구현상태·§11 검색추천 체크리스트에 산정 기준 요약 반영 | — |
+| 2026-07-03 | v1.0 | §8 다음 작업 4번(Alembic `env.py` 설정) 완료 처리 — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py` 작성. Phase 2 진행률 5%→10%로 갱신. §11 데이터베이스 체크리스트 "Alembic 마이그레이션 환경 구성" 항목 완료 처리. 실 DB 연결 검증은 로컬 환경 제약으로 미실시 | — |
 

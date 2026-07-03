@@ -41,6 +41,17 @@ docker compose restart
 docker compose up -d --build
 ```
 
+## DB 마이그레이션 (Alembic)
+
+```bash
+cd backend
+alembic revision --autogenerate -m "설명"   # app/models/에 등록된 모델 기준 마이그레이션 생성
+alembic upgrade head                          # 최신 마이그레이션까지 적용
+alembic downgrade -1                          # 직전 마이그레이션으로 롤백
+```
+
+`DATABASE_URL`은 `.env`에서 로드된다 (`alembic.ini`에는 하드코딩하지 않음). 컨테이너 안에서 실행하려면 `docker compose exec api alembic upgrade head` 형태로 실행한다.
+
 ## DB 백업
 
 ```bash
