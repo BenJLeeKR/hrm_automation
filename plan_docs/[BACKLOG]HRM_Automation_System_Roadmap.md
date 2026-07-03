@@ -97,7 +97,7 @@
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 89% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 94% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -251,7 +251,7 @@
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 89% |
+| **진행률** | 94% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -272,7 +272,7 @@
 | 프로젝트 CRUD API (`PJT_MST`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/projects`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
 | 투입 관리 API (`PJT_ASGN_HIS`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/assignments`, 동일 사원·겹치는 기간 ALLOC_RT 합계 100% 초과 검증 포함, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
 | 가동률 계산 API (`HR_AVAIL_SNAP`) | 완료 (`GET /api/v1/availability/{empl_id}` — `AVAILABILITY_CALC_SPEC.md` §2/§4 로직으로 즉시 계산, `HR_AVAIL_SNAP` 테이블에는 저장하지 않음(스냅샷 저장은 Phase 7 배치 `HR_AVAIL_SNAP_GEN` 전담), 실 서버 검증 완료, 2026-07-03) |
-| 대시보드 집계 API | 예정 |
+| 대시보드 집계 API | 완료 (SCR-002 설계서에 명시된 4개 엔드포인트 — `GET /api/v1/dashboard/{summary,dept-utilization,job-type-distribution,utilization-by-type}` 구현, 실 서버 검증 완료, 2026-07-03. `HR_AVAIL_SNAP` 배치 미구현으로 실시간 계산 로직으로 대체 — 하단 비고 참조) |
 | Excel Import/Export API | 예정 |
 | 페이지네이션 공통 처리 구현 | 완료 (`app/core/pagination.py`(`PaginationParams`), `app/schemas/pagination.py`(`PaginatedResponse` 제네릭)로 추출, `employees`/`projects`/`assignments` 3개 라우터 적용, 실 서버 검증 완료, 2026-07-03) |
 | OpenAPI 문서 확인 (`/docs`) | 완료 (실 서버 `/docs`·`/redoc`·`/openapi.json` 정상 응답 확인, 22개 엔드포인트 전부 태그·설명·응답 코드 정상 노출, `HTTPBearer` 보안 스키마 자동 반영 확인, 2026-07-03) |
@@ -613,6 +613,7 @@
 - **페이지네이션 공통 처리 구현 (§8 다음 작업 1번)** — `backend/app/core/pagination.py`(신규, `PaginationParams` — FastAPI "classes as dependencies" 패턴으로 `skip`/`limit` Query 파라미터를 하나로 추출), `backend/app/schemas/pagination.py`(신규, `PaginatedResponse[T]` Pydantic 제네릭 — `total`/`skip`/`limit`/`items` 구조 재사용) 작성. 기존 `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`가 각자 동일 구조를 중복 정의하던 것을 `PaginatedResponse[EmployeeOut]` 등 타입 별칭으로 대체(응답 JSON 형태는 기존과 동일하게 유지). `employees.py`/`projects.py`/`assignments.py`의 목록 조회 라우터에서 개별 `Query(0, ge=0)`/`Query(20, ge=1, le=200)` 선언을 `pagination: PaginationParams = Depends()`로 교체. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 3개 엔드포인트 모두 기본값(`skip=0, limit=20`) 및 커스텀 값(`skip=5&limit=10`) 정상 응답, `limit=0`/`limit=300`(범위 밖) 시 422 검증 그대로 유지됨을 확인 — 응답 JSON 키(`total`/`skip`/`limit`/`items`) 변경 없음. 단, `/openapi.json`의 스키마명이 `EmployeeListResponse` 등에서 `PaginatedResponse_EmployeeOut_` 형태로 바뀌는 부수 효과 발견해 §9 리스크로 기록(응답 바디 자체는 무영향, 프론트엔드는 현재 목데이터 기반이라 당장 영향 없음). Phase 3 진행률 72%→78%로 갱신, §11 "페이지네이션 공통 처리 구현" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1)
 - **OpenAPI 문서(`/docs`) 확인 (§8 다음 작업 1번)** — 코드 변경 없이 실 서버에서 실제 검증만 수행. `curl`로 `/docs`(Swagger UI), `/redoc`, `/openapi.json` 전부 200 정상 응답 확인. `/openapi.json` 파싱 결과 현재까지 구현된 22개 엔드포인트(auth 3개, employees 4개, skills 3개, employee-skills 3개, projects 3개, assignments 3개, codes 3개)가 각자 올바른 태그·설명(각 함수 docstring이 `description`으로 자동 반영됨)·응답 코드로 노출됨을 확인. `HTTPBearer` 보안 스키마가 `components.securitySchemes`에 자동 등록되어 있고, 인증이 필요한 엔드포인트(예: `GET /employees`)에는 `security: [{"HTTPBearer": []}]`가, 공개 엔드포인트(`POST /auth/login`)에는 `security` 필드가 없음을 확인 — RBAC 적용 범위가 OpenAPI 스펙에도 정확히 반영되어 있음을 재확인. Phase 3 진행률 78%→83%로 갱신, §11 "OpenAPI 문서 확인" 완료 체크, §8 큐가 비어 §4 Phase 3 "주요 작업" 표에서 아직 미착수인 3개 항목(가동률 계산 API, 대시보드 집계 API, Excel Import/Export API)으로 새 큐 구성
 - **가동률 계산 API 구현 (§8 다음 작업 1번)** — `backend/app/repositories/hr_avail_snap.py`(신규, `compute_availability`)에 `AVAILABILITY_CALC_SPEC.md` §2/§4 로직을 그대로 구현: 기준일 현재 `ASGN_STAT_CD='ACTIVE'`이고 투입 기간 내이며 `ASGN_TYPE_CD IN ('RUNNING','COMMITTED')`인 `PJT_ASGN_HIS` 행만 집계해 `TOT_ALLOC_RT` 산출, 0%=`AVAILABLE`/1~99%=`PARTIAL`/≥100%=`FULL`(`MAX(ASGN_END_DT)+1일`, 종료일 NULL 존재 시 `AVAIL_STRT_DT=None`+`DATA_QUALITY_WARNING=True`) 3단계 산정. `backend/app/schemas/hr_avail_snap.py`에 `AvailabilityCalcOut` 추가. `backend/app/api/v1/availability.py`(신규) `GET /api/v1/availability/{empl_id}`(`snap_dt` 쿼리 파라미터로 기준일 지정 가능, 기본 오늘) 작성, `require_permission("availability", "view")` 적용(기존 PERM_JSON `availability.view` 값 그대로 재사용), `router.py`에 등록. **중요한 설계 결정**: 이 API는 `HR_AVAIL_SNAP` 테이블에 스냅샷 행을 저장하지 않는 순수 즉시 계산(read-only) 엔드포인트로 구현 — 스냅샷 생성·자동 배치(`HR_AVAIL_SNAP_GEN`, 매일 01:00)는 모델 주석과 스펙 문서에 이미 Phase 7 몫으로 명시되어 있어 중복 구현하지 않기 위함(§9 참고 사항 없이 스펙 문서 원칙을 그대로 따른 것이라 별도 리스크로 기록하지 않음). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 테스트용 부서·사원 5명·프로젝트·투입 데이터를 임시 생성해 5가지 케이스 전부 스펙과 정확히 일치함을 확인 — ① 투입 없음→`AVAILABLE`(기준일), ② 60% 투입→`PARTIAL`(기준일), ③ 100% 투입(종료일 있음)→`FULL`(`종료일+1일`), ④ 100% 투입(종료일 NULL)→`FULL`+`AVAIL_STRT_DT=null`+`DATA_QUALITY_WARNING=true`, ⑤ `ASGN_TYPE_CD='PROPOSED'`+`ASGN_STAT_CD='PLANNED'` 80% 투입→집계 제외되어 `AVAILABLE`. 존재하지 않는 사원 404, 무인증 401도 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. Phase 3 진행률 83%→89%로 갱신, §5 "가동 가능일 자동 계산" 항목을 "예정→진행 중"(즉시 계산 API는 완료, 자동 배치는 Phase 7 미구현)으로 갱신, §11 "가동률 계산 API" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1~2)
+- **대시보드 집계 API 구현 (§8 다음 작업 1번)** — `[DESIGN]HRM_Screen_Design.md` SCR-002(대시보드) "연동 API" 표에 명시된 4개 엔드포인트를 그대로 구현: `GET /api/v1/dashboard/summary`(전체 인원·즉시/부분/풀 가동 인원수·이달 종료 예정자·평균 가동률 KPI), `/dept-utilization`(부서별 평균 가동률), `/job-type-distribution`(직무 유형별 인력 분포, 미등록 사원은 별도 그룹), `/utilization-by-type?month=yyyyMM`(RUNNING→+COMMITTED→+PROPOSED 3단계 조직 평균 가동률). `backend/app/repositories/hr_avail_snap.py`에 `active_alloc_rt_subquery`(신규)를 추출해 가동률 계산 API(`compute_availability`)와 동일한 산정 조건을 대시보드 집계에서도 재사용, `backend/app/repositories/dashboard.py`(신규)·`backend/app/schemas/dashboard.py`(신규)·`backend/app/api/v1/dashboard.py`(신규, `require_permission("dashboard", "view")` — 기존 PERM_JSON `dashboard.view`가 6개 역할 전부 허용이라 그대로 재사용) 작성. **중요한 설계 결정**: 화면 설계서는 데이터 소스를 `HR_AVAIL_SNAP` 테이블로 명시하지만 스냅샷 생성 배치(`HR_AVAIL_SNAP_GEN`, Phase 7)가 아직 없어 테이블이 항상 비어 있으므로, 동일 산정 로직을 사원 단위로 실시간 계산해 대체 — 결과값은 스펙상 정확하나 매 요청마다 재계산하므로 Phase 7 배치 도입 후 스냅샷 기반으로 전환 검토가 필요함을 §9 리스크로 기록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 부서 2개·프로젝트·사원 3명(0%/50%/100%)의 임시 데이터로 4개 엔드포인트 응답을 수기 계산과 대조해 전부 정확히 일치함을 확인(KPI 카드 합계, 부서별 평균, 직무 미등록 그룹핑, 3단계 월별 집계 비율). 잘못된 `month` 형식 422, 무인증 401도 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. Phase 3 진행률 89%→94%로 갱신, §11 "대시보드 집계 API" 완료 체크, §9 리스크 1건 추가, §8 큐에서 완료 항목 제거 및 재번호(1)
 
 ---
 
@@ -621,10 +622,9 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 대시보드 집계 API 구현
-- [ ] 2. Excel Import/Export API 구현
+- [ ] 1. Excel Import/Export API 구현
 
-> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현", "페이지네이션 공통 처리 구현", "OpenAPI 문서 확인", "가동률 계산 API 구현(`HR_AVAIL_SNAP`)"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)", "`SYS_AUDIT_LOG` 감사 로그 미들웨어 구현", "RBAC 권한 미들웨어 구현(`SYS_ROLE_MST` 기반)", "사원 퇴직 처리 API 구현", "페이지네이션 공통 처리 구현", "OpenAPI 문서 확인", "가동률 계산 API 구현(`HR_AVAIL_SNAP`)", "대시보드 집계 API 구현"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: §8 큐가 이전 항목 완료로 비어, §4 Phase 3 "주요 작업" 표에서 아직 "예정"으로 남은 항목 3개(표 나열 순서 그대로)를 새 큐로 구성했다. 실제 착수 전 우선순위(예: Phase 4 프론트엔드 착수를 먼저 할지)는 재확인 가능.
 
@@ -657,6 +657,7 @@
 | passlib 1.7.4 / bcrypt 최신 버전 비호환 | 높음 | 해소 | `passlib[bcrypt]==1.7.4`가 `bcrypt>=4.1`의 `bcrypt.__about__.__version__` 제거로 인해 비밀번호 해싱 시 `AttributeError`/`ValueError`로 실패하는 상위 호환성 버그 발견 — `backend/requirements.txt`에 `bcrypt==4.0.1` 고정 추가로 해결, 실 서버 컨테이너 재빌드 후 해싱/검증 정상 동작 확인 | 2026-07-03 |
 | `departments`/`positions`/`job-types` 화면 권한 키 미정 | 중간 | 해소 | 운영팀 확인 완료(2026-07-03) — 부서(`departments`)/직급(`positions`)은 독립 화면이 아닌 "공통 코드/기준정보"로 취급하기로 확정, 별도 화면 키 대신 `SYS_ROLE_MST.PERM_JSON`에 공통 `codes` 키 추가(`codes.view`는 전 역할 허용, `codes.create`/`update`/`delete`는 ADMIN/HR_MGR만 허용). `GET /api/v1/job-types` 조회도 `codes.view` 정책과 동일하게 전 역할 허용(단, 직무 유형 관리 화면의 등록/수정/삭제는 기존 `job_types.*`(A H 전용) 유지). `backend/app/db/seed/sys_role_mst_seed.py` Seed 갱신 및 Alembic 리비전 `9c1f3a5d2b7e`로 기존 DB의 `PERM_JSON`도 갱신 완료, `backend/app/api/v1/codes.py`(부서/직급/직무 유형 조회 API) 3개 엔드포인트에 `require_permission("codes", "view")` 적용 완료 — 인증 없이 호출 가능하던 상태 제거. `backend/docs/PERMISSION_MATRIX.md`에 `codes` 권한 섹션 추가 | 2026-07-03 |
 | 페이지네이션 공통화로 OpenAPI 스키마명 변경 | 낮음 | 주의 | `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`를 Pydantic 제네릭 `PaginatedResponse[T]`의 타입 별칭으로 전환하면서, 응답 JSON 형태(`total`/`skip`/`limit`/`items`)는 동일하게 유지되지만 `/openapi.json`에 노출되는 스키마명이 `PaginatedResponse_EmployeeOut_` 형태로 바뀜. 프론트엔드는 현재 목데이터 기반이라 실 API 응답 스키마에 의존하지 않아 당장 영향 없음 — 향후 OpenAPI 기반 타입 자동 생성 도구 도입 시 참고 필요 | 2026-07-03 |
+| 대시보드 API가 `HR_AVAIL_SNAP` 대신 실시간 계산 사용 | 중간 | 주의 | `[DESIGN]HRM_Screen_Design.md` SCR-002는 KPI 카드·부서별 가동률의 데이터 소스를 `HR_AVAIL_SNAP` 테이블로 명시하지만, 스냅샷 생성 배치 `HR_AVAIL_SNAP_GEN`(Phase 7)이 아직 없어 테이블이 항상 비어 있다. 이에 `backend/app/repositories/dashboard.py`는 가동률 계산 API(`compute_availability`)와 동일한 `AVAILABILITY_CALC_SPEC.md` 로직을 사원 단위로 실시간 재계산해 대체 — 결과값은 스펙상 정확하나, Phase 7 배치 도입 후에는 매일 갱신되는 스냅샷 기반 집계로 전환해 매 요청마다 재계산하지 않도록 성능 개선 검토 필요 | 2026-07-03 |
 
 ---
 
@@ -750,7 +751,7 @@
 - [x] 투입 관리 API (`PJT_ASGN_HIS`) — 조회/등록/수정 및 ALLOC_RT 100% 초과 검증 구현, 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 가동률 계산 API (`HR_AVAIL_SNAP`) — `GET /api/v1/availability/{empl_id}` 즉시 계산 API 구현, 실 서버 검증 완료 (2026-07-03). 스냅샷 저장·배치 자동화는 Phase 7 `HR_AVAIL_SNAP_GEN` 몫으로 별도 유지
 - [ ] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`)
-- [ ] 대시보드 집계 API (직무 유형별 분포 포함)
+- [x] 대시보드 집계 API (직무 유형별 분포 포함) — SCR-002 설계서 명시 4개 엔드포인트 전부 구현, 실 서버 검증 완료 (2026-07-03)
 - [ ] Excel Import/Export API
 - [x] 페이지네이션 공통 처리 구현 — `PaginationParams`/`PaginatedResponse` 공통 모듈로 추출, 3개 라우터 적용 및 실 서버 검증 완료 (2026-07-03)
 - [x] OpenAPI 문서 확인 (`http://{서버IP}:8000/docs`) — 실 서버 `/docs`·`/redoc`·`/openapi.json` 정상 확인, 22개 엔드포인트 전부 등록 확인 (2026-07-03)
@@ -877,4 +878,5 @@
 | 2026-07-03 | v4.1 | §8 다음 작업 1번(페이지네이션 공통 처리) 완료 처리 — `backend/app/core/pagination.py`(`PaginationParams`), `backend/app/schemas/pagination.py`(`PaginatedResponse[T]` 제네릭) 신규 작성. `EmployeeListResponse`/`ProjectListResponse`/`AssignmentListResponse`를 제네릭 타입 별칭으로 전환(응답 JSON 형태 동일 유지), `employees`/`projects`/`assignments` 3개 라우터의 개별 skip/limit `Query` 선언을 `Depends(PaginationParams)`로 교체. 실 서버 재빌드 후 기본값/커스텀 값/422 검증 범위가 기존과 동일하게 동작함을 확인. `/openapi.json` 스키마명이 `PaginatedResponse_XOut_` 형태로 바뀌는 부수 효과를 §9 리스크로 기록(응답 바디 무영향). Phase 3 진행률 72%→78%로 갱신, §11 "페이지네이션 공통 처리 구현" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1) | — |
 | 2026-07-03 | v4.2 | §8 다음 작업 1번(OpenAPI 문서 확인) 완료 처리 — 코드 변경 없이 실 서버에서 `/docs`·`/redoc`·`/openapi.json` 정상 응답 및 22개 엔드포인트 태그·설명·응답 코드·`HTTPBearer` 보안 스키마 반영을 확인. Phase 3 진행률 78%→83%로 갱신, §11 "OpenAPI 문서 확인" 완료 체크, §8 큐를 §4 Phase 3 미착수 항목(가동률 계산 API, 대시보드 집계 API, Excel Import/Export API) 3개로 재구성 | — |
 | 2026-07-03 | v4.3 | §8 다음 작업 1번(가동률 계산 API) 완료 처리 — `backend/app/repositories/hr_avail_snap.py`(`compute_availability`, `AVAILABILITY_CALC_SPEC.md` §2/§4 로직 구현), `backend/app/schemas/hr_avail_snap.py`(`AvailabilityCalcOut`), `backend/app/api/v1/availability.py`(신규, `GET /api/v1/availability/{empl_id}`) 작성. `HR_AVAIL_SNAP` 테이블에 저장하지 않는 즉시 계산 전용 API로 설계(스냅샷 생성 배치는 Phase 7 `HR_AVAIL_SNAP_GEN` 몫으로 이미 문서화되어 있어 중복 구현 회피). 실 서버에서 AVAILABLE/PARTIAL/FULL(종료일 있음)/FULL(데이터 품질 경고)/PROPOSED 제외 5가지 케이스 및 404/401 전부 확인 후 테스트 데이터 삭제. Phase 3 진행률 83%→89%로 갱신, §5 "가동 가능일 자동 계산" 예정→진행 중, §11 "가동률 계산 API" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1~2) | — |
+| 2026-07-03 | v4.4 | §8 다음 작업 1번(대시보드 집계 API) 완료 처리 — SCR-002 설계서 명시 4개 엔드포인트(`summary`/`dept-utilization`/`job-type-distribution`/`utilization-by-type`) 신규 구현(`app/repositories/dashboard.py`, `app/schemas/dashboard.py`, `app/api/v1/dashboard.py`). `hr_avail_snap.py`에 `active_alloc_rt_subquery` 추출해 가동률 계산 로직 재사용. `HR_AVAIL_SNAP` 배치 미구현으로 실시간 재계산 방식 채택(§9 리스크 기록). 실 서버에서 부서 2개·사원 3명 임시 데이터로 4개 엔드포인트 결과를 수기 계산과 대조해 전부 일치 확인. Phase 3 진행률 89%→94%로 갱신, §11 "대시보드 집계 API" 완료 체크, §8 큐에서 완료 항목 제거 및 재번호(1, Excel Import/Export API만 남음) | — |
 

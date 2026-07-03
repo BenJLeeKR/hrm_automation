@@ -2,8 +2,9 @@ import uuid
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.selectable import Subquery
 
 from app.models.pjt_asgn_his import PjtAsgnHis
 
@@ -69,4 +70,24 @@ def compute_availability(db: Session, *, empl_id: uuid.UUID, snap_dt: date) -> A
         AVAIL_STRT_DT=avail_strt_dt,
         AVAIL_STAT_CD=avail_stat_cd,
         DATA_QUALITY_WARNING=data_quality_warning,
+    )
+
+
+def active_alloc_rt_subquery(as_of: date) -> Subquery:
+    """기준일 현재 유효한 투입(§2 조건과 동일 — `RUNNING`/`COMMITTED`만)의 사원별
+    `ALLOC_RT` 합계 서브쿼리. `compute_availability`의 단건 계산과 동일한 산정 조건을
+    대시보드 집계(`app/repositories/dashboard.py`)에서도 그대로 재사용하기 위해 추출했다."""
+    return (
+        select(
+            PjtAsgnHis.EMPL_ID.label("EMPL_ID"),
+            func.coalesce(func.sum(PjtAsgnHis.ALLOC_RT), 0).label("tot_alloc_rt"),
+        )
+        .where(
+            PjtAsgnHis.ASGN_STAT_CD == "ACTIVE",
+            PjtAsgnHis.ASGN_STRT_DT <= as_of,
+            or_(PjtAsgnHis.ASGN_END_DT.is_(None), PjtAsgnHis.ASGN_END_DT >= as_of),
+            PjtAsgnHis.ASGN_TYPE_CD.in_(_CALC_TARGET_ASGN_TYPE_CODES),
+        )
+        .group_by(PjtAsgnHis.EMPL_ID)
+        .subquery()
     )
