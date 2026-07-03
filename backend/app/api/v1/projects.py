@@ -30,6 +30,17 @@ def get_projects(
     return ProjectListResponse(total=total, skip=pagination.skip, limit=pagination.limit, items=items)
 
 
+@router.get(
+    "/{pjt_id}", response_model=ProjectOut, dependencies=[Depends(require_permission("projects", "view"))]
+)
+def get_project_detail(pjt_id: uuid.UUID, db: Session = Depends(get_db)) -> ProjectOut:
+    """프로젝트 상세 조회 (로드맵 §8 다음 작업 1번, SCR-008 "프로젝트 상세" 기본 정보)"""
+    project = get_project(db, pjt_id)
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="프로젝트를 찾을 수 없습니다.")
+    return project
+
+
 @router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
 def post_project(
     payload: ProjectCreate,

@@ -98,7 +98,7 @@
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
-| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 63% | 정상 |
+| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 69% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
@@ -300,7 +300,7 @@
 | **목표** | 권한별 메뉴 제어가 적용된 웹 화면 전체 구현 (포트 3030) |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 63% |
+| **진행률** | 69% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -317,7 +317,7 @@
 | 사원 상세 화면 구현 (`/employees/[id]`) | 완료 (기존 목데이터 기반 스캐폴딩을 백엔드 실 API로 연동 — 기본정보/보유기술/투입이력 3개 탭 실 데이터 조회, 신규 `GET /api/v1/employees/{empl_id}` 추가, 실 서버 빌드·검증 완료, 2026-07-03. 정보수정/기술추가/퇴직처리 버튼은 조회 전용으로 남기고 후속 작업으로 분리 — §9 참조) |
 | 기술 관리 화면 구현 (`/skills`) | 완료 (목데이터를 백엔드 실 API(조회/등록/수정/사용여부 토글)로 전량 교체, 실 서버 빌드·검증 완료, 2026-07-04) |
 | 직무 유형 관리 화면 구현 (`/job-types`) | 완료 (목데이터를 백엔드 실 API로 전량 교체, `POST`/`PATCH /api/v1/job-types` 신규 추가, 실 서버 검증 완료, 2026-07-04) |
-| 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`) | 예정 |
+| 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`) | 완료 (목데이터를 백엔드 실 API로 전량 교체, `GET /api/v1/projects/{pjt_id}` 신규 추가, 실 서버 검증 완료, 2026-07-04. 수정/종료처리/인력투입 UI는 조회 전용으로 남겨 후속 과제로 분리) |
 | 투입 관리 화면 구현 (`/assignments`) | 예정 |
 | 가동 가능 인력 조회 화면 구현 (`/availability`) | 예정 |
 | 리포트 화면 구현 (`/reports`) | 예정 |
@@ -631,6 +631,7 @@
 - **기술 관리 화면 구현 — 목데이터를 실 API로 연동 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/skills/page.tsx`(검색/그룹/사용여부 필터, 등록·수정 모달까지 UI로는 완성되어 있었으나 전부 `lib/mock-data.ts` 기반)를 백엔드 `HR_SKILL_MST` API(조회/등록/수정, `backend/app/api/v1/skills.py`)로 연동. 백엔드는 이미 완전히 구현되어 있어 API 신규 작성 없이 프론트엔드만 재작성. `GET /skills`가 `use_yn` 생략 시 사용중(true)인 기술만 반환하는 기본 동작이라 "전체" 필터를 지원하기 위해 `use_yn=true`/`use_yn=false` 두 응답을 병렬 조회해 병합하는 방식 채택(백엔드 기본 동작은 다른 화면에 영향 없도록 변경하지 않음). "보유 인원" 컬럼은 별도 집계 API 없이 `GET /employee-skills`(전체) 조회 결과를 `SKILL_ID` 기준으로 클라이언트에서 카운트해 계산. 설계서(SCR-005)가 요구하는 "비활성 처리"는 `DELETE` 엔드포인트가 없어 기존 `PATCH /skills/{skill_id}`에 `USE_YN` 토글 요청을 보내는 방식으로 재사용(신규 엔드포인트 불필요). `frontend/lib/api.ts`에 `apiPost`/`apiPatch` 공통 헬퍼 신규 추가(기존 `apiGet`과 동일 패턴, 실패 시 서버 `detail` 메시지를 그대로 노출해 409 등 검증 오류를 화면에 표시). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 `POST /skills`로 임시 기술 1건 등록(201), `PATCH`로 `USE_YN` 토글(사용중→미사용) 확인, `use_yn=false` 목록 조회에 정상 반영됨을 확인, `/skills` 페이지 200 렌더링 확인. 검증 중 **`SKILL_NM`에 DB 유니크 제약이 없어 동일 이름으로 등록해도 409가 아닌 201이 반환됨을 발견**(설계서는 "기술명 중복 시 오류" 요구하나 현재 미충족) — §9 리스크로 신규 기록, 검증에 사용한 임시 데이터는 SQL로 삭제. 이번 작업은 프론트엔드 전용이라 백엔드 pytest 스위트는 변경 없이 21개 그대로 유지·통과 확인. §4 Phase 4 "기술 관리 화면 구현" 항목 완료로 갱신(진행률 50%→56%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **직무 유형 관리 화면 구현 — 목데이터를 실 API로 연동, 등록/수정 API 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/job-types/page.tsx`(검색/그룹/사용여부 필터, 등록·수정 모달까지 UI로는 완성되어 있었으나 전부 `lib/mock-data.ts` 기반)를 백엔드 `HR_JIKMU_MST` API로 연동. **기술 관리 화면과 달리 등록/수정 API 자체가 없어**(`GET /job-types` 조회만 존재) 신규 작성 — `backend/app/schemas/hr_jikmu_mst.py`에 `JobTypeCreate`/`JobTypeUpdate` 추가, `backend/app/repositories/codes.py`에 `get_job_type`/`create_job_type`/`update_job_type` 추가, `backend/app/api/v1/codes.py`에 `POST`/`PATCH /api/v1/job-types`(권한: `require_permission("job_types", "create"/"update")` — 기존 조회 API의 `codes.view`와 다른 권한 키, `PERMISSION_MATRIX.md` "job_types" 섹션 기준) 추가, `skills.py`/`employees.py` 패턴과 동일하게 `record_audit` 연동. `HR_JIKMU_MST.JIKMU_CD`는 모델에 이미 UNIQUE 제약이 있어(기술명과 달리) 중복 등록 시 `IntegrityError`를 잡아 409로 정상 변환됨을 검증으로 확인. 프론트엔드는 skills 화면과 동일하게 `use_yn=true`/`false` 병렬 조회로 "전체" 필터 지원, 직무 코드는 등록 시에만 입력받고 수정 폼에서는 제외(설계서 SCR-006 기준 직무 코드는 수정 대상 아님). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 `POST /job-types` 등록(201), 동일 코드 재등록 시 409(스키마 유니크 제약 정상 동작 확인 — 기술 관리 화면에서 발견한 `SKILL_NM` 무결성 문제와 대조됨), `PATCH`로 `USE_YN` 토글 확인, `/job-types` 페이지 200 렌더링 확인, `SYS_AUDIT_LOG`에 `CREATE`/`UPDATE` 기록 확인. `backend/tests/test_codes.py`(신규)에 등록/수정/중복 409/404/VIEWER 403/VIEWER 조회 가능 5개 케이스 추가(pytest 21→26개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 4 "직무 유형 관리 화면 구현" 항목 완료로 갱신(진행률 56%→63%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **긴급 수정 — SSH 터널 접속 시 로그인 불가 (사용자 보고)** — 사용자가 "SSH 터널로 `localhost:3030` 접속 시 로그인 화면에서 '서버에 연결할 수 없습니다' 오류, `hrm-api` 로그에도 요청 기록 자체가 없다"고 보고. 프론트엔드 JS 번들을 직접 확인해 `NEXT_PUBLIC_API_BASE_URL`(빌드 시점에 고정되는 값)이 서버의 LAN IP(`http://192.168.0.87:8000`)로 절대경로 고정되어 있음을 확인 — SSH 로컬 포트 포워딩(`-L`)은 클라이언트가 `localhost:포트`로 접속할 때만 가로채므로, 클라이언트 JS가 LAN IP를 직접 호출하면 터널을 거치지 않고 클라이언트 PC에서 그 IP로 직접 연결을 시도하다 실패하는 구조였음(같은 LAN에 있지 않으면 연결 자체가 안 됨) — 이는 CORS 문제가 아니라 순수 네트워크 도달 불가 문제로, 요청이 서버에 도달하기 전에 실패해 `hrm-api` 로그에 기록이 없는 것과도 일치. **구조적 해결**: `frontend/next.config.mjs`에 `rewrites()` 추가 — `/api/v1/*` 요청을 Next.js 서버가 Docker 내부망의 `api:8000`(백엔드 컨테이너, 서비스명으로 내부 DNS 해석) 컨테이너로 대신 전달하도록 프록시 구성. 프론트엔드 코드(`lib/api.ts`, `lib/auth.ts`)는 이미 `NEXT_PUBLIC_API_BASE_URL`이 빈 값이면 상대 경로(`/api/v1/...`)로 호출하도록 되어 있어 코드 변경 없이 프록시를 자동으로 타게 됨. 사용자가 `.env`의 `NEXT_PUBLIC_API_BASE_URL`을 빈 값으로 직접 변경(수정 금지 파일이라 AI가 직접 수정하지 않음, 값 변경만 안내), 이후 `docker compose up -d --build web` 재빌드 진행. **실 서버에서 실제 검증**: 재빌드 후 컴파일된 JS 번들에 절대 IP가 완전히 사라짐을 확인, `curl http://localhost:3030/api/v1/auth/login`(3030 포트 하나만으로 프록시 경유) 200 정상 토큰 발급 확인, `/login` 페이지 200 렌더링 확인, `pytest` 26개 그대로 통과 확인. 이 변경으로 **LAN IP 직접 접속과 SSH 터널(3030 포트 하나만 필요) 두 접속 방식을 하나의 빌드로 동시에 지원**하게 되어, 접속 방식이 여러 개일 때 매번 재빌드가 필요했던 기존 구조적 한계도 함께 해소됨. 백로그 §8 큐에 있던 예정 작업이 아니라 사용자가 보고한 장애의 긴급 수정이라 별도 순번 없이 기록
+- **프로젝트 목록/상세 화면 구현 — 목데이터를 실 API로 연동, 단건 조회 API 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/projects/page.tsx`(검색/상태 필터, 등록 모달)와 `frontend/app/(app)/projects/[id]/page.tsx`(개요/투입 유형 구성/투입 인력 목록 탭)를 백엔드 `PJT_MST`/`PJT_ASGN_HIS` API로 연동. 사원 상세와 마찬가지로 프로젝트 단건 조회 API가 없어(목록/등록/수정만 존재) `backend/app/api/v1/projects.py`에 `GET /projects/{pjt_id}`(신규, 기존 `get_project` 리포지토리 재사용, `require_permission("projects","view")`, 404 처리) 추가. 목록 화면은 `GET /projects`(페이지네이션 응답)와 진행 중(`ACTIVE`) 투입 이력을 집계해 "투입 인원" 컬럼을 계산, "프로젝트 등록" 모달은 `POST /projects`로 실제 연동(설계서 SCR-007 목업에는 없었으나 백엔드 스키마상 필수인 `PJT_CD` 입력 필드를 등록 폼에 추가, 사유 주석 명시 — `PJT_CD`는 모델에 UNIQUE 제약이 있어 중복 시 409 정상 반환 확인). 상세 화면은 `GET /projects/{pjt_id}` + `GET /assignments?pjt_id=`(투입 이력) + `GET /employees`/`departments`/`job-types`(사원명·부서명·직무명 조인, 사원 상세 화면과 동일한 클라이언트 조인 패턴 재사용)를 병렬 조회해 개요·투입 유형 구성·투입 인력 테이블을 실 데이터로 렌더링, 총 투입 인원/평균 투입률은 `ASGN_STAT_CD='ACTIVE'` 건 기준으로 계산. **범위를 의도적으로 축소한 부분**: "수정"/"종료처리"/"인력 투입" 버튼은 사원 상세 화면과 동일한 이유(편집 폼을 이번 범위에서 다루지 않음)로 제외, 조회 전용으로 제공 — 별도 §9 리스크는 추가하지 않음(사원 상세와 동일한 유형의 기존 리스크로 통합 가능하나 화면이 달라 세부 후속 작업은 프로젝트 CRUD 착수 시 재확인). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api web` 재빌드 성공, `POST /projects` 등록(201), 동일 코드 재등록 시 409, `GET /projects/{pjt_id}` 200/존재하지 않는 ID 404, `/projects`·`/projects/{pjt_id}` 페이지 200 렌더링 확인. `backend/tests/test_projects.py`(신규)에 등록/수정/상세조회/404/중복 409/VIEWER 조회 가능 5개 케이스 추가(pytest 26→31개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 4 "프로젝트 목록/상세 화면 구현" 항목 완료로 갱신(진행률 63%→69%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 
 ---
 
@@ -639,14 +640,15 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`)
-- [ ] 2. 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`)
-- [ ] 3. 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함)
-- [ ] 4. 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
-- [ ] 5. AI Chat 화면 구현 (`/ai-chat`)
-- [ ] 6. 리포트 화면 구현 (`/reports`)
-- [ ] 7. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
-- [ ] 8. Excel Import/Export UI 구현
+- [ ] 1. 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`)
+- [ ] 2. 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함)
+- [ ] 3. 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
+- [ ] 4. AI Chat 화면 구현 (`/ai-chat`)
+- [ ] 5. 리포트 화면 구현 (`/reports`)
+- [ ] 6. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
+- [ ] 7. Excel Import/Export UI 구현
+
+> 참고: "프로젝트 목록/상세 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: "직무 유형 관리 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
@@ -818,7 +820,7 @@
 - [x] 사원 상세 화면 구현 (`/employees/[id]`) — 목데이터 스캐폴딩을 백엔드 실 API로 연동(기본정보/보유기술/투입이력), `GET /api/v1/employees/{empl_id}` 신규 추가, 실 서버 검증 완료 (2026-07-03). 정보수정/기술추가/퇴직처리는 조회 전용으로 남겨 후속 과제로 분리
 - [x] 기술 관리 화면 구현 (`/skills`, `HR_SKILL_MST`) — 목데이터를 백엔드 실 API(조회/등록/수정)로 전량 교체, 사용여부 토글은 기존 `PATCH` 재사용, 실 서버 검증 완료 (2026-07-04)
 - [x] 직무 유형 관리 화면 구현 (`/job-types`, `HR_JIKMU_MST`) — 목데이터를 백엔드 실 API로 전량 교체, 등록/수정 API가 없어 `POST`/`PATCH /api/v1/job-types` 신규 추가, 실 서버 검증 완료 (2026-07-04)
-- [ ] 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`)
+- [x] 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`) — 목데이터를 백엔드 실 API로 전량 교체, `GET /api/v1/projects/{pjt_id}` 신규 추가, 실 서버 검증 완료 (2026-07-04). 수정/종료처리/인력투입은 조회 전용으로 남겨 후속 과제로 분리
 - [ ] 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`)
 - [ ] 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함)
 - [ ] 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
@@ -942,4 +944,5 @@
 | 2026-07-04 | v5.6 | §8 다음 작업 1번(기술 관리 화면 구현) 완료 처리 — 기존 목데이터 기반 `/skills` 화면을 백엔드 `HR_SKILL_MST` API(조회/등록/수정, 이미 구현되어 있어 백엔드 변경 없음)로 연동. `use_yn` 필터 두 상태 병렬 조회로 "전체" 목록 지원, "보유 인원"은 `employee-skills` 전체 조회 결과를 클라이언트에서 집계, "비활성 처리"는 신규 API 없이 기존 `PATCH`의 `USE_YN` 토글로 재사용. `frontend/lib/api.ts`에 `apiPost`/`apiPatch` 공통 헬퍼 신규 추가. 실 서버에서 등록/수정/토글 전부 검증 완료, 검증 중 `SKILL_NM` 유니크 제약 부재(중복 등록 시 오류 미발생)를 발견해 §9 리스크로 신규 기록. 백엔드 변경 없어 pytest는 21개 그대로 유지. Phase 4 진행률 50%→56%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 | 2026-07-04 | v5.7 | §8 다음 작업 1번(직무 유형 관리 화면 구현) 완료 처리 — 목데이터 기반 `/job-types` 화면을 백엔드 `HR_JIKMU_MST` API로 연동. 기술 관리와 달리 등록/수정 API가 없어 `JobTypeCreate`/`JobTypeUpdate` 스키마, 리포지토리 함수, `POST`/`PATCH /api/v1/job-types`(권한 `job_types.create`/`update`, 감사 로그 연동) 신규 작성. `JIKMU_CD`는 모델에 UNIQUE 제약이 있어 중복 등록 시 409가 정상 반환됨을 확인(직전 턴 `SKILL_NM` 무결성 문제와 대조). `backend/tests/test_codes.py` 신규 작성(5개 케이스, pytest 21→26개 전부 통과). 실 서버에서 등록/중복 409/수정/토글/감사 로그 전부 검증 완료. Phase 4 진행률 56%→63%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 | 2026-07-04 | v5.8 | **긴급 수정** — 사용자가 SSH 터널로 `localhost:3030` 접속 시 로그인이 "서버에 연결할 수 없습니다" 오류로 실패한다고 보고. 원인은 CORS가 아니라, 빌드 시점에 고정되는 `NEXT_PUBLIC_API_BASE_URL`이 서버의 LAN IP로 절대경로 고정되어 있어 SSH 로컬 포트 포워딩을 우회해 클라이언트 PC가 그 IP로 직접 연결을 시도하다 실패하는 구조였음을 진단(요청이 서버에 도달하기 전에 실패해 `hrm-api` 로그에도 기록이 없음과 일치). `frontend/next.config.mjs`에 `rewrites()` 추가 — `/api/v1/*` 요청을 Next.js 서버가 Docker 내부망의 `api:8000`으로 프록시하도록 구성, 기존 코드가 이미 지원하던 상대 경로 호출 방식과 결합해 코드 변경만으로 LAN IP 직접 접속·SSH 터널(3030 포트만 필요) 두 접속 방식을 하나의 빌드로 동시 지원하도록 구조 개선. 사용자가 `.env`의 `NEXT_PUBLIC_API_BASE_URL`을 빈 값으로 직접 변경(AI는 `.env` 수정 금지 원칙에 따라 값 변경 없이 안내만 제공) 후 재빌드, 번들에서 절대 IP 제거·`curl`로 3030 경유 로그인 200·pytest 26개 그대로 통과 확인. §9 리스크 신규 1건 추가·"해소"로 기록, §8 큐와 무관한 사용자 보고 장애 수정이라 §4 진행률은 변경 없음 | — |
+| 2026-07-04 | v5.9 | §8 다음 작업 1번(프로젝트 목록/상세 화면 구현) 완료 처리 — 목데이터 기반 `/projects`·`/projects/[id]` 화면을 백엔드 `PJT_MST`/`PJT_ASGN_HIS` API로 연동. 사원 상세와 동일하게 프로젝트 단건 조회 API가 없어 `GET /api/v1/projects/{pjt_id}` 신규 추가. 목록은 `GET /projects` + 진행 중 투입 집계로 투입 인원 컬럼 계산, 등록 모달은 `POST /projects` 실 연동(설계서 목업에 없던 `PJT_CD` 필드는 백엔드 필수값이라 추가, 사유 주석 명시). 상세는 프로젝트 정보 + 투입 이력 + 사원/부서/직무 마스터 조인으로 개요·투입 유형 구성·투입 인력 테이블 실 데이터 렌더링. 수정/종료처리/인력투입 버튼은 사원 상세와 동일한 원칙으로 조회 전용 제공. `backend/tests/test_projects.py` 신규 작성(5개 케이스, pytest 26→31개 전부 통과). 실 서버에서 등록/중복 409/상세조회/404/렌더링 전부 검증 완료. Phase 4 진행률 63%→69%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 
