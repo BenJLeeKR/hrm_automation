@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,3 +33,26 @@ def list_job_types(db: Session, *, use_yn: bool | None = True) -> list[HrJikmuMs
     if use_yn is not None:
         stmt = stmt.where(HrJikmuMst.USE_YN == use_yn)
     return list(db.scalars(stmt.order_by(HrJikmuMst.SORT_ORD)))
+
+
+def get_job_type(db: Session, jikmu_id: uuid.UUID) -> HrJikmuMst | None:
+    return db.get(HrJikmuMst, jikmu_id)
+
+
+def create_job_type(db: Session, data: dict) -> HrJikmuMst:
+    """직무 유형 등록 (SCR-006). `JIKMU_CD` UNIQUE 위반은 호출부(API 라우터)에서
+    `sqlalchemy.exc.IntegrityError`를 잡아 처리한다."""
+    job_type = HrJikmuMst(**data)
+    db.add(job_type)
+    db.commit()
+    db.refresh(job_type)
+    return job_type
+
+
+def update_job_type(db: Session, job_type: HrJikmuMst, data: dict) -> HrJikmuMst:
+    """전달된 필드만 갱신 (부분 업데이트)."""
+    for key, value in data.items():
+        setattr(job_type, key, value)
+    db.commit()
+    db.refresh(job_type)
+    return job_type
