@@ -1,11 +1,13 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
+from app.core.audit import record_audit
 from app.db.session import get_db
+from app.models.sys_user_mst import SysUserMst
 from app.repositories.pjt_asgn_his import (
     create_assignment,
     get_assignment,
@@ -18,6 +20,7 @@ from app.schemas.pjt_asgn_his import AssignmentCreate, AssignmentListResponse, A
 router = APIRouter(prefix="/assignments", tags=["assignments"])
 
 _FK_ERROR_DETAIL = "사원/프로젝트 ID가 유효하지 않습니다."
+_TGT_TBL_NM = "PJT_ASGN_HIS"
 
 
 @router.get(
@@ -36,13 +39,13 @@ def get_assignments(
     return AssignmentListResponse(total=total, skip=skip, limit=limit, items=items)
 
 
-@router.post(
-    "",
-    response_model=AssignmentOut,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("assignments", "create"))],
-)
-def post_assignment(payload: AssignmentCreate, db: Session = Depends(get_db)) -> AssignmentOut:
+@router.post("", response_model=AssignmentOut, status_code=status.HTTP_201_CREATED)
+def post_assignment(
+    payload: AssignmentCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("assignments", "create")),
+) -> AssignmentOut:
     """투입 이력 등록 — 동일 사원·겹치는 기간의 유효(`PLANNED`/`ACTIVE`) ALLOC_RT 합계가
     100%를 초과하면 409로 거부한다 (ERD §3.9 / 설계서 §5.5 정합성 규칙)."""
     if payload.ASGN_STAT_CD in ("PLANNED", "ACTIVE"):
@@ -60,18 +63,33 @@ def post_assignment(payload: AssignmentCreate, db: Session = Depends(get_db)) ->
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_FK_ERROR_DETAIL) from None
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="CREATE",
+        tgt_tbl_nm=_TGT_TBL_NM,
+        tgt_id=assignment.ASGN_ID,
+        aft_val_json=AssignmentOut.model_validate(assignment).model_dump(mode="json"),
+    )
     return assignment
 
 
-@router.patch(
-    "/{asgn_id}", response_model=AssignmentOut, dependencies=[Depends(require_permission("assignments", "update"))]
-)
-def patch_assignment(asgn_id: uuid.UUID, payload: AssignmentUpdate, db: Session = Depends(get_db)) -> AssignmentOut:
+@router.patch("/{asgn_id}", response_model=AssignmentOut)
+def patch_assignment(
+    asgn_id: uuid.UUID,
+    payload: AssignmentUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("assignments", "update")),
+) -> AssignmentOut:
     """투입 이력 수정 — 전달된 필드만 갱신. ALLOC_RT/기간/상태 변경 시 100% 초과 여부를 재검증한다."""
     assignment = get_assignment(db, asgn_id)
     if assignment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="투입 이력을 찾을 수 없습니다.")
 
+    before_snapshot = AssignmentOut.model_validate(assignment).model_dump(mode="json")
     update_data = payload.model_dump(exclude_unset=True)
     new_stat = update_data.get("ASGN_STAT_CD", assignment.ASGN_STAT_CD)
     if new_stat in ("PLANNED", "ACTIVE"):
@@ -92,4 +110,15 @@ def patch_assignment(asgn_id: uuid.UUID, payload: AssignmentUpdate, db: Session 
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_FK_ERROR_DETAIL) from None
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="UPDATE",
+        tgt_tbl_nm=_TGT_TBL_NM,
+        tgt_id=assignment.ASGN_ID,
+        bfr_val_json=before_snapshot,
+        aft_val_json=AssignmentOut.model_validate(assignment).model_dump(mode="json"),
+    )
     return assignment

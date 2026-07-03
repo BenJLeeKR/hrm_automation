@@ -40,6 +40,8 @@
 
 (A=ADMIN, H=HR_MGR, P=PM, T=TEAM_LEAD, E=EXEC, V=VIEWER — 화면 설계서 범례 그대로 사용)
 
+> **`codes` (공통 코드/기준정보, 2026-07-03 운영팀 확인 완료):** 부서(`GET /api/v1/departments`)/직급(`GET /api/v1/positions`)은 화면 설계서에 별도 SCR 항목이 없어(§9 리스크 "departments/positions/job-types 화면 권한 키 미정" 참조), 독립 화면으로 보지 않고 "공통 코드/기준정보"로 취급하기로 확정했다. 별도 SCR/화면을 갖지 않으므로 위 §2 화면 목록 표에는 포함하지 않고, `PERM_JSON`에 `codes`라는 논리적 권한 키만 둔다. `GET /api/v1/job-types`도 직무 유형 관리 화면(SCR-006, `job_types`)의 등록/수정/삭제 권한과 별개로, 다른 화면의 필터·조회 옵션 용도로 전 역할이 조회할 수 있어야 하므로 `codes` 정책을 함께 적용한다.
+
 ---
 
 ## 3. 화면 × 역할 × 버튼 권한 매트릭스
@@ -101,6 +103,20 @@
 | VIEWER | - | - | - | - | - | - |
 
 전체 A H만 접근 (화면 설계서에 "조회는 전체" 문구 없음 — skills와 달리 완전히 A H 전용).
+
+### `codes` — 공통 코드/기준정보: 부서·직급·직무 유형 조회 (SCR 없음, 2026-07-03 추가)
+
+| 역할 | V | C | U | D | X | A |
+|---|---|---|---|---|---|---|
+| ADMIN | ● | ● | ● | ● | - | - |
+| HR_MGR | ● | ● | ● | ● | - | - |
+| PM | ● | - | - | - | - | - |
+| TEAM_LEAD | ● | - | - | - | - | - |
+| EXEC | ● | - | - | - | - | - |
+| VIEWER | ● | - | - | - | - | - |
+
+- 부서(`departments`)/직급(`positions`)은 독립 화면이 아닌 공통 코드/기준정보로 취급 — 운영팀 확인 완료(2026-07-03). `view`는 전 역할 허용, `create`/`update`/`delete`는 ADMIN/HR_MGR만 허용(등록/수정 화면은 별도 백로그 항목으로 아직 미구현).
+- `GET /api/v1/job-types`(직무 유형 조회)도 이 `codes.view` 정책을 함께 적용해 전 역할이 조회 가능하도록 한다 — 단, 직무 유형 관리 화면(위 `job_types` 섹션)의 등록/수정/삭제는 그대로 A H 전용을 유지한다(두 정책이 서로 다른 화면 키에 걸쳐 병행 적용됨에 유의).
 
 ### `projects` — 프로젝트 목록/상세 (SCR-007, SCR-008)
 
@@ -246,7 +262,7 @@
 }
 ```
 
-`screen_key` 13종: `dashboard`, `employees`, `skills`, `job_types`, `projects`, `assignments`, `availability`, `recommendations`, `ai_chat`, `reports`, `settings`, `settings_users`, `settings_audit_logs`
+`screen_key`(및 `codes` 논리 키 포함) 14종: `dashboard`, `employees`, `skills`, `job_types`, `codes`, `projects`, `assignments`, `availability`, `recommendations`, `ai_chat`, `reports`, `settings`, `settings_users`, `settings_audit_logs`
 
 실제 값은 `backend/app/db/seed/sys_role_mst_seed.py`에 반영되어 있다.
 

@@ -16,6 +16,14 @@
 #   }}}
 # 상세 근거·역할별 매트릭스는 `backend/docs/PERMISSION_MATRIX.md` 참조.
 #
+# `codes` 화면 키 (2026-07-03, 운영팀 확인 완료): 부서(`departments`)/직급(`positions`)은
+# MVP에서 독립 화면으로 보지 않고 "공통 코드/기준정보"로 취급하기로 확정 — 별도 화면 키를
+# 만들지 않고 `codes` 키 하나로 통합한다. `codes.view`는 전 역할 허용, `codes.create`/
+# `update`/`delete`는 ADMIN/HR_MGR만 허용. `job_types`(직무 유형)는 기존 화면 키를 그대로
+# 유지하며(관리 화면의 등록/수정/삭제는 `job_types.*` 권한 유지), 조회(`GET /job-types`)는
+# `codes.view`와 동일하게 전 역할에 허용한다(§9 리스크 "departments/positions/job-types
+# 화면 권한 키 미정" 해소 처리 근거).
+#
 # 주의:
 #   1. TEAM_LEAD의 employees.update 등 "본인팀만" 같은 row-level 스코프는 이 구조로
 #      표현하지 않는다 — 화면/버튼 노출 여부만 다루며, 데이터 스코프는 API 레이어에서
@@ -51,6 +59,7 @@ SYS_ROLE_MST_SEED = [
             employees=_perm(view=True, create=True, update=True, delete=True, excel=True),
             skills=_perm(view=True, create=True, update=True, delete=True),
             job_types=_perm(view=True, create=True, update=True, delete=True),
+            codes=_perm(view=True, create=True, update=True, delete=True),
             projects=_perm(view=True, create=True, update=True),
             assignments=_perm(view=True, create=True, update=True, excel=True),
             availability=_perm(view=True),
@@ -71,6 +80,7 @@ SYS_ROLE_MST_SEED = [
             employees=_perm(view=True, create=True, update=True, delete=True, excel=True),
             skills=_perm(view=True, create=True, update=True, delete=True),
             job_types=_perm(view=True, create=True, update=True, delete=True),
+            codes=_perm(view=True, create=True, update=True, delete=True),
             projects=_perm(view=True, create=True, update=True),
             assignments=_perm(view=True, create=True, update=True, excel=True),
             availability=_perm(view=True),
@@ -92,6 +102,7 @@ SYS_ROLE_MST_SEED = [
             employees=_perm(view=True),
             skills=_perm(),
             job_types=_perm(),
+            codes=_perm(view=True),
             projects=_perm(view=True, create=True, update=True),
             assignments=_perm(view=True, create=True, update=True, excel=True),
             availability=_perm(view=True),
@@ -114,6 +125,7 @@ SYS_ROLE_MST_SEED = [
             employees=_perm(view=True, update=True),
             skills=_perm(),
             job_types=_perm(),
+            codes=_perm(view=True),
             projects=_perm(view=True),
             assignments=_perm(view=True),  # 투입 관리 화면 접근은 가능하나 등록/수정은 A H P만
             availability=_perm(view=True),
@@ -134,6 +146,7 @@ SYS_ROLE_MST_SEED = [
             employees=_perm(view=True),
             skills=_perm(),
             job_types=_perm(),
+            codes=_perm(view=True),
             projects=_perm(view=True),
             assignments=_perm(),  # 화면 설계서상 투입 관리 화면 접근 불가 (A H P T만)
             availability=_perm(view=True),
@@ -154,6 +167,7 @@ SYS_ROLE_MST_SEED = [
             employees=_perm(view=True),
             skills=_perm(),
             job_types=_perm(),
+            codes=_perm(view=True),
             projects=_perm(view=True),
             assignments=_perm(),
             availability=_perm(),  # 화면 설계서상 VIEWER 제외

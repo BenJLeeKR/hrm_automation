@@ -1,8 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.core.audit import record_audit
 from app.core.security import (
     REFRESH_TOKEN_TYPE,
     TokenError,
@@ -21,14 +22,16 @@ _INVALID_CREDENTIALS_DETAIL = "아이디 또는 비밀번호가 올바르지 않
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenResponse:
     """로그인 — `SYS_USER_MST.USER_LGID`/비밀번호 검증 후 액세스/리프레시 토큰 발급"""
     user = get_user_by_login_id(db, payload.USER_LGID)
     # 계정 존재 여부를 노출하지 않도록 미존재/비밀번호 불일치/비활성/비밀번호 미설정을 모두 동일한 401로 처리한다.
+    # 실패한 로그인 시도는 SYS_AUDIT_LOG.USER_ID가 NOT NULL FK라 행위자를 특정할 수 없어 기록하지 않는다.
     if user is None or not user.USE_YN or not user.ENCR_PWD or not verify_password(payload.password, user.ENCR_PWD):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=_INVALID_CREDENTIALS_DETAIL)
 
     update_last_login(db, user)
+    record_audit(db, request, user, act_cd="LOGIN", tgt_tbl_nm="SYS_USER_MST", tgt_id=user.USER_ID)
     return TokenResponse(
         access_token=create_access_token(user_id=str(user.USER_ID), role_id=str(user.ROLE_ID)),
         refresh_token=create_refresh_token(user_id=str(user.USER_ID)),
