@@ -97,7 +97,7 @@
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
-| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 33% | 정상 |
+| Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 56% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
@@ -488,15 +488,15 @@
 | 기능 영역 | 주요 기능 | 상태 | 우선순위 | 관련 모듈 | 비고 |
 |---|---|---|---|---|---|
 | 직원 관리 | `HR_EMPL_MST` CRUD, 퇴직 처리 | 진행 중 (조회/등록/수정 구현, 퇴직 처리 미구현) | 높음 | `employees.py`, `HR_EMPL_MST` | 직무 유형(`JIKMU_ID`) 필드 포함 |
-| 팀/조직 관리 | `HR_DEPT_MST` 계층 구조 관리 | 예정 | 높음 | `departments.py`, `HR_DEPT_MST` | 상위 부서(`PRNT_DEPT_ID`) 지원 |
-| 직급/역할 관리 | `HR_JIKGUP_MST`, `HR_JIKMU_MST` 마스터 관리 | 예정 | 높음 | `positions.py`, `job_types.py` | 직급·직무 분리 설계 |
-| 기술 스택 관리 | `HR_SKILL_MST` CRUD | 예정 | 높음 | `skills.py`, `HR_SKILL_MST` | 기술 그룹(`SKILL_GRP_CD`) 분류 |
-| 직원별 숙련도 관리 | `HR_EMPL_SKILL_REL` 등록·수정 | 예정 | 높음 | `employees.py`, `HR_EMPL_SKILL_REL` | `PRFCY_LEVL` 1~5 |
-| 프로젝트 관리 | `PJT_MST` CRUD, 상태 관리 | 예정 | 높음 | `projects.py`, `PJT_MST` | `PJT_STAT_CD` (PLANNED/RUNNING/CLOSED/HOLD) |
-| 프로젝트 투입 관리 | `PJT_ASGN_HIS` 등록·수정·취소 | 예정 | 높음 | `assignments.py`, `PJT_ASGN_HIS` | 투입 역할(`PRJT_ROLE_NM`) 포함 |
-| 투입률 관리 | `ALLOC_RT` 합계 검증 및 표시 | 예정 | 높음 | `availability_service.py` | 동일 기간 합계 100% 초과 방지 |
+| 팀/조직 관리 | `HR_DEPT_MST` 계층 구조 관리 | 진행 중 (조회 API만 구현 — `GET /api/v1/departments`, 등록/수정/계층 구조 관리 미구현) | 높음 | `codes.py`, `HR_DEPT_MST` | 상위 부서(`PRNT_DEPT_ID`) 지원 |
+| 직급/역할 관리 | `HR_JIKGUP_MST`, `HR_JIKMU_MST` 마스터 관리 | 진행 중 (조회 API만 구현 — `GET /positions`, `/job-types`, 등록/수정 미구현) | 높음 | `codes.py` | 직급·직무 분리 설계 |
+| 기술 스택 관리 | `HR_SKILL_MST` CRUD | 완료 (조회/등록/수정 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `skills.py`, `HR_SKILL_MST` | 기술 그룹(`SKILL_GRP_CD`) 분류 |
+| 직원별 숙련도 관리 | `HR_EMPL_SKILL_REL` 등록·수정 | 완료 (조회/등록/수정 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `employee_skills.py`, `HR_EMPL_SKILL_REL` | `PRFCY_LEVL` 1~5 |
+| 프로젝트 관리 | `PJT_MST` CRUD, 상태 관리 | 완료 (조회/등록/수정 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `projects.py`, `PJT_MST` | `PJT_STAT_CD` (PLANNED/RUNNING/CLOSED/HOLD) |
+| 프로젝트 투입 관리 | `PJT_ASGN_HIS` 등록·수정·취소 | 완료 (조회/등록/수정 구현, 취소는 `PATCH`로 `ASGN_STAT_CD='CANCELED'` 전환, 실 서버 검증 완료 — 2026-07-03) | 높음 | `assignments.py`, `PJT_ASGN_HIS` | 투입 역할(`PRJT_ROLE_NM`) 포함 |
+| 투입률 관리 | `ALLOC_RT` 합계 검증 및 표시 | 완료 (동일 사원·겹치는 기간 유효(`PLANNED`/`ACTIVE`) 투입 합계 100% 초과 시 409 거부 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `assignments.py`, `pjt_asgn_his.py`(repository) | 동일 기간 합계 100% 초과 방지 |
 | 종료 예정일 관리 | `ASGN_END_DT` 조회·알림 | 예정 | 높음 | `PJT_ASGN_HIS`, `PJT_ASGN_END_ALERT` 배치 | 30일 이내 종료 예정 알림 |
-| 가동 가능일 자동 계산 | `HR_AVAIL_SNAP` 기반 산정 | 예정 | 높음 | `availability_service.py`, `HR_AVAIL_SNAP_GEN` 배치 | 투입률 0%=AVAILABLE(기준일), 1~99%=PARTIAL(기준일), ≥100%=FULL(MAX(종료일)+1, 종료일 NULL 시 품질경고) — `PROPOSED` 제외, 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` |
+| 가동 가능일 자동 계산 | `HR_AVAIL_SNAP` 기반 산정 | 예정 (MVP 산정 기준만 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md`, 실제 계산 배치는 미구현) | 높음 | `availability_service.py`, `HR_AVAIL_SNAP_GEN` 배치 | 투입률 0%=AVAILABLE(기준일), 1~99%=PARTIAL(기준일), ≥100%=FULL(MAX(종료일)+1, 종료일 NULL 시 품질경고) — `PROPOSED` 제외, 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` |
 | 즉시 투입 가능 인력 조회 | `AVAIL_STAT_CD='AVAILABLE'` 필터 | 예정 | 높음 | `GET /api/v1/availability` | 직무 유형 필터 포함 |
 | 기술 기반 인력 검색 | 기술·숙련도·직무 복합 검색 | 예정 | 높음 | `recommendations.py` | `HR_EMPL_SKILL_REL` + `HR_JIKMU_MST` 조인 |
 | 프로젝트 종료 예정자 조회 | 이번 달/30일 이내 종료 예정자 | 예정 | 높음 | `reports.py`, `PJT_ASGN_HIS` | |
@@ -504,10 +504,10 @@
 | 리소스 추천 | `PJT_RCMD_RSLT` 점수 기반 후보 추천 | 예정 | 중간 | `recommendation_service.py` | 6개 항목 가중 점수 |
 | AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 예정 | 중간 | `ai_service.py`, `POST /api/v1/ai/chat` | Phase 6 |
 | 주간 리포트 | `PJT_WEEKLY_RPT` 자동 발송 | 예정 | 중간 | `report_service.py`, Teams Webhook | 매주 월요일 09:00 |
-| 감사 로그 | `SYS_AUDIT_LOG` 변경 이력 기록 | 예정 | 높음 | `sys_audit_log.py`, 미들웨어 | 로그인·CRUD·Import 포함 |
-| 사용자 인증/권한 | JWT + RBAC (`SYS_USER_MST`, `SYS_ROLE_MST`) | 예정 | 높음 | `auth.py`, `security.py` | 6개 역할 |
-| 백업/복구 | `SYS_DB_BACKUP` 자동화, `pg_dump` | 예정 | 높음 | `backup_db.sh`, crontab | 매일 02:00, 14일 보관 |
-| 배포 자동화 | Docker Compose 기반 배포 | 예정 | 높음 | `docker-compose.yml` | CI/CD는 확장 단계 |
+| 감사 로그 | `SYS_AUDIT_LOG` 변경 이력 기록 | 예정 (테이블/모델만 존재, 기록 미들웨어 미구현) | 높음 | `sys_audit_log.py`, 미들웨어 | 로그인·CRUD·Import 포함 |
+| 사용자 인증/권한 | JWT + RBAC (`SYS_USER_MST`, `SYS_ROLE_MST`) | 진행 중 (JWT 로그인/토큰갱신/로그아웃 완료, RBAC는 5개 라우터 적용·`codes.py` 미적용 — 2026-07-03) | 높음 | `auth.py`, `security.py`, `deps.py` | 6개 역할 |
+| 백업/복구 | `SYS_DB_BACKUP` 자동화, `pg_dump` | 진행 중 (수동 백업 스크립트 작성 및 실행 확인 완료, crontab 자동화·복구 테스트 미완료) | 높음 | `backup_db.sh`, crontab | 매일 02:00, 14일 보관 |
+| 배포 자동화 | Docker Compose 기반 배포 | 완료 (실 서버에서 `docker compose`로 api/web/db/redis/worker 5개 서비스 정상 구동 중 — 2026-07-03) | 높음 | `docker-compose.yml` | CI/CD는 확장 단계 |
 
 ---
 
@@ -515,22 +515,22 @@
 
 | 구성 요소 | 적용 기술 | 상태 | 필수 여부 | 비고 |
 |---|---|---|---|---|
-| Ubuntu Server | Ubuntu 24.04 LTS | 예정 | 필수 | 운영 서버 OS |
-| Docker | Docker Engine (최신) | 예정 | 필수 | 컨테이너 런타임 |
-| Docker Compose | Docker Compose Plugin v2 | 예정 | 필수 | 멀티 컨테이너 오케스트레이션 |
-| PostgreSQL | PostgreSQL 16-alpine (Docker) | 예정 | 필수 | 외부 포트 5442, 데이터 `/App/hrmngr/data/postgres/` |
-| FastAPI | FastAPI + Uvicorn (Python 3.12) | 예정 | 필수 | 포트 8000, 운영 시 Gunicorn+Uvicorn Worker 전환 검토 |
-| SQLAlchemy 또는 SQLModel | SQLAlchemy 2.x + Alembic | 예정 | 필수 | ORM 및 마이그레이션 |
-| Alembic | Alembic (SQLAlchemy 연동) | 예정 | 필수 | DB 스키마 버전 관리 |
-| Next.js | Next.js (node:22-alpine, standalone) | 예정 | 필수 | 외부 포트 3030, `output: 'standalone'` |
-| API Client | Axios 또는 fetch (Next.js 내장) | 예정 | 필수 | `NEXT_PUBLIC_API_BASE_URL` 환경변수 기반 |
-| 인증 방식 | JWT (Access Token 60분 + Refresh Token 7일) | 예정 | 필수 | HttpOnly Cookie, Token Rotation |
-| Batch/Scheduler | APScheduler (MVP) → Celery (확장) | 예정 | 필수 | `hrm-worker` 컨테이너 |
-| Logging | structlog 또는 Python logging (JSON 포맷) | 예정 | 필수 | `/App/hrmngr/logs/` |
-| Backup | `pg_dump` + gzip + crontab | 예정 | 필수 | `/App/hrmngr/backup/postgres/`, 14일 보관 |
+| Ubuntu Server | Ubuntu 24.04 LTS | 적용 완료 | 필수 | 운영 서버 OS, 실 서버 구축 확인 완료 (2026-07-03) |
+| Docker | Docker Engine (최신) | 적용 완료 | 필수 | 컨테이너 런타임, `sg docker`로 `novauser` 권한 확인 후 직접 운용 중 |
+| Docker Compose | Docker Compose Plugin v2 | 적용 완료 (v5.2.0) | 필수 | 멀티 컨테이너 오케스트레이션, 5개 서비스 정상 구동 확인 (2026-07-03) |
+| PostgreSQL | PostgreSQL 16-alpine (Docker) | 적용 완료 | 필수 | 외부 포트 `127.0.0.1:5442`(보안 조치 반영), 데이터 `/App/hrmngr/data/postgres/`, 16개 테이블 정상 구동 확인 (2026-07-03) |
+| FastAPI | FastAPI + Uvicorn (Python 3.12) | 적용 완료 | 필수 | 포트 8000, `/health` 및 다수 API 정상 응답 확인. 운영 시 Gunicorn+Uvicorn Worker 전환은 미검토 |
+| SQLAlchemy 또는 SQLModel | SQLAlchemy 2.x + Alembic | 적용 완료 | 필수 | ORM 및 마이그레이션, 16개 테이블 모델 작성 및 실 DB 적용 완료 |
+| Alembic | Alembic (SQLAlchemy 연동) | 적용 완료 | 필수 | DB 스키마 버전 관리, 실 서버 `alembic upgrade head` 정상 실행 확인 |
+| Next.js | Next.js (node:22-alpine, standalone) | 진행 중 | 필수 | 외부 포트 3030, `output: 'standalone'` 적용·컨테이너 구동 확인. 대부분 화면은 목데이터 기반이라 실 API 연동은 미완료 |
+| API Client | Axios 또는 fetch (Next.js 내장) | 예정 | 필수 | `NEXT_PUBLIC_API_BASE_URL` 환경변수는 설정되어 있으나, 현재 화면들은 실제 백엔드 API 대신 목데이터를 사용 중이라 연동 자체는 미착수 |
+| 인증 방식 | JWT (Access Token 60분 + Refresh Token 7일) | 진행 중 | 필수 | 백엔드 로그인/토큰갱신/로그아웃 API 구현 및 검증 완료(2026-07-03). 프론트엔드는 아직 localStorage 기반 임시 세션 마커(`lib/auth.ts`)를 사용 중이라 HttpOnly Cookie·Token Rotation 연동은 미완료 |
+| Batch/Scheduler | APScheduler (MVP) → Celery (확장) | 예정 | 필수 | `hrm-worker` 컨테이너는 Phase 7까지 placeholder로 구동 중(실제 배치 로직 없음) |
+| Logging | structlog 또는 Python logging (JSON 포맷) | 예정 | 필수 | `/App/hrmngr/logs/`, 현재 기본 Uvicorn 로그만 사용, 구조화 로그 미적용 |
+| Backup | `pg_dump` + gzip + crontab | 진행 중 | 필수 | `/App/hrmngr/backup/postgres/`, 수동 백업 스크립트 작성·실행 확인 완료(2026-07-03), crontab 자동화·14일 보관 정책은 미완료 |
 | Nginx | Nginx (선택) | 예정 | 선택 | 초기 구축에서는 제외 가능하며, HTTPS/도메인/운영 안정화 단계에서 추가 검토 |
 | AI Agent / LLM 연동 | OpenAI API 또는 Anthropic API (MVP), 사내 LLM (확장) | 예정 | 선택 | Phase 6, LLM 호출 레이어 추상화 필수 |
-| Redis | Redis 7-alpine (Docker) | 예정 | 선택 | 캐시·비동기 큐, MVP에서 생략 가능 |
+| Redis | Redis 7-alpine (Docker) | 진행 중 | 선택 | 컨테이너(`hrm-redis`)는 정상 구동 중이나 애플리케이션 코드에서 아직 연동(캐시/큐 등)하지 않음 — MVP에서 생략 가능한 범위 |
 
 ---
 
@@ -698,8 +698,8 @@
 
 ### 데이터베이스 `→ Phase 2`
 
-- [ ] PostgreSQL Docker 컨테이너 구성 (외부 포트 **5442** → 내부 5432)
-- [ ] `/App/hrmngr/data/postgres/` 바인드 마운트 확인
+- [x] PostgreSQL Docker 컨테이너 구성 (외부 포트 **5442** → 내부 5432) — `docker-compose.yml`의 `db` 서비스가 `127.0.0.1:5442:5432`로 바인딩되어 실 서버에서 정상 구동 중임을 `docker compose ps`(`Up (healthy)`, `127.0.0.1:5442->5432/tcp`)로 확인 완료 (Phase 1 완료 시 이미 검증되었으나 체크 표시가 누락되어 있었음 — 2026-07-03 확인 후 반영)
+- [x] `/App/hrmngr/data/postgres/` 바인드 마운트 확인 — `docker-compose.yml`에 `./data/postgres:/var/lib/postgresql/data`로 마운트되어 있고, 실 서버 디렉터리에 `pgdata`가 생성되어 16개 테이블 데이터가 정상 저장되어 있음을 확인 완료 (Phase 1 완료 시 이미 검증되었으나 체크 표시가 누락되어 있었음 — 2026-07-03 확인 후 반영)
 - [x] Alembic 마이그레이션 환경 구성 (`env.py` 설정) — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py`(`Base` 선언) 작성. 실 서버에서 `alembic upgrade head` 정상 실행 확인 완료 (2026-07-03)
 - [x] 전체 테이블 생성 (16개, 16/16 모델·마이그레이션 작성 및 실 서버 DB 적용 검증 완료 — `\dt` 결과 16개 테이블 전부 확인, 2026-07-03)
   - [x] `HR_DEPT_MST` — 부서 마스터 (실 서버 DB 적용 검증 완료, 2026-07-03)
@@ -718,11 +718,11 @@
   - [x] `SYS_ROLE_MST` — 역할 마스터 (실 서버 DB 적용 검증 완료, Seed 6종 `SELECT` 확인, 2026-07-03)
   - [x] `SYS_AUDIT_LOG` — 감사 로그 (실 서버 DB 적용 검증 완료, 2026-07-03)
   - [x] `SYS_BATCH_HIS` — 배치 실행 이력 (모델+마이그레이션 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03)
-- [x] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST`(10종) + `HR_JIKMU_MST`(12종) — `SYS_ROLE_MST`는 마이그레이션 `83fc676b952e_create_sys_user_role_audit_tables.py`에 `op.bulk_insert`로 반영, 실 서버 DB에서 6종 전부 정상 삽입 확인 완료(`SELECT` 결과, 2026-07-03). `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed는 `backend/app/db/seed/hr_jikgup_mst_seed.py`, `hr_jikmu_mst_seed.py` 신규 작성 및 Alembic 리비전 `370c95546556_seed_hr_jikgup_mst_and_hr_jikmu_mst.py`로 반영 완료 — 실 DB 적용은 미검증 (아래 §3 참조)
+- [x] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST`(10종) + `HR_JIKMU_MST`(12종) — `SYS_ROLE_MST`는 마이그레이션 `83fc676b952e_create_sys_user_role_audit_tables.py`에 `op.bulk_insert`로 반영, 실 서버 DB에서 6종 전부 정상 삽입 확인 완료(`SELECT` 결과, 2026-07-03). `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed는 `backend/app/db/seed/hr_jikgup_mst_seed.py`, `hr_jikmu_mst_seed.py` 신규 작성 및 Alembic 리비전 `370c95546556_seed_hr_jikgup_mst_and_hr_jikmu_mst.py`로 반영 완료 — 실 DB 적용도 Phase 2 완료 검증(2026-07-03, `SELECT COUNT(*)`로 10건/12건 확인)에서 검증 완료 (이전에 "미검증"으로 남아있던 문구는 갱신 누락이었음)
 - [ ] `HR_SKILL_MST` Seed 입력 — MVP 초안 55건 작성 완료(`backend/app/db/seed/hr_skill_mst_seed.py`), 운영팀 최종 확정 후 실 데이터 반영 예정 (미완료 유지)
-- [ ] DB 백업 스크립트 작성 (`/App/hrmngr/backup/backup_db.sh`) 및 crontab 등록 (매일 02:00)
-- [ ] 복구 테스트 완료 (백업 파일 → 신규 DB 복구 확인)
-- [ ] 외부 DB 클라이언트 접속 확인 (DBeaver 등, `localhost:5442`)
+- [ ] DB 백업 스크립트 작성 (`/App/hrmngr/backup/backup_db.sh`) 및 crontab 등록 (매일 02:00) — 스크립트 작성 및 수동 실행(`pg_dump` 백업 파일 생성)은 완료(§4 Phase 2 참조, 2026-07-03), **crontab 자동 등록은 미완료**라 항목 전체는 미체크 유지(Phase 7 `SYS_DB_BACKUP` 배치 작업에서 마무리 예정)
+- [ ] 복구 테스트 완료 (백업 파일 → 신규 DB 복구 확인) — 미실시
+- [ ] 외부 DB 클라이언트 접속 확인 (DBeaver 등, `localhost:5442`) — 미실시. 참고: 2026-07-03 보안 조치로 `db` 포트가 `127.0.0.1:5442`(호스트 로컬)로만 바인딩되어 있어, "외부"(원격 클라이언트) 접속은 설계상 불가하고 호스트 서버 로컬에서의 DBeaver 등 접속 여부만 확인 가능 — 항목 취지 재확인 필요
 
 ---
 
@@ -864,4 +864,5 @@
 | 2026-07-03 | v3.4 | §8 다음 작업 1번(투입 관리 API) 완료 처리 — `AssignmentCreate`/`AssignmentUpdate`/`AssignmentListResponse` 스키마 및 리포지토리·라우터(`app/repositories/pjt_asgn_his.py`, `app/api/v1/assignments.py`) 신규 작성. ERD §3.9/설계서 §5.5의 "동일 사원 동일 기간 ALLOC_RT 합계 100% 초과 금지" 규칙을 `sum_overlapping_alloc_rt` 헬퍼로 구현해 등록/수정 시 409로 거부하도록 적용(집계 대상 상태 MVP 해석은 §9 리스크로 별도 기록). 실 서버 재빌드 후 임시 테스트 데이터로 100%/초과/취소 제외/404 케이스 전부 확인 후 테스트 데이터 삭제. Phase 3 진행률 44%→50%로 갱신, §11 "투입 관리 API" 완료 체크, §9 리스크 1건 추가, §8 큐에서 제거 및 재번호(1~6) | — |
 | 2026-07-03 | v3.5 | §8 다음 작업 1번(JWT 인증 API) 완료 처리 — `backend/app/core/security.py`(비밀번호 해싱, JWT 발급/검증), `backend/app/schemas/auth.py`, `backend/app/repositories/sys_user_mst.py`, `backend/app/api/v1/auth.py`(`POST /api/v1/auth/{login,refresh,logout}`) 신규 작성. 실 서버 재빌드 중 `passlib[bcrypt]==1.7.4`/`bcrypt>=4.1` 비호환 버그 발견해 `backend/requirements.txt`에 `bcrypt==4.0.1` 고정으로 해결(§9 리스크 기록). 임시 역할·사용자 데이터로 로그인/토큰 갱신/로그아웃 및 401 경로 전부 확인 후 삭제. `.env`의 `JWT_SECRET_KEY`는 이미 설정되어 있어 별도 수정 불필요. Phase 3 진행률 50%→56%로 갱신, §11 "JWT 인증 API" 완료 체크, §9 리스크 2건 추가(로그아웃 무효화 미구현, bcrypt 호환성), §8 큐에서 제거 및 재번호(1~5) | — |
 | 2026-07-03 | v3.6 | §8 다음 작업 1번(RBAC 권한 미들웨어) 부분 완료 — `backend/app/api/deps.py`(신규, `get_current_user`/`require_permission`) 작성 및 `PERM_JSON` 화면 키가 명확한 5개 라우터(`employees`/`skills`/`employee_skills`/`projects`/`assignments`)에 적용. `codes.py`는 대응 화면 키(`departments`/`positions`) 부재로 적용 보류(§9 리스크 추가) — 항목은 "진행 중"으로 유지, §8 큐에서 제거하지 않음. 실 서버에서 VIEWER/PM 역할 테스트 사용자로 401/403/200/201 경로가 `PERMISSION_MATRIX.md`와 일치함을 확인. Phase 3 진행률은 보수적으로 56% 유지, §11 해당 항목 "진행 중"으로 갱신 | — |
+| 2026-07-03 | v3.7 | **체크리스트/상태표 정합성 점검(사용자 요청)** — 실 서버 재확인 결과 §11 데이터베이스 체크리스트의 "PostgreSQL Docker 컨테이너 구성"/"바인드 마운트 확인" 2개 항목이 실제로는 Phase 1 완료 시 이미 검증되었음에도 체크 표시가 누락되어 있어 `[x]`로 정정(`docker compose ps` 및 `data/postgres/pgdata` 실존 확인). "Seed 데이터 입력" 항목의 "실 DB 적용 미검증" 문구가 Phase 2 100% 완료 검증(2026-07-03) 이후 갱신되지 않은 것도 발견해 정정. "DB 백업 스크립트+crontab" 항목은 스크립트 작성/수동 실행만 완료(crontab 미완료)임을 명확히 하는 설명을 추가했으나 체크는 보류. "외부 DB 클라이언트 접속 확인" 항목에는 5442 포트가 `127.0.0.1`로만 바인딩되어 있어 문자 그대로의 "외부" 접속은 설계상 불가하다는 점을 주석으로 추가(체크는 보류). 추가로 §5 "기능별 구현 상태"·§6 "기술 구성 요소별 진행 상태" 두 표가 최초 작성 이후 한 번도 갱신되지 않아 이미 완료된 다수 항목(Docker/PostgreSQL/FastAPI/SQLAlchemy/Alembic 등 인프라 전체, 기술/직원기술/프로젝트/투입관리/투입률검증/배포자동화 등 API 기능)이 "예정"으로 남아있던 것을 확인해 실제 상태(완료/진행 중/예정)로 전면 갱신. §3 전체 로드맵 표의 Phase 3 진행률이 33%로 정체되어 있던 것을 §4 상세표 기준 56%로 정정. 실질적인 기능/코드 변경은 없음(문서 정합성 정정만 수행) | — |
 
