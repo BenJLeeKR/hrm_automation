@@ -95,7 +95,7 @@
 | Phase | 이름 | 계획 기간 | 개발 상태 | 진행률 | 일정 상태 |
 |---|---|---|---|---:|---|
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
-| Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 진행 중 | 75% | 정상 |
+| Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 60% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 진행 중 | 15% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 25% | 정상 |
@@ -151,8 +151,8 @@
 |---|---|
 | **목표** | Docker 기반 개발·운영 환경 구성 및 전체 서비스 컨테이너 기동 확인 |
 | **계획 기간** | 2주차 |
-| **개발 상태** | 진행 중 |
-| **진행률** | 75% |
+| **개발 상태** | 완료 |
+| **진행률** | 100% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -167,10 +167,10 @@
 | 전 컨테이너 타임존 KST(Asia/Seoul) 통일 | 완료 (2026-07-03 — `TZ`/`PGTZ` 환경변수 + `/etc/localtime`·`/etc/timezone` 읽기전용 바인드 마운트, YAML anchor로 중복 최소화. 실 컨테이너 기동 후 `date`/`SHOW timezone;` 검증은 서버에서 수행 필요) |
 | `.env` 파일 작성 및 `.gitignore` 설정 | 완료 (`.env.example` 작성, `.gitignore`에 `data/`, `backup/postgres/*.sql.gz`, `logs/`, `.next/` 추가) |
 | Git Repository 초기화 | 완료 (기존 리포지토리) |
-| PostgreSQL 컨테이너 기동 및 포트 5442 접속 확인 | 진행 중 (컨테이너 `Healthy` 상태 및 `alembic upgrade head`로 실제 DB 연결·쿼리 확인 완료, 2026-07-03 — 호스트 `localhost:5442` 외부 접속 자체는 미확인) |
-| FastAPI 컨테이너 기동 및 `/health` 응답 확인 | 진행 중 (컨테이너 `Started` 및 `alembic` 실행으로 앱 코드 정상 임포트 확인, 2026-07-03 — `/health` 엔드포인트 curl 응답은 미확인) |
-| Next.js 컨테이너 기동 및 포트 3030 접속 확인 | 진행 중 (컨테이너 `Running` 확인, 2026-07-03 — 포트 3030 curl 응답은 미확인) |
-| 방화벽(UFW) 설정 (3030, 8000 허용 / 5442 내부망 제한) | 완료 (22/3030/8000 허용 및 활성화 확인, 2026-07-03 — 5442 내부망 제한은 별도 규칙 추가 여부 미확인, UFW 기본 정책이 inbound deny인지 확인 필요) |
+| PostgreSQL 컨테이너 기동 및 포트 5442 접속 확인 | 완료 (컨테이너 `Healthy`, `alembic upgrade head`로 DB 연결·쿼리 확인. 외부 노출은 `127.0.0.1:5442`로 제한 — `docker-compose.yml` 반영, 2026-07-03) |
+| FastAPI 컨테이너 기동 및 `/health` 응답 확인 | 완료 (`curl http://localhost:8000/health` → `{"status":"ok"}` 확인, 2026-07-03) |
+| Next.js 컨테이너 기동 및 포트 3030 접속 확인 | 완료 (`curl -I http://localhost:3030` → `307 → /dashboard` 정상 확인, 2026-07-03) |
+| 방화벽(UFW) 설정 (3030, 8000 허용 / 5442 내부망 제한) | 완료 (22/3030/8000 UFW 허용 및 활성화, 5442는 `docker-compose.yml`에서 `127.0.0.1:5442:5432`로 바인딩해 애초에 외부 인터페이스로 노출되지 않도록 처리 — Docker가 UFW 규칙보다 우선하는 자체 iptables 규칙을 추가하는 문제를 우회, 2026-07-03) |
 
 **산출물**
 
@@ -591,6 +591,7 @@
   4. **`alembic upgrade head` 실행 시 `invalid interpolation syntax`** — percent-encoding된 비밀번호의 `%` 문자를 Python `ConfigParser`(BasicInterpolation)가 보간 문법으로 오인 → `backend/alembic/env.py`에서 `config.set_main_option` 호출 시 `%`를 `%%`로 이스케이프하도록 수정 (Alembic 공식 권장 우회)
   5. **`CREATE TABLE` 실행 시 `column "empl_stat_cd" does not exist`** — `HR_EMPL_MST`/`PJT_MST`/`PJT_ASGN_HIS`의 `CheckConstraint` 원문 SQL에 컬럼명을 큰따옴표로 감싸지 않아, SQLAlchemy가 큰따옴표로 생성한 실제 컬럼(`"EMPL_STAT_CD"`)과 대소문자가 안 맞아 Postgres가 소문자로 접어 컬럼을 찾지 못함 → `backend/app/models/{hr_empl_mst,pjt_mst,pjt_asgn_his}.py`와 `backend/alembic/versions/28ce52377e32_...py`의 CHECK 제약 6곳 모두 컬럼명에 큰따옴표 추가
   - 수정 후 실 서버에서 **10개 테이블 생성 및 `SYS_ROLE_MST` 6종 Seed 삽입을 `\dt`/`SELECT`로 최종 확인 완료**. §8 4~6번, §11 데이터베이스 체크리스트의 "실 DB 미검증" 표기를 전부 "실 서버 DB 적용 검증 완료"로 갱신
+- **Phase 1 완료 — 전체 컨테이너 헬스체크 및 5442 포트 보안 조치** — 사용자가 `curl http://localhost:8000/health` → `{"status":"ok"}`, `curl -I http://localhost:3030` → `307 Temporary Redirect → /dashboard` 정상 응답을 확인해 FastAPI/Next.js 컨테이너 기동 항목을 완료 처리. PostgreSQL 외부 노출 문제는 UFW 규칙이 아니라 `docker-compose.yml`의 `db` 서비스 포트 바인딩을 `"5442:5432"` → `"127.0.0.1:5442:5432"`로 변경해 해결 — Docker가 게시 포트에 대해 UFW보다 먼저 적용되는 자체 iptables 규칙을 추가하는 문제가 있어, UFW 규칙만으로는 외부 접근을 확실히 차단하지 못할 수 있다는 점을 코드 주석으로 명시. `POSTGRES_PASSWORD` 로테이션도 사용자가 즉시 완료. §3/§4 Phase 1을 "완료(100%)"로 전환, §9 리스크 2건(비밀번호 노출, UFW 5442) "해소" 처리. 포트 바인딩 변경 후 `docker compose up -d --force-recreate db`로 재생성해 `./data/postgres` 볼륨 데이터(11개 테이블, `SYS_ROLE_MST` 6종 Seed)가 유실 없이 그대로 유지됨을 재확인 완료
 
 ---
 
@@ -630,8 +631,8 @@
 | `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 해소 | 관계자 확인 완료 — Phase 2 데이터 모델 범위에 포함 확정. 로드맵 전체 테이블 수를 "15개→16개"로 정정, §4/§11 테이블 목록에 반영 완료 (`backend/docs/ERD.md` §5 참조) | 2026-07-02 |
 | `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 해소 | ROLE_NM/ROLE_DESC 및 화면×버튼 권한(`view`/`create`/`update`/`delete`/`excel`/`admin`) 기준 PERM_JSON MVP 확정 완료 — `backend/app/db/seed/sys_role_mst_seed.py`, `backend/docs/PERMISSION_MATRIX.md` 참조 | 2026-07-02 |
 | `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 | - |
-| `POSTGRES_PASSWORD` 노출 이력 (실 배포 트러블슈팅 중 채팅에 평문 공유됨) | 중간 | 주의 | 실 서버 배포 트러블슈팅 과정에서 `.env`의 DB 비밀번호가 대화 이력에 평문으로 남음 — 운영 전환 전 반드시 `POSTGRES_PASSWORD`(및 `DATABASE_URL` 내 값) 로테이션 필요. `.env`는 원칙상 직접 수정하지 않으므로 운영팀/담당자가 직접 교체 | - |
-| UFW `5442`(PostgreSQL) 내부망 제한 규칙 미확인 | 낮음 | 주의 | 22/3030/8000 허용은 확인됐으나 `5442`에 대한 명시적 제한 규칙 추가 여부 미확인 — `sudo ufw status verbose`로 기본 inbound 정책이 `deny`인지, `5442`가 별도로 열려있지 않은지 확인 필요 (설계서 §11.4 UFW 명령 참조) | - |
+| `POSTGRES_PASSWORD` 노출 이력 (실 배포 트러블슈팅 중 채팅에 평문 공유됨) | 중간 | 해소 | 사용자가 `.env`의 `POSTGRES_PASSWORD`/`DATABASE_URL` 값을 즉시 교체(로테이션) 완료 확인 | 2026-07-03 |
+| UFW `5442`(PostgreSQL) 내부망 제한 규칙 미확인 | 낮음 | 해소 | UFW 규칙 대신 `docker-compose.yml`의 `db` 서비스 포트를 `127.0.0.1:5442:5432`로 바인딩해 외부 인터페이스 노출 자체를 차단(Docker가 UFW보다 우선하는 iptables 규칙을 추가하는 문제 회피) — `localhost`(호스트 로컬)에서만 접속 가능 | 2026-07-03 |
 
 ---
 
@@ -673,7 +674,7 @@
 - [x] `docker-compose.yml` 작성 (api / web / db / redis / worker 5개 서비스)
 - [x] `.env` 파일 작성 및 `.gitignore` 설정 (`.env`, `data/`, `backup/postgres/*.sql.gz`, `logs/` 제외)
 - [x] Git Repository 초기화
-- [x] 방화벽(UFW) 설정 — OpenSSH(22), 3030, 8000 허용 및 활성화 완료 (2026-07-03). 5442 내부망 제한은 별도 규칙 추가 여부 미확인 — UFW 기본 inbound 정책이 deny인지 확인 필요
+- [x] 방화벽(UFW) 설정 — OpenSSH(22), 3030, 8000 허용 및 활성화 완료. 5442는 `docker-compose.yml`에서 `127.0.0.1:5442:5432` 바인딩으로 외부 노출 자체를 차단 (2026-07-03)
 
 ---
 
@@ -828,4 +829,5 @@
 | 2026-07-03 | v1.7 | §8 다음 작업 9번(Next.js 기본 레이아웃 구성) 완료 처리 — 기존 로그인/레이아웃/사이드바/상단바 스캐폴딩을 `frontend/lib/auth.ts`(신규, JWT API 전까지 임시 세션 마커)로 실제 동작하는 흐름으로 연결(로그인 시 세션 저장, 미인증 시 `/login` 리다이렉트, 로그아웃 시 세션 제거). Phase 4를 "예정→진행 중"(0%→20%)으로 갱신 — Phase 1에서 이미 완료돼 있던 `output: 'standalone'`/`NEXT_PUBLIC_API_BASE_URL`도 반영. §11 프론트엔드 체크리스트 3개 항목 완료 체크, "공통 레이아웃·네비게이션"은 권한별 메뉴 제어 미구현으로 부분 완료 유지. Next.js 빌드/타입체크는 로컬 환경 제약(Node 16, `node_modules` 미설치)으로 미실시 | — |
 | 2026-07-03 | v1.8 | §8 다음 작업 10번(사원 목록 화면, 직무 유형 필터) 완료 처리 — `frontend/app/(app)/employees/page.tsx`의 기존 "보유 역할"(하드코딩 목록) 필터를 `HR_JIKMU_MST` 마스터 기반 `jobTypeOptions`("직무 유형")로 교체, 신규/구 코드 혼재 대응 별칭 매핑 추가. Phase 4 진행률 20%→25%로 갱신. §4/§11의 사원 목록 화면 항목 완료 체크(목데이터 기반, 실 API 미연동 명시). Next.js 빌드/타입체크는 로컬 환경 제약으로 미실시 | — |
 | 2026-07-03 | v1.9 | 실 서버 배포 검증 완료 및 버그 수정 5건 반영 — (1) `frontend/package.json`에 `packageManager` 고정(pnpm 11로 인한 lockfile 충돌 해결), (2) `frontend/public/.gitkeep` 추가(Docker 빌드 COPY 실패 해결), (3) `backend/alembic/env.py`의 `%` 이스케이프 처리(ConfigParser 보간 오류 해결, DATABASE_URL percent-encoding 대응), (4) `backend/app/models/{hr_empl_mst,pjt_mst,pjt_asgn_his}.py` 및 `alembic/versions/28ce52377e32_...py`의 CHECK 제약 6곳에 컬럼명 큰따옴표 추가(Postgres 대소문자 접힘으로 인한 "column does not exist" 오류 해결). 실 서버에서 Docker Compose v2(v5.2.0)·UFW(22/3030/8000)·`alembic upgrade head`(10개 테이블 생성+`SYS_ROLE_MST` 6종 Seed) 전부 정상 동작 확인. §3/§4 Phase 1 진행률 60%→75%로 갱신, §8 4~6번 및 §11 데이터베이스/인프라 체크리스트의 "미검증" 표기를 실 서버 확인 완료로 전환, §9에 `POSTGRES_PASSWORD` 노출 이력(로테이션 필요)·UFW 5442 제한 미확인 리스크 2건 추가 | — |
+| 2026-07-03 | v2.0 | Phase 1 완료(100%) 처리 — `/health`·포트 3030 curl 응답 정상 확인. `docker-compose.yml`의 `db` 포트 바인딩을 `"5442:5432"` → `"127.0.0.1:5442:5432"`로 변경(UFW 대신 Docker 포트 바인딩 레벨에서 PostgreSQL 외부 노출 차단). `POSTGRES_PASSWORD` 로테이션 완료 확인. §9 리스크 2건(비밀번호 노출, UFW 5442) "해소" 처리, §3/§4 Phase 1을 "완료"로 갱신 | — |
 

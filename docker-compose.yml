@@ -23,7 +23,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5442:5432"
+      # 127.0.0.1 바인딩 — Docker는 게시된 포트에 대해 자체 iptables 규칙을 추가하므로
+      # UFW의 inbound 정책만으로는 외부 접근을 확실히 막지 못할 수 있다 (Docker가 UFW보다
+      # 앞선 체인에 규칙을 삽입하는 알려진 문제). 호스트 루프백에만 바인딩해 애초에 외부
+      # 인터페이스로 노출되지 않도록 한다.
+      - "127.0.0.1:5442:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - *tz-localtime-ro
