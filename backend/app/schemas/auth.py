@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel
 
 
@@ -27,3 +29,15 @@ class AccessTokenResponse(BaseModel):
 
     access_token: str
     token_type: str = "bearer"
+
+
+class MeOut(BaseModel):
+    """현재 로그인 사용자 정보 응답 (`GET /api/v1/auth/me`) — 프론트엔드가 화면 접근 권한
+    (`PERM_JSON`)을 조회해 메뉴를 필터링하는 데 사용한다 (로드맵 §8 "권한별 메뉴 제어")."""
+
+    USER_ID: uuid.UUID
+    USER_LGID: str
+    EMAIL_ADDR: str
+    ROLE_CD: str
+    ROLE_NM: str
+    PERM_JSON: dict | None

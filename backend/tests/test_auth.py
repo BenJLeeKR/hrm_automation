@@ -59,3 +59,24 @@ def test_protected_endpoint_rejects_garbage_token(client):
     resp = client.get("/api/v1/employees", headers={"Authorization": "Bearer garbage"})
 
     assert resp.status_code == 401
+
+
+def test_me_returns_current_user_and_perm_json(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    access_token = client.post(
+        "/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}
+    ).json()["access_token"]
+
+    resp = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {access_token}"})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["USER_LGID"] == login_id
+    assert body["ROLE_CD"] == "ADMIN"
+    assert body["PERM_JSON"]["screens"]["employees"]["view"] is True
+
+
+def test_me_requires_auth(client):
+    resp = client.get("/api/v1/auth/me")
+
+    assert resp.status_code == 401

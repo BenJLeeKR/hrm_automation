@@ -98,7 +98,7 @@
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
-| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 31% | 정상 |
+| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 38% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
@@ -300,7 +300,7 @@
 | **목표** | 권한별 메뉴 제어가 적용된 웹 화면 전체 구현 (포트 3030) |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 31% |
+| **진행률** | 38% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -311,7 +311,7 @@
 | `NEXT_PUBLIC_API_BASE_URL` 환경변수 설정 | 완료 (Phase 1, `.env.example`. 2026-07-03: Docker 빌드 시 이 값이 클라이언트 번들에 실제로 주입되지 않던 버그 발견 및 수정 — 하단 비고 참조) |
 | 로그인 화면 구현 (`/login`) | 완료 (`frontend/app/login/page.tsx`, 기존 스캐폴딩 보강 — JWT API 전까지 `lib/auth.ts` MVP 세션 마커로 대체, 2026-07-03) |
 | 로그인 JWT API 연동 (`frontend/lib/auth.ts` localStorage 임시 마커 → `POST /api/v1/auth/{login,refresh,logout}` 실 API 연동) | 완료 (`lib/auth.ts`에 `login`/`logout`/`getAccessToken` 추가, `login/page.tsx`·`top-nav.tsx` 실 API 연동, 실 서버 컨테이너 빌드·번들 검증 완료, 2026-07-03. 토큰 저장은 MVP로 localStorage 유지 — HttpOnly Cookie 전환은 별도 후속 과제) |
-| 공통 레이아웃·네비게이션 구현 (권한별 메뉴 제어) | 진행 중 (레이아웃·네비게이션·미인증 리다이렉트는 구현 완료, "권한별 메뉴 제어"는 `SYS_ROLE_MST.PERM_JSON` 연동 미구현) |
+| 공통 레이아웃·네비게이션 구현 (권한별 메뉴 제어) | 완료 (레이아웃·네비게이션·미인증 리다이렉트 및 `SYS_ROLE_MST.PERM_JSON` 기반 사이드바 메뉴 필터링 구현, 실 서버 검증 완료, 2026-07-03) |
 | 대시보드 화면 구현 (`/dashboard`) — 직무 유형 분포 위젯 포함 | 예정 |
 | 사원 목록 화면 구현 (`/employees`) — 직무 유형 필터 포함 | 완료 (기존 스캐폴딩 + 직무 유형 필터 추가, 목데이터 기반, 2026-07-03) |
 | 사원 상세 화면 구현 (`/employees/[id]`) | 예정 |
@@ -625,6 +625,7 @@
 - **Pytest 단위 테스트 스위트 구축 — Phase 3 정식 완료 (§8 다음 작업 1번)** — `backend/requirements.txt`에 `pytest`/`httpx` 신규 추가, `backend/pytest.ini`(신규, `pythonpath = .`로 `import app...` 해석) 작성. `backend/tests/conftest.py`(신규)에 실 DB 연결 하나를 열어 외부 트랜잭션을 시작하고 세션은 `join_transaction_mode="create_savepoint"`로 생성하는 표준 격리 패턴 구현 — 애플리케이션 코드가 각 API 호출 안에서 `db.commit()`을 호출해도 SAVEPOINT만 커밋되고, 테스트 종료 시 외부 트랜잭션을 롤백해 실 DB에는 어떤 흔적도 남기지 않는다(별도 테스트 DB 없이도 안전하게 반복 실행 가능). `app.dependency_overrides[get_db]`로 FastAPI 앱의 DB 세션을 테스트 세션으로 교체하는 `client` 픽스처, `SYS_ROLE_MST`의 기존 ADMIN/VIEWER Seed를 그대로 활용하는 `admin_token`/`viewer_token` 픽스처 작성. 테스트 파일 4종(`test_health.py`, `test_auth.py`, `test_employees.py`, `test_assignments.py`) 총 16개 케이스 작성 — `/health`, 로그인 성공/실패/미존재 사용자, 토큰 갱신, 토큰 타입 오용 거부, 인증 없는/위조 토큰 접근 거부, 사원 생성·조회·수정·퇴직·재퇴직 409·중복 사번 409·미존재 404, RBAC(VIEWER는 조회 가능·생성 403), 투입 관리 ALLOC_RT 100% 초과 거부(409)·정확히 100% 허용(201)·취소된 투입 재집계 제외 커버. **실 서버 컨테이너에서 실제 실행**: 이미지 재빌드 후 `pytest -v` 16개 전부 통과 확인, 실행 직후 `psql`로 `SYS_USER_MST`/`HR_DEPT_MST`/`PJT_MST`/`HR_EMPL_MST`에 `pytest_%`/`PYTEST%` 패턴의 잔여 데이터가 0건임을 확인해 트랜잭션 롤백 격리가 실제로 동작함을 검증. §4 Phase 3 "완료 기준" 4개 항목(핵심 CRUD 응답 확인/JWT·RBAC 동작 확인/감사 로그 기록 확인/Pytest 커버)이 전부 충족되어 **Phase 3을 정식 완료(개발 상태 "완료", 진행률 100%)로 전환**, §3 전체 로드맵 표 갱신, §9 리스크 "해소" 처리, §8 큐를 Phase 3 완료로 다음 순서인 Phase 4(Next.js) 잔여 항목("공통 레이아웃·네비게이션 권한별 메뉴 제어", "대시보드 화면 구현")으로 재구성
 - **프론트엔드 전체 한글 폰트를 Noto Sans KR로 변경 (사용자 요청)** — `frontend/app/layout.tsx`의 본문 폰트를 `next/font/google`의 `Geist`(라틴 전용)에서 `Noto_Sans_KR`(subsets `latin`+`korean`, weight 400/500/600/700)로 교체 — 화면 대부분이 한글이라 한글 글리프를 지원하지 않는 라틴 전용 폰트 대신 한글 최적화 폰트로 전환. CSS 변수명(`--font-geist-sans`)은 그대로 유지해 `globals.css`의 `--font-sans` 매핑 등 다른 파일 변경을 최소화(폴백 폰트명만 `'Geist Fallback'`→`'Noto Sans KR Fallback'`으로 갱신). 코드/숫자용 모노스페이스 폰트(`Geist Mono`)는 변경하지 않음(한글 폰트 요청 범위 밖). **실 서버 컨테이너에서 실제 렌더링 검증**: `sg docker -c "docker compose up -d --build web"`로 재빌드(TypeScript/Next.js 빌드 정상 통과 확인 — 로컬 환경 Node 16 제약으로 못했던 빌드 검증을 실 서버에서 대체 수행), `/login` 200 정상 응답, 실제 서빙된 CSS에서 `font-family: Noto Sans KR, Noto Sans KR Fallback`이 `--font-geist-sans` 변수에 정상 매핑되어 적용됨을 확인, `Geist Mono`는 그대로 유지됨을 확인. 백로그에 해당 전용 체크리스트 항목이 없어 Phase 진행률 변경 없음(§7 완료 내역에만 기록)
 - **대시보드 집계 API — 프론트엔드 목데이터 기반 4개 엔드포인트 추가 (사용자 요청)** — 사용자가 "현재 frontend에 mock 데이터로 구현되어 있는 dashboard를 참고해서 필요한 API를 구현"을 요청. `frontend/app/(app)/dashboard/page.tsx`와 `frontend/lib/mock-data.ts`를 확인한 결과, 화면이 이미 SCR-002 설계서 표에 없던 4개 위젯(데이터 품질 점검·이달 투입 종료 예정 상세 목록·최근 입사자·월별 인력 추이)을 목데이터로 표시하고 있음을 확인 — 앞서 구현한 4개 엔드포인트(설계서 명시분)로는 커버되지 않는 부분이라 추가로 구현. `backend/app/repositories/dashboard.py`에 `get_data_quality`(재직 사원 중 기술/직무 미등록 수, `ALLOC_RT` 합계 100% 초과 사원 수), `get_ending_this_month`(이번 달 종료 예정 투입 상세 목록 — 사원명/부서명/프로젝트명/종료일/투입률), `get_recent_employees`(최근 입사자, `HIRE_DT` 내림차순), `get_headcount_trend`(월별 재직 인원/입사/퇴사 추이, 개월 수 파라미터화) 4개 함수 추가. `backend/app/schemas/dashboard.py`·`backend/app/api/v1/dashboard.py`에 대응 스키마·엔드포인트(`GET /api/v1/dashboard/{data-quality,ending-this-month,recent-employees,headcount-trend}`) 추가, 기존과 동일하게 `require_permission("dashboard", "view")` 적용. 100% 초과 데이터 점검은 등록/수정 API에서 이미 저장 차단하지만(§9 참조) 기존 Excel 이관 데이터 예외(`AVAILABILITY_CALC_SPEC.md` §5)를 대비해 별도로 재점검하도록 구현. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 사원 3명(기술/직무 미등록 1명, 정상 1명 — 레거시 100% 초과 투입 직접 삽입, 이번 달 퇴직 1명)의 임시 데이터로 4개 엔드포인트를 수기 계산과 대조 — 데이터 품질(기술 미등록 1/직무 미등록 1/초과 1), 이달 종료 예정 1건, 최근 입사자 2명(퇴직자 제외), 3개월 인력 추이(입사 1·퇴사 1 반영) 전부 정확히 일치함을 확인. 검증에 사용한 임시 데이터는 검증 직후 전부 삭제. §11 "대시보드 집계 API" 항목 설명에 8개 엔드포인트 전체 반영, 별도 리스크 추가 없음(기존 §9 "대시보드 API가 HR_AVAIL_SNAP 대신 실시간 계산 사용" 리스크와 동일 원칙 적용)
+- **공통 레이아웃·네비게이션 — 권한별 메뉴 제어 구현 (§8 다음 작업 1번)** — 사이드바 메뉴를 로그인 사용자의 `SYS_ROLE_MST.PERM_JSON` 기준으로 필터링하는 기능을 구현. 프론트엔드에는 로그인 성공 후 현재 사용자의 역할·권한을 조회할 방법이 없어(토큰에는 `role_id`만 있고 `PERM_JSON`은 없음), `backend/app/api/v1/auth.py`에 `GET /api/v1/auth/me`(신규, 기존 `get_current_user` 의존성만 사용 — 별도 권한 검사 없이 인증된 사용자면 자신의 정보 조회 가능) 및 `backend/app/schemas/auth.py`에 `MeOut`(신규, `USER_LGID`/`ROLE_CD`/`ROLE_NM`/`PERM_JSON` 반환) 추가. `frontend/lib/nav.ts`의 `NavItem`에 `permKey`(선택, `PERM_JSON.screens`의 화면 키) 필드 추가해 각 메뉴를 대응 화면 키에 매핑(대시보드→`dashboard`, 사원 관리→`employees` 등), `filterNavByPermissions` 헬퍼(신규, `permKey`가 없는 항목은 항상 노출, 있으면 `screens[permKey].view===true`인 것만 통과) 추가. `frontend/lib/auth.ts`에 `getMe()`(신규, `/auth/me` 호출, 실패 시 `null` 반환 — 권한 조회 실패가 메뉴를 숨기는 방향으로 작동하지 않도록 설계, 실제 접근 차단은 각 API의 RBAC가 담당) 추가. `frontend/components/layout/app-shell.tsx`에서 인증 확인 직후 `getMe()`를 호출해 `PERM_JSON`을 `Sidebar`(데스크톱·모바일 드로어 두 곳 모두)에 전달, `frontend/components/layout/sidebar.tsx`는 전달받은 `permJson`으로 `mainNav`/`bottomNav`를 필터링해 렌더링. **실 서버 컨테이너에서 실제 검증**: 백엔드 재빌드 후 실제 `admin` 계정으로 `GET /auth/me` 호출해 `ROLE_CD=ADMIN`과 `PERM_JSON` 전체가 정상 반환됨을 확인, 무인증 호출 401 확인. `backend/tests/test_auth.py`에 `test_me_returns_current_user_and_perm_json`/`test_me_requires_auth` 2개 케이스 추가해 pytest 스위트를 16개→18개로 확장, 전부 통과 확인. 프론트엔드는 `docker compose up -d --build web` 재빌드 후 컴파일된 클라이언트 번들에 `/auth/me` 호출 코드가 포함됨을 확인. §4 Phase 4 "공통 레이아웃·네비게이션" 항목을 진행 중→완료로 갱신(Phase 4 진행률 31%→38%), §11 동일 항목 완료 체크, §8 큐에서 완료 항목 제거(대시보드 화면 구현만 남음)
 
 ---
 
@@ -633,8 +634,9 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 공통 레이아웃·네비게이션 — 권한별 메뉴 제어 구현 (사이드바 메뉴를 로그인한 사용자의 `SYS_ROLE_MST.PERM_JSON` 기준으로 필터링 — 로그인 JWT 연동 완료로 현재 사용자 컨텍스트 확보 가능해짐)
-- [ ] 2. 대시보드 화면 구현 (`/dashboard`, 직무 유형 분포 위젯 포함 — 목데이터를 백엔드 8개 API로 교체)
+- [ ] 1. 대시보드 화면 구현 (`/dashboard`, 직무 유형 분포 위젯 포함 — 목데이터를 백엔드 8개 API로 교체)
+
+> 참고: "공통 레이아웃·네비게이션 권한별 메뉴 제어"는 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: "Excel Export API 구현(`GET /api/v1/employees/export`)", "Excel Import API 구현(`POST /api/v1/employees/import`)", "로그인 JWT API 연동", "Pytest 단위 테스트 스위트 구축"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다. Import 정책은 사용자 확정 사항(마스터 미존재 시 전체 실패, `EMPL_NO` 기준 Upsert, 부분 실패 시 전체 롤백)을 그대로 반영했다.
 
@@ -784,7 +786,7 @@
 - [x] `NEXT_PUBLIC_API_BASE_URL` 환경변수 설정 (`http://{서버IP}:8000`)
 - [x] 로그인 화면 구현 (`/login`) — MVP 임시 인증(`frontend/lib/auth.ts`), JWT API 연동 전까지 대체
 - [x] 로그인 JWT API 연동 (`frontend/lib/auth.ts`의 localStorage 임시 마커를 `POST /api/v1/auth/login`·`/logout` 실제 호출로 교체) — 실 서버 컨테이너 빌드 및 번들 검증 완료 (2026-07-03). 토큰 저장은 MVP로 localStorage 유지
-- [ ] 공통 레이아웃·네비게이션 구현 (권한별 메뉴 제어) — 레이아웃/네비게이션/미인증 리다이렉트 구현 완료, 권한별 메뉴 제어(`PERM_JSON` 연동)는 미구현
+- [x] 공통 레이아웃·네비게이션 구현 (권한별 메뉴 제어) — 레이아웃/네비게이션/미인증 리다이렉트 및 `PERM_JSON` 기반 메뉴 필터링 전부 구현, 실 서버 검증 완료 (2026-07-03)
 - [ ] 대시보드 구현 (`/dashboard` — 직무 유형 분포 위젯 포함)
 - [x] 사원 관리 화면 구현 (`/employees` — `JIKMU_ID` 필드·직무 유형 필터 포함) — 목데이터 기반, 실 API(`GET /api/v1/employees`) 연동 미완료
 - [ ] 사원 상세 화면 구현 (`/employees/[id]`)
@@ -908,4 +910,5 @@
 | 2026-07-03 | v5.0 | Excel Import 정책 확정 반영: 마스터 미존재 시 전체 실패, `EMPL_NO` 기준 Upsert, 일부 실패 시 전체 롤백 (사용자 확정) — `POST /api/v1/employees/import` 신규 구현(`backend/app/services/employee_import.py`: 파싱·검증·Upsert·역할/기술 동기화, `python-multipart` 신규 의존성). 실 서버에서 정상/마스터 미존재/파일 내 사번 중복/기존 사번 수정 4개 시나리오 및 권한/인증/감사 로그 전부 검증 완료, 실패 시나리오는 DB 무변경 확인. §4 "Excel Import/Export API" 완료 처리, §11 항목 완료 체크. **Phase 3 재점검**: 주요 작업 전 항목 완료로 진행률 100% 갱신했으나, "완료 기준"의 "Pytest 단위 테스트 핵심 API 커버"가 미충족임을 확인해 Phase 3을 "완료"로 선언하지 않음 — §8 다음 작업을 "Pytest 단위 테스트 스위트 구축"으로 재구성, §9 리스크 1건 추가 | — |
 | 2026-07-03 | v5.1 | **버그 수정** — `NEXT_PUBLIC_API_BASE_URL`이 프론트엔드 Docker 이미지 빌드 시점에 클라이언트 번들로 인라인되지 않던 문제 발견 및 수정(사용자가 프론트엔드 로그인 화면에서 로그인이 안 된다고 보고해 조사 중 발견). `docker-compose.yml`의 `web.build`에 `args: {NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}}` 추가, `frontend/Dockerfile` builder 스테이지에 `ARG`/`ENV` 선언 추가. Phase 1 때부터 잠재했던 버그로, 화면이 목데이터만 쓰던 동안은 드러나지 않다가 로그인 JWT 연동(v4.9) 이후 처음 실제 영향이 나타남 — 재빌드 후 클라이언트 번들에 백엔드 URL이 정상 포함되고 CORS 프리플라이트·실제 로그인 요청이 브라우저와 동일한 조건(Origin 헤더 포함)으로 정상 동작함을 확인. `.env`/DESIGN 파일은 수정하지 않음. §9 리스크에 "해소"로 기록, §11 관련 항목 설명 갱신 | — |
 | 2026-07-03 | v5.2 | **Phase 3(FastAPI 백엔드 구축) 정식 완료** — Pytest 단위 테스트 스위트 신규 구축(`backend/tests/`, 16개 테스트: health/인증/RBAC/사원 CRUD/투입관리 ALLOC_RT 검증). 실 DB 연결+SAVEPOINT 격리 패턴으로 테스트 후 자동 롤백되어 DB에 흔적을 남기지 않도록 구현, 실 서버 컨테이너에서 16개 전부 통과 및 잔여 데이터 0건 확인. §4 Phase 3 "완료 기준" 4개 항목 전부 충족되어 개발 상태 "완료"·진행률 100%로 전환, §3 전체 로드맵 갱신, §9 리스크 해소 처리, §8 큐를 Phase 4(Next.js) 잔여 항목으로 재구성 | — |
+| 2026-07-03 | v5.3 | §8 다음 작업 1번(공통 레이아웃·네비게이션 권한별 메뉴 제어) 완료 처리 — `GET /api/v1/auth/me`(신규, `MeOut` 스키마) 추가해 프론트엔드가 현재 사용자의 `ROLE_CD`/`PERM_JSON`을 조회할 수 있게 함. `frontend/lib/nav.ts`에 `NavItem.permKey` 필드와 `filterNavByPermissions` 헬퍼 추가, `lib/auth.ts`에 `getMe()` 추가, `app-shell.tsx`가 로그인 확인 후 `getMe()` 호출 결과를 `Sidebar`(데스크톱/모바일 공통)에 전달해 메뉴를 화면 권한 기준으로 필터링. `backend/tests/test_auth.py`에 `/auth/me` 테스트 2건 추가(pytest 16→18개 전부 통과). 실 서버에서 `admin` 계정으로 `/auth/me` 정상 응답, 무인증 401, 프론트엔드 재빌드 후 번들에 호출 코드 포함 확인. Phase 4 진행률 31%→38%로 갱신, §4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거(대시보드 화면 구현만 남음) | — |
 

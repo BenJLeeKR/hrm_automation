@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.core.audit import record_audit
 from app.core.security import (
     REFRESH_TOKEN_TYPE,
@@ -13,8 +14,10 @@ from app.core.security import (
     verify_password,
 )
 from app.db.session import get_db
+from app.models.sys_role_mst import SysRoleMst
+from app.models.sys_user_mst import SysUserMst
 from app.repositories.sys_user_mst import get_user, get_user_by_login_id, update_last_login
-from app.schemas.auth import AccessTokenResponse, LoginRequest, RefreshRequest, TokenResponse
+from app.schemas.auth import AccessTokenResponse, LoginRequest, MeOut, RefreshRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -61,3 +64,18 @@ def logout() -> None:
     구현 시 토큰 검증 경로가 추가되면 함께 도입 예정 — 그 전까지는 클라이언트가 저장된
     토큰을 폐기하는 것으로 로그아웃을 처리한다."""
     return None
+
+
+@router.get("/me", response_model=MeOut)
+def get_me(current_user: SysUserMst = Depends(get_current_user), db: Session = Depends(get_db)) -> MeOut:
+    """현재 로그인 사용자 정보 및 역할 권한(`PERM_JSON`) 조회 — 프론트엔드가 화면별
+    접근 권한에 따라 사이드바 메뉴를 필터링하는 데 사용한다."""
+    role = db.get(SysRoleMst, current_user.ROLE_ID)
+    return MeOut(
+        USER_ID=current_user.USER_ID,
+        USER_LGID=current_user.USER_LGID,
+        EMAIL_ADDR=current_user.EMAIL_ADDR,
+        ROLE_CD=role.ROLE_CD if role else "",
+        ROLE_NM=role.ROLE_NM if role else "",
+        PERM_JSON=role.PERM_JSON if role else None,
+    )

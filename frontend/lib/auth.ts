@@ -60,6 +60,33 @@ export async function login(userLoginId: string, password: string): Promise<Logi
   }
 }
 
+export interface CurrentUser {
+  USER_ID: string
+  USER_LGID: string
+  EMAIL_ADDR: string
+  ROLE_CD: string
+  ROLE_NM: string
+  PERM_JSON: { screens?: Record<string, { view?: boolean }> } | null
+}
+
+/** 현재 로그인 사용자 정보와 역할 권한(`PERM_JSON`)을 조회한다 — 사이드바 메뉴를
+ * 역할별로 필터링하는 데 사용한다 (로드맵 §8 "권한별 메뉴 제어"). 인증 실패·네트워크
+ * 오류 시 `null`을 반환하며, 호출부에서 메뉴 필터링을 생략(전체 노출)하도록 한다. */
+export async function getMe(): Promise<CurrentUser | null> {
+  const accessToken = getAccessToken()
+  if (!accessToken) return null
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!res.ok) return null
+    return (await res.json()) as CurrentUser
+  } catch {
+    return null
+  }
+}
+
 export async function logout(): Promise<void> {
   const accessToken = getAccessToken()
   clearSession()

@@ -4,14 +4,18 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Boxes } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { mainNav, bottomNav } from '@/lib/nav'
+import { mainNav, bottomNav, filterNavByPermissions, type PermJson } from '@/lib/nav'
 
 interface SidebarProps {
   onNavigate?: () => void
+  /** 로그인 사용자의 `SYS_ROLE_MST.PERM_JSON` — `null`이면(조회 전/실패) 전체 메뉴를 노출한다. */
+  permJson?: PermJson | null
 }
 
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar({ onNavigate, permJson = null }: SidebarProps) {
   const pathname = usePathname()
+  const visibleMainNav = filterNavByPermissions(mainNav, permJson)
+  const visibleBottomNav = filterNavByPermissions(bottomNav, permJson)
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === href
@@ -34,7 +38,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       {/* 메인 메뉴 */}
       <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-2">
         <ul className="flex flex-col gap-1">
-          {mainNav.map((item) => {
+          {visibleMainNav.map((item) => {
             const active = isActive(item.href)
             return (
               <li key={item.href}>
@@ -73,7 +77,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       {/* 하단 메뉴 */}
       <div className="shrink-0 border-t border-nav-border px-3 py-3">
         <ul className="flex flex-col gap-1">
-          {bottomNav.map((item) => (
+          {visibleBottomNav.map((item) => (
             <li key={item.label}>
               <Link
                 href={item.href}
