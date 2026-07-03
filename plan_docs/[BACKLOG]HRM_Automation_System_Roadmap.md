@@ -164,6 +164,7 @@
 | Docker Compose Plugin 설치 | 예정 (현재 `docker-compose` v1.29.2만 설치됨 — v2 플러그인 전환 필요) |
 | `/App/hrmngr/` 디렉토리 구조 생성 | 완료 (`backend/`, `frontend/`, `data/postgres/`, `data/redis/`, `backup/postgres/`, `logs/`) |
 | `docker-compose.yml` 초안 작성 (api / web / db / redis / worker) | 완료 (`docker-compose config`로 문법 검증 완료) |
+| 전 컨테이너 타임존 KST(Asia/Seoul) 통일 | 완료 (2026-07-03 — `TZ`/`PGTZ` 환경변수 + `/etc/localtime`·`/etc/timezone` 읽기전용 바인드 마운트, YAML anchor로 중복 최소화. 실 컨테이너 기동 후 `date`/`SHOW timezone;` 검증은 서버에서 수행 필요) |
 | `.env` 파일 작성 및 `.gitignore` 설정 | 완료 (`.env.example` 작성, `.gitignore`에 `data/`, `backup/postgres/*.sql.gz`, `logs/`, `.next/` 추가) |
 | Git Repository 초기화 | 완료 (기존 리포지토리) |
 | PostgreSQL 컨테이너 기동 및 포트 5442 접속 확인 | 예정 (개발 환경 권한 제약으로 미검증 — 서버에서 확인 필요) |
@@ -575,6 +576,7 @@
 
 - 가동 가능일 MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 신규 작성. 기준일=`HR_AVAIL_SNAP.SNAP_DT`(배치 실행일), 투입률 합계 산정 대상 조건(`ASGN_STAT_CD='ACTIVE'`, `ASGN_STRT_DT<=기준일`, `ASGN_END_DT IS NULL OR ASGN_END_DT>=기준일`, `ASGN_TYPE_CD IN ('RUNNING','COMMITTED')`), `PROPOSED` 기본 제외(대시보드/리포트 "전체(+제안중)" 지표로 별도 표시), 0%/1~99%/≥100% 3단계 `AVAIL_STAT_CD`·`AVAIL_STRT_DT` 산정식(종료일 NULL 시 데이터 품질 경고 처리 포함), 100% 초과 데이터의 저장 차단 원칙 및 기존 Excel 이관 데이터 예외(품질 점검 경고 대상) 확정. §9 리스크 "가동 가능일 계산 기준 미정" 상태를 "차단→주의"로 하향, §11 MVP 체크리스트 관련 항목 설명 갱신
 - (§8 다음 작업 4번) PostgreSQL 초기 마이그레이션 구성(Alembic `env.py` 설정) 완료 — `backend/alembic.ini`(민감정보 미포함, `DATABASE_URL`은 `.env` 기반으로 `env.py`에서 로드), `backend/alembic/env.py`(offline/online 마이그레이션 모드 지원, `app.db.base.Base.metadata`를 target_metadata로 사용), `backend/alembic/script.py.mako`(리비전 템플릿), `backend/alembic/versions/`(빈 디렉토리) 신규 작성. `backend/app/db/base.py`에 공통 `Base` 선언 추가, `app/models/__init__.py`에 Phase 2 모델 등록 안내 주석 추가. README.md에 Alembic 사용법(리비전 생성/적용/롤백) 섹션 추가. **실 DB 연결 기반 `alembic upgrade head` 실행은 로컬 환경에 `alembic`/`pip` 미설치로 미검증** — 구문·설정 파일 유효성만 확인 (아래 검증 결과 참조)
+- 전 컨테이너 타임존 KST(Asia/Seoul) 통일 — `docker-compose.yml`의 `api`/`web`/`worker`/`db`/`redis` 5개 서비스에 `TZ=Asia/Seoul` 적용(YAML anchor `x-tz-env`로 중복 최소화), Ubuntu 호스트 `/etc/localtime`·`/etc/timezone` 읽기전용 바인드 마운트 추가, PostgreSQL은 `PGTZ=Asia/Seoul` 추가 지정(단 `TIMESTAMPTZ` 내부 저장은 UTC 유지). `.env`에는 `TZ` 추가하지 않음(compose 레벨 anchor로 고정). 설계서(`[DESIGN]HRM_Automation_System_Design_v0_6.md`) §8.3을 동일 내용으로 갱신하고 §8.3-1(타임존 정책, Alpine tzdata 참고사항, 운영 검증 명령)을 신규 추가 — 업무/DB/화면/API 설계 내용은 변경 없음. Dockerfile은 이번 작업에서 수정하지 않음(Alpine tzdata 이슈 미확인, 필요 시 후속 검토 사항으로 문서화)
 
 ---
 
@@ -610,6 +612,7 @@
 | 운영 서버 백업 정책 미정 | 중간 | 주의 | `pg_dump` 매일 02:00 + 14일 보관 + 외부 스토리지 복제 초안 제시, 운영팀 확인 필요 |
 | 서버 HTTPS/도메인 미적용 | 낮음 | 주의 | 초기 구축은 내부망 HTTP로 운영, Phase 7에서 Nginx + TLS 도입 여부 재검토 |
 | `HR_EMPL_MST.JIKMU_ID` 기존 데이터 없음 | 낮음 | 주의 | NULL 허용 설계로 이관 후 운영팀 수동 보정, Phase 8 데이터 이관 시 처리 |
+| 컨테이너 타임존이 Ubuntu 호스트 설정에 종속 | 낮음 | 주의 (2026-07-03 추가) | `/etc/localtime`·`/etc/timezone` 바인드 마운트 방식이라 호스트 자체가 KST(Asia/Seoul)로 설정되어 있어야 컨테이너도 KST가 됨 — 배포 전 `timedatectl set-timezone Asia/Seoul` 확인 필요. Alpine 이미지(`redis`, `db`, `web`)는 `tzdata` 미설치 시 일부 CLI가 `TZ` 이름을 못 찾을 수 있음(바인드 마운트로 우회되나 완전 검증은 실 서버에서 필요) — 상세는 설계서 §8.3-1, `docker-compose.yml` 참조 |
 | `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 해결 (2026-07-02) | 관계자 확인 완료 — Phase 2 데이터 모델 범위에 포함 확정. 로드맵 전체 테이블 수를 "15개→16개"로 정정, §4/§11 테이블 목록에 반영 완료 (`backend/docs/ERD.md` §5 참조) |
 | `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 해결 (MVP, 2026-07-02 갱신) | ROLE_NM/ROLE_DESC 및 화면×버튼 권한(`view`/`create`/`update`/`delete`/`excel`/`admin`) 기준 PERM_JSON MVP 확정 완료 — `backend/app/db/seed/sys_role_mst_seed.py`, `backend/docs/PERMISSION_MATRIX.md` 참조 |
 | `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 |
@@ -800,4 +803,5 @@
 | 2026-07-02 | v0.8 | MVP 권한 매트릭스(화면 접근 + 버튼 권한 조회/등록/수정/삭제/Excel/관리자 기능) 작성 — `backend/docs/PERMISSION_MATRIX.md` 신규, `sys_role_mst_seed.py`의 `PERM_JSON`을 화면×버튼 세부 구조(v2)로 갱신. §9 리스크 2건 해결 내용을 v2 매트릭스 기준으로 갱신 | — |
 | 2026-07-03 | v0.9 | 가동 가능일 MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 신규 작성(기준일/집계조건/`PROPOSED` 제외/3단계 산정식/100% 초과 예외 처리). §9 리스크 "가동 가능일 계산 기준 미정" 상태를 "차단→주의"로 하향, §4 Phase 5·§5 기능별 구현상태·§11 검색추천 체크리스트에 산정 기준 요약 반영 | — |
 | 2026-07-03 | v1.0 | §8 다음 작업 4번(Alembic `env.py` 설정) 완료 처리 — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py` 작성. Phase 2 진행률 5%→10%로 갱신. §11 데이터베이스 체크리스트 "Alembic 마이그레이션 환경 구성" 항목 완료 처리. 실 DB 연결 검증은 로컬 환경 제약으로 미실시 | — |
+| 2026-07-03 | v1.1 | 전 컨테이너(api/web/worker/db/redis) 타임존 Asia/Seoul(KST) 통일 — `docker-compose.yml`에 `TZ`/`PGTZ` 환경변수 및 `/etc/localtime`·`/etc/timezone` 읽기전용 바인드 마운트 적용(YAML anchor 사용). `[DESIGN]HRM_Automation_System_Design_v0_6.md` §8.3 동일 갱신 및 §8.3-1(타임존 정책/Alpine tzdata 참고/운영 검증 명령) 신규 추가 — 예외적으로 운영 환경 구성 부분만 수정, 업무/DB/화면/API 설계는 변경 없음. §4 Phase 1 작업 목록에 타임존 통일 항목 추가 | — |
 

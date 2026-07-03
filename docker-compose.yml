@@ -1,3 +1,14 @@
+# --- 타임존 정책: 전 컨테이너 Asia/Seoul(KST) 통일 ---
+# - TZ 환경변수와 호스트 /etc/localtime·/etc/timezone 읽기전용 바인드 마운트를 함께 적용한다.
+# - .env 파일에는 TZ를 추가하지 않는다 (compose 레벨 anchor로 고정값 주입).
+# - PostgreSQL은 TIMESTAMPTZ(UTC 내부 저장) 원칙을 유지하되, 세션/서버 타임존과 로그·배치
+#   실행 기준은 KST로 통일한다 (PGTZ 참조).
+x-tz-env: &tz-env
+  TZ: Asia/Seoul
+
+x-tz-localtime-ro: &tz-localtime-ro /etc/localtime:/etc/localtime:ro
+x-tz-timezone-ro: &tz-timezone-ro /etc/timezone:/etc/timezone:ro
+
 services:
   db:
     image: postgres:16-alpine
@@ -5,6 +16,8 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
+      <<: *tz-env
+      PGTZ: Asia/Seoul
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -13,6 +26,8 @@ services:
       - "5442:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -26,9 +41,13 @@ services:
     image: redis:7-alpine
     container_name: hrm-redis
     restart: unless-stopped
+    environment:
+      <<: *tz-env
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - ./data/redis:/data
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     networks:
       - hrm-net
 
@@ -39,6 +58,8 @@ services:
     container_name: hrm-api
     restart: unless-stopped
     env_file: .env
+    environment:
+      <<: *tz-env
     ports:
       - "8000:8000"
     depends_on:
@@ -46,6 +67,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -62,12 +86,17 @@ services:
     container_name: hrm-worker
     restart: unless-stopped
     env_file: .env
+    environment:
+      <<: *tz-env
     command: ["python", "-m", "app.worker"]
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     networks:
       - hrm-net
 
@@ -78,10 +107,15 @@ services:
     container_name: hrm-web
     restart: unless-stopped
     env_file: .env
+    environment:
+      <<: *tz-env
     ports:
       - "3030:3000"
     depends_on:
       - api
+    volumes:
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     networks:
       - hrm-net
 

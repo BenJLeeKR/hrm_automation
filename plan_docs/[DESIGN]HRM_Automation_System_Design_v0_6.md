@@ -1029,6 +1029,13 @@ cd /App/hrmngr
 파일 위치: `/App/hrmngr/docker-compose.yml`
 
 ```yaml
+# --- 타임존 정책: 전 컨테이너 Asia/Seoul(KST) 통일 (2026-07-03, §8.3-1 참조) ---
+x-tz-env: &tz-env
+  TZ: Asia/Seoul
+
+x-tz-localtime-ro: &tz-localtime-ro /etc/localtime:/etc/localtime:ro
+x-tz-timezone-ro: &tz-timezone-ro /etc/timezone:/etc/timezone:ro
+
 services:
 
   api:
@@ -1039,6 +1046,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      <<: *tz-env
     ports:
       - "8000:8000"
     depends_on:
@@ -1046,6 +1055,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -1063,10 +1075,15 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      <<: *tz-env
     ports:
       - "3030:3000"           # 외부 3030 → 컨테이너 내부 3000
     depends_on:
       - api
+    volumes:
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     networks:
       - hrm-net
 
@@ -1078,12 +1095,17 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      <<: *tz-env
     command: ["python", "-m", "app.worker"]
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     networks:
       - hrm-net
 
@@ -1092,6 +1114,8 @@ services:
     container_name: hrm-db
     restart: unless-stopped
     environment:
+      <<: *tz-env
+      PGTZ: Asia/Seoul
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -1100,6 +1124,8 @@ services:
       - "5442:5432"           # 외부 5442 → 컨테이너 내부 5432
     volumes:
       - /App/hrmngr/data/postgres:/var/lib/postgresql/data
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -1113,9 +1139,13 @@ services:
     image: redis:7-alpine
     container_name: hrm-redis
     restart: unless-stopped
+    environment:
+      <<: *tz-env
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - /App/hrmngr/data/redis:/data
+      - *tz-localtime-ro
+      - *tz-timezone-ro
     networks:
       - hrm-net
 
@@ -1123,6 +1153,45 @@ networks:
   hrm-net:
     driver: bridge
 ```
+
+### 8.3-1 컨테이너 타임존 정책 (Asia/Seoul 통일)
+
+> 2026-07-03 추가 — 운영 환경 구성 관련 갱신. 업무/DB/화면/API 설계 내용에는 영향 없음.
+
+**정책**
+
+- `api`/`web`/`worker`/`db`/`redis` 5개 서비스 모두 `TZ=Asia/Seoul`을 명시한다 (위 §8.3 YAML anchor `x-tz-env` 참조, 중복 최소화).
+- Ubuntu 호스트의 `/etc/localtime`, `/etc/timezone`을 5개 서비스 컨테이너에 읽기 전용(`:ro`)으로 바인드 마운트해, 호스트가 KST로 설정되어 있으면 컨테이너도 그대로 따르도록 한다. 호스트 자체가 KST가 아니면 이 바인드 마운트만으로는 KST가 되지 않으므로, 호스트 타임존을 먼저 `Asia/Seoul`로 설정해야 한다 (`sudo timedatectl set-timezone Asia/Seoul`).
+- `.env` 파일에는 `TZ`를 추가하지 않는다 — compose 레벨 anchor로 고정하며, 사용자별 환경변수 파일 관리 범위와 분리한다.
+- PostgreSQL은 `PGTZ=Asia/Seoul`을 추가로 지정해 서버/세션 타임존을 KST로 맞춘다. 단 `TIMESTAMPTZ` 컬럼의 **내부 저장 형식은 UTC 그대로 유지**한다 (설계서 §5 데이터 모델 변경 없음) — `PGTZ`/세션 타임존은 조회 시 출력 표현과 `NOW()` 등 함수의 로컬 표기에만 영향을 준다.
+- 화면 표시, 애플리케이션 로그, 배치 실행 기준(`HR_AVAIL_SNAP_GEN` 01:00, `SYS_DB_BACKUP` 02:00 등 §10.1 배치 스케줄)은 모두 KST 기준으로 통일한다.
+
+**Alpine 이미지 tzdata 관련 참고사항 (Dockerfile 미수정)**
+
+- `redis:7-alpine`, `postgres:16-alpine`은 공식 이미지를 그대로 사용하며(자체 Dockerfile 없음), `backend/frontend`의 `python:3.12-slim`/`node:22-alpine` 기반 Dockerfile도 이번 작업에서 수정하지 않는다.
+- Alpine(musl libc) 계열 이미지는 `tzdata` 패키지가 없으면 `TZ=Asia/Seoul` 같은 이름 기반 타임존 지정이 무시되고 UTC로 동작할 수 있다. 본 정책은 이를 `/etc/localtime`·`/etc/timezone` 바인드 마운트로 우회한다 — 바인드 마운트된 `/etc/localtime`은 이미 컴파일된 타임존 규칙 파일이므로 `tzdata` 설치 여부와 무관하게 시스템 로컬타임 조회(`date`, 각 언어 런타임의 로컬타임 API)에 정확히 반영된다.
+- 다만 컨테이너 내부에서 `TZ` 환경변수 이름을 직접 참조해 `/usr/share/zoneinfo/Asia/Seoul` 파일을 찾는 도구(일부 CLI 유틸리티)는 `tzdata` 미설치 시 정상 동작하지 않을 수 있다. 운영 중 실제 문제가 확인되면 `backend/Dockerfile`에 `apt-get install -y tzdata`(Debian slim 계열, `api`/`worker`), `frontend/Dockerfile`에 `apk add --no-cache tzdata`(Alpine 계열, `web`) 추가를 검토한다 — 이번 작업에서는 실제 이슈가 확인되지 않아 적용하지 않았다.
+
+**운영 검증 명령 (§11 운영·보안 요건과 연계)**
+
+```bash
+# 호스트 타임존 확인/설정
+timedatectl
+sudo timedatectl set-timezone Asia/Seoul
+
+# 컨테이너별 시간/타임존 확인
+docker compose exec api date
+docker compose exec web date
+docker compose exec worker date
+docker compose exec db date
+docker compose exec redis date
+
+# PostgreSQL 서버/세션 타임존 확인
+docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "SHOW timezone;"
+docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "SELECT now(), now() AT TIME ZONE 'UTC';"
+```
+
+`SHOW timezone;` 결과가 `Asia/Seoul`(또는 동일 오프셋)이고, `now()` 출력이 KST 기준 현재 시각과 일치하면 정상이다. `TIMESTAMPTZ` 컬럼은 내부적으로 UTC로 저장되므로 `now() AT TIME ZONE 'UTC'` 결과와 9시간 차이가 나는 것이 정상 동작이다.
 
 ### 8.4 포트 접근 경로 정리
 
