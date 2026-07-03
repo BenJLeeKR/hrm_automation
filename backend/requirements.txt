@@ -6,5 +6,8 @@ psycopg[binary]==3.2.3
 pydantic==2.10.4
 pydantic-settings==2.7.0
 python-jose[cryptography]==3.3.0
+# bcrypt>=4.1은 passlib 1.7.4가 참조하는 `bcrypt.__about__.__version__`을 제거해 호환이 깨짐
+# (passlib 최신 릴리스도 아직 미수정) — 4.0.x로 고정
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 redis==5.2.1

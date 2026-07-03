@@ -251,7 +251,7 @@
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 39% |
+| **진행률** | 56% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -262,15 +262,15 @@
 | SQLAlchemy 2.x ORM 모델 작성 (16개 테이블) | 완료 (16/16, Phase 2 완료로 전체 작성 및 실 서버 DB 적용 검증 완료, 2026-07-03) |
 | Pydantic v2 스키마 작성 | 완료 (16개 테이블 전체 조회(Out) 스키마 작성, 실 서버 컨테이너에서 실제 임포트 및 ORM 데이터 검증 완료, 2026-07-03 — `EmployeeCreate`/`EmployeeUpdate` 등 등록/수정 스키마는 각 CRUD API 구현 시 추가 예정) |
 | `/health` 헬스체크 엔드포인트 구현 | 완료 (Phase 1, `backend/app/main.py`) |
-| JWT 인증 API 구현 (`SYS_USER_MST` 기반) | 예정 |
+| JWT 인증 API 구현 (`SYS_USER_MST` 기반) | 완료 (로그인/토큰 갱신/로그아웃 구현 — `POST /api/v1/auth/{login,refresh,logout}`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03. 로그아웃은 stateless 토큰 특성상 서버 측 즉시 무효화는 미구현 — 하단 비고 참조) |
 | RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반) | 예정 |
 | `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현 | 예정 |
 | CORS 설정 (포트 3030 허용) | 완료 (Phase 1, `backend/app/main.py`) |
 | 사원 CRUD API (`HR_EMPL_MST`) | 진행 중 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/employees`, 퇴직 처리용 삭제(DELETE)는 미구현) |
 | 부서/직급/직무 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`) | 완료 (조회 API만 구현 — `GET /api/v1/departments`, `/positions`, `/job-types`, 2026-07-03. 등록/수정은 §11 "직무 유형 CRUD API" 항목으로 별도 관리) |
 | 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/skills`, `/api/v1/employee-skills`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
-| 프로젝트 CRUD API (`PJT_MST`) | 예정 |
-| 투입 관리 API (`PJT_ASGN_HIS`) | 예정 |
+| 프로젝트 CRUD API (`PJT_MST`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/projects`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
+| 투입 관리 API (`PJT_ASGN_HIS`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/assignments`, 동일 사원·겹치는 기간 ALLOC_RT 합계 100% 초과 검증 포함, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
 | 가동률 계산 API (`HR_AVAIL_SNAP`) | 예정 |
 | 대시보드 집계 API | 예정 |
 | Excel Import/Export API | 예정 |
@@ -603,6 +603,9 @@
 - **Pydantic v2 스키마 작성 — 16개 테이블 전체 조회(Out) 스키마 완료 (§8 다음 작업 1번)** — 사용자가 현재 `novauser` 계정도 `docker` 그룹 권한을 갖고 있음을 알려주어(`sg docker -c "..."`로 그룹 즉시 적용 확인), 이후 `sudo` 없이 직접 실 서버 컨테이너에 접근해 작업. 기존 `EmployeeOut`(1개) 외 나머지 15개 테이블 도메인에 대해 `backend/app/schemas/`에 조회 전용 스키마 신규 작성 — `hr_dept_mst.py`(`DepartmentOut`), `hr_jikgup_mst.py`(`PositionOut`), `hr_jikmu_mst.py`(`JobTypeOut`), `hr_skill_mst.py`(`SkillOut`), `hr_empl_skill_rel.py`(`EmployeeSkillOut`), `hr_empl_role_rel.py`(`EmployeeRoleOut`), `hr_avail_snap.py`(`AvailabilitySnapshotOut`), `pjt_mst.py`(`ProjectOut`), `pjt_asgn_his.py`(`AssignmentOut`), `pjt_rsrc_req.py`(`ResourceRequestOut`), `pjt_rcmd_rslt.py`(`RecommendationResultOut`), `sys_user_mst.py`(`SysUserOut` — `ENCR_PWD`는 설계서 §11 보안 원칙에 따라 스키마에서 의도적으로 제외), `sys_role_mst.py`(`RoleOut`), `sys_audit_log.py`(`AuditLogOut`), `sys_batch_his.py`(`BatchHistoryOut`). 각 모델의 Mixin 종류(`TimestampMixin`/`AuditMixin`/단독 `REG_DTTM`)를 정확히 반영해 필드 구성. **검증을 이례적으로 강하게 수행**: `docker compose up -d --build api`로 이미지 재빌드 후, 컨테이너 내부에서 실제 `python3 -c "import ..."`로 15개 스키마 전부 정상 임포트 확인, `HR_JIKGUP_MST`/`SYS_ROLE_MST` 실 데이터 행을 SQLAlchemy로 조회해 `PositionOut`/`RoleOut`으로 `model_validate()` 변환까지 성공 확인(`RoleOut`에서 `PERM_JSON` JSONB 필드와 `REG_DTTM`의 KST 타임존 정상 역직렬화 확인). `ENCR_PWD`가 `SysUserOut.model_fields`에 없음을 코드로 재확인. Phase 3 진행률 20%→28%로 갱신(FastAPI 구조/`/health`/CORS/SQLAlchemy 모델/Pydantic 스키마 5개 항목 완료). §8 큐에서 완료 항목 제거 및 나머지 재번호(1~9)
 - **부서/직급/직무 코드 조회 API 구현 (§8 다음 작업 1번)** — `backend/app/repositories/codes.py`(신규, `HR_DEPT_MST`/`HR_JIKGUP_MST`/`HR_JIKMU_MST` 세 코드 마스터가 소규모라 백로그 항목과 동일하게 한 모듈로 묶어 구현) 및 `backend/app/api/v1/codes.py`(신규, `GET /api/v1/departments`·`/positions`·`/job-types`, 각 정렬 컬럼(`DEPT_ORD`/`JIKGUP_ORD`/`SORT_ORD`) 기준 정렬 + `use_yn` 필터)를 `employees.py`/`hr_empl_mst.py`와 동일한 리포지토리+라우터 패턴으로 작성. `backend/app/api/v1/router.py`에 등록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api` 재빌드 후 `curl /api/v1/departments`(0건, `HR_DEPT_MST` Seed 없어 정상)·`/positions`(10건)·`/job-types`(12건) 정상 응답 확인, `openapi.json`에서 3개 경로 전부 등록 확인. Phase 3 진행률 28%→33%로 갱신, §11 "부서/직급 코드 API" 완료 체크(범위상 조회만 구현이라 "직무 유형 CRUD API" 항목은 조회만 완료로 별도 표기, 등록/수정 미구현 유지). §8 큐에서 완료 항목 제거 및 재번호(1~9)
 - **기술 CRUD API 구현 (§8 다음 작업 1번)** — `employees.py` 패턴을 그대로 재사용해 조회/등록/수정(GET/POST/PATCH) 구현. `backend/app/schemas/hr_skill_mst.py`에 `SkillCreate`/`SkillUpdate` 추가, `backend/app/schemas/hr_empl_skill_rel.py`에 `EmployeeSkillCreate`/`EmployeeSkillUpdate` 추가(`PRFCY_LEVL`은 ERD CHECK 제약(1~5)과 동일하게 `Field(ge=1, le=5)`로 검증). `backend/app/repositories/hr_skill_mst.py`(신규, `list_skills`/`get_skill`/`create_skill`/`update_skill`, `skill_grp_cd`/`use_yn` 필터), `backend/app/repositories/hr_empl_skill_rel.py`(신규, `list_employee_skills`/`get_employee_skill`/`create_employee_skill`/`update_employee_skill`, `empl_id`/`skill_id` 필터) 작성. 라우터 `backend/app/api/v1/skills.py`(`GET`/`POST /api/v1/skills`, `PATCH /api/v1/skills/{skill_id}`), `backend/app/api/v1/employee_skills.py`(`GET`/`POST /api/v1/employee-skills`, `PATCH /api/v1/employee-skills/{empl_skill_id}`) 신규 작성, `backend/app/api/v1/router.py`에 등록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api` 재빌드 후 `POST /api/v1/skills`(정상 생성 확인), `GET /api/v1/skills`(`use_yn` 기본 필터 동작 확인), `PATCH /api/v1/skills/{id}`(부분 업데이트 확인), `POST /api/v1/employee-skills`에 `PRFCY_LEVL=9`(범위 밖) 전달 시 422, 존재하지 않는 `EMPL_ID`로 전달 시 409(FK 위반→`IntegrityError` 변환) 정상 확인. 현재 `HR_EMPL_MST`에 실 데이터가 없어 정상 케이스(유효 FK)의 등록/조회까지는 검증하지 못함 — 검증 결과 참조. Phase 3 진행률 33%→39%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~8)
+- **프로젝트 CRUD API 구현 (§8 다음 작업 1번)** — `employees.py`/`hr_empl_mst.py` 패턴(skip/limit 페이지네이션 + total 응답)을 재사용해 조회/등록/수정(GET/POST/PATCH) 구현. `backend/app/schemas/pjt_mst.py`에 `ProjectCreate`/`ProjectUpdate`(`PJT_STAT_CD`는 모델의 `PJT_STAT_CODES` 상수를 `Literal` 타입으로 재사용해 DB CHECK 제약과 값 목록 어긋남 방지) 및 `ProjectListResponse` 추가. `backend/app/repositories/pjt_mst.py`(신규, `list_projects`/`get_project`/`create_project`/`update_project`, `pjt_stat_cd` 필터 + skip/limit) 작성. 라우터 `backend/app/api/v1/projects.py`(신규, `GET`/`POST /api/v1/projects`, `PATCH /api/v1/projects/{pjt_id}`) 작성, `backend/app/api/v1/router.py`에 등록. `PJT_CD` UNIQUE 위반은 `IntegrityError`를 잡아 409로 변환. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api` 재빌드 후 `POST /api/v1/projects`(정상 생성 확인), 동일 `PJT_CD` 재등록 시 409, `PATCH`에 잘못된 `PJT_STAT_CD`("BOGUS") 전달 시 422, 유효한 상태값으로 `PATCH` 후 `GET ?pjt_stat_cd=` 필터 정상 동작, 존재하지 않는 `pjt_id`로 `PATCH` 시 404 전부 확인. Phase 3 진행률 39%→44%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~7)
+- **투입 관리 API 구현 (§8 다음 작업 1번)** — `employees.py`/`projects.py` 패턴을 재사용해 조회/등록/수정(GET/POST/PATCH) 구현. `backend/app/schemas/pjt_asgn_his.py`에 `AssignmentCreate`/`AssignmentUpdate`/`AssignmentListResponse` 추가(`ASGN_TYPE_CD`/`ASGN_STAT_CD`는 모델 상수 기반 `Literal`, `ALLOC_RT`는 `Field(ge=0, le=100)`로 CHECK 제약과 동일하게 검증). `backend/app/repositories/pjt_asgn_his.py`(신규, `list_assignments`/`get_assignment`/`create_assignment`/`update_assignment` 외 `sum_overlapping_alloc_rt` 신규 — 동일 사원·겹치는 기간의 유효(`PLANNED`/`ACTIVE`) 투입 건 ALLOC_RT 합계 계산) 작성. 모델 주석(ERD §3.9/설계서 §5.5)에 명시된 "동일 사원 동일 기간 ALLOC_RT 합계 100% 초과 금지" 정합성 규칙을 라우터(`backend/app/api/v1/assignments.py`, 신규)의 등록/수정 시점에 적용해 초과 시 409로 거부 — 이 규칙의 집계 대상 상태(`PLANNED`/`ACTIVE`만 포함, `CANCELED`/`DONE` 제외)는 설계서에 명문화되어 있지 않은 MVP 해석이라 코드 주석에 근거와 함께 명시(§9 리스크 참고). `backend/app/api/v1/router.py`에 등록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api` 재빌드 후, 테스트용 부서·사원·프로젝트 데이터를 임시 생성해 동일 사원·동일 기간에 ALLOC_RT 60%+40%=100% 등록 성공, 60%+50%(=110%) 등록 시 409, 기존 60%건을 70%로 수정 시(40%와 합 110%) 409, 상태를 `CANCELED`로 변경 시 집계 제외되어 정상 처리, 존재하지 않는 `asgn_id`로 `PATCH` 시 404 전부 확인. 검증에 사용한 임시 부서/사원/프로젝트/투입이력 데이터는 검증 직후 모두 삭제해 DB에 남기지 않음. Phase 3 진행률 44%→50%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~6)
+- **JWT 인증 API 구현 (§8 다음 작업 1번)** — 로그인/토큰 갱신/로그아웃 3개 엔드포인트 신규 구현. `backend/app/core/security.py`(신규, `passlib`(bcrypt) 비밀번호 해싱, `python-jose` JWT 인코딩/디코딩, 액세스(60분)/리프레시(7일) 토큰 발급 — 만료 시간은 기존 `Settings.ACCESS_TOKEN_EXPIRE_MINUTES`/`REFRESH_TOKEN_EXPIRE_DAYS`(이미 `.env.example`/`config.py`에 존재) 재사용), `backend/app/schemas/auth.py`(신규, `LoginRequest`/`TokenResponse`/`RefreshRequest`/`AccessTokenResponse`), `backend/app/repositories/sys_user_mst.py`(신규, `get_user_by_login_id`/`get_user`/`update_last_login`), `backend/app/api/v1/auth.py`(신규, `POST /api/v1/auth/{login,refresh,logout}`) 작성. `backend/app/api/v1/router.py`에 등록. 로그인은 계정 미존재/비밀번호 불일치/비활성/비밀번호 미설정을 모두 동일한 401로 처리(계정 존재 여부 비노출), 로그아웃은 stateless JWT 특성상 서버 측 즉시 무효화 저장소가 아직 없어 클라이언트 토큰 폐기로 처리(§9 리스크로 기록, RBAC 미들웨어 도입 시 Redis 블랙리스트 검토 예정). **실 서버 컨테이너 재빌드 중 `passlib[bcrypt]==1.7.4`가 최신 `bcrypt`(5.0.0) 설치로 인해 비밀번호 해싱 시 `AttributeError`/`ValueError`를 던지는 상위 호환성 버그를 발견** — `backend/requirements.txt`에 `bcrypt==4.0.1` 고정 추가로 해결(§9 리스크 기록). 재빌드 후 검증용 임시 역할·사용자 데이터로 로그인 성공(토큰 발급, `LAST_LGN_DTTM` 갱신 확인), 비밀번호 오류 401, 존재하지 않는 사용자 401, 리프레시 토큰으로 액세스 토큰 재발급, 액세스 토큰을 리프레시 토큰으로 오용 시 401(토큰 타입 검증), 위조 토큰 401, 로그아웃 204 전부 확인 후 테스트 데이터 삭제. `.env`의 `JWT_SECRET_KEY`는 이미 설정되어 있음을 확인했으며 직접 수정하지 않음. Phase 3 진행률 50%→56%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~5)
 
 ---
 
@@ -611,16 +614,13 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 프로젝트 CRUD API 구현 (`PJT_MST`)
-- [ ] 2. 투입 관리 API 구현 (`PJT_ASGN_HIS`)
-- [ ] 3. JWT 인증 API 구현 (`SYS_USER_MST` 기반)
-- [ ] 4. RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반)
-- [ ] 5. `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
-- [ ] 6. 사원 퇴직 처리 API 구현 (`DELETE /api/v1/employees/{empl_id}` — `EMPL_STAT_CD='RETIRED'` 전환)
-- [ ] 7. 페이지네이션 공통 처리 구현 (현재 `employees.py`에 한정된 skip/limit을 공통 모듈로 추출)
-- [ ] 8. OpenAPI 문서(`/docs`) 확인
+- [ ] 1. RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반)
+- [ ] 2. `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
+- [ ] 3. 사원 퇴직 처리 API 구현 (`DELETE /api/v1/employees/{empl_id}` — `EMPL_STAT_CD='RETIRED'` 전환)
+- [ ] 4. 페이지네이션 공통 처리 구현 (현재 `employees.py`/`projects.py`/`assignments.py`에 한정된 skip/limit을 공통 모듈로 추출)
+- [ ] 5. OpenAPI 문서(`/docs`) 확인
 
-> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)", "프로젝트 CRUD API 구현(`PJT_MST`)", "투입 관리 API 구현(`PJT_ASGN_HIS`)", "JWT 인증 API 구현(`SYS_USER_MST` 기반)"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: 순서는 §4 Phase 3 "주요 작업" 표 나열 순서를 기준으로 구성했다. 실제 우선순위(예: 인증을 CRUD API보다 먼저)는 착수 전 재확인 가능.
 
@@ -646,6 +646,9 @@
 | `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 | - |
 | `POSTGRES_PASSWORD` 노출 이력 (실 배포 트러블슈팅 중 채팅에 평문 공유됨) | 중간 | 해소 | 사용자가 `.env`의 `POSTGRES_PASSWORD`/`DATABASE_URL` 값을 즉시 교체(로테이션) 완료 확인 | 2026-07-03 |
 | UFW `5442`(PostgreSQL) 내부망 제한 규칙 미확인 | 낮음 | 해소 | UFW 규칙 대신 `docker-compose.yml`의 `db` 서비스 포트를 `127.0.0.1:5442:5432`로 바인딩해 외부 인터페이스 노출 자체를 차단(Docker가 UFW보다 우선하는 iptables 규칙을 추가하는 문제 회피) — `localhost`(호스트 로컬)에서만 접속 가능 | 2026-07-03 |
+| `PJT_ASGN_HIS` ALLOC_RT 100% 초과 검증 집계 범위 미확정 | 중간 | 주의 | ERD §3.9/설계서 §5.5는 "동일 사원 동일 기간 ALLOC_RT 합계 100% 초과 금지" 원칙만 명시하고 집계 대상 상태(`ASGN_STAT_CD`)를 특정하지 않아, MVP로 `PLANNED`/`ACTIVE`만 집계하고 `CANCELED`/`DONE`은 제외하는 것으로 구현(`backend/app/repositories/pjt_asgn_his.py` 주석 참조). `PROPOSED`(제안중)를 포함한 `ASGN_TYPE_CD` 구분은 이번 검증에 반영하지 않음 — 운영팀 확인 후 필요 시 조건 조정 예정 | 2026-07-03 |
+| JWT 로그아웃 서버 측 즉시 무효화 미구현 | 낮음 | 주의 | 현재 JWT는 stateless라 `POST /api/v1/auth/logout`이 클라이언트 측 토큰 폐기만 유도하고, 이미 발급된 액세스/리프레시 토큰은 만료 시각(각 60분/7일)까지 유효하다. RBAC 권한 미들웨어(§8 다음 작업 1번) 구현 시 모든 요청에서 토큰을 검증하는 경로가 생기므로, 그 시점에 Redis(이미 `REDIS_URL`로 연결 가능) 기반 토큰 블랙리스트 도입 여부를 함께 검토 예정 | 2026-07-03 |
+| passlib 1.7.4 / bcrypt 최신 버전 비호환 | 높음 | 해소 | `passlib[bcrypt]==1.7.4`가 `bcrypt>=4.1`의 `bcrypt.__about__.__version__` 제거로 인해 비밀번호 해싱 시 `AttributeError`/`ValueError`로 실패하는 상위 호환성 버그 발견 — `backend/requirements.txt`에 `bcrypt==4.0.1` 고정 추가로 해결, 실 서버 컨테이너 재빌드 후 해싱/검증 정상 동작 확인 | 2026-07-03 |
 
 ---
 
@@ -727,7 +730,7 @@
 - [x] SQLAlchemy 2.x ORM 모델 작성 (16개 테이블 전체) — 16/16 완료, 실 서버 DB 적용 검증 완료 (2026-07-03)
 - [x] Pydantic v2 스키마 작성 — 16개 테이블 전체 조회(Out) 스키마 작성 완료, 실 서버 컨테이너에서 실제 임포트 및 ORM 데이터 검증 완료 (2026-07-03)
 - [x] `/health` 헬스체크 엔드포인트 구현
-- [ ] JWT 인증 API 구현 (`SYS_USER_MST` 기반 — 로그인, 토큰 갱신, 로그아웃)
+- [x] JWT 인증 API 구현 (`SYS_USER_MST` 기반 — 로그인, 토큰 갱신, 로그아웃) — 실 서버 HTTP 응답 확인 완료 (2026-07-03), 로그아웃 서버 측 즉시 무효화는 RBAC 미들웨어 도입 시 별도 처리 예정
 - [x] CORS 설정 적용 (포트 3030 허용)
 - [ ] RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 6개 역할)
 - [ ] `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
@@ -735,8 +738,8 @@
 - [ ] 직무 유형 CRUD API (`HR_JIKMU_MST`) — 조회만 구현(`GET /api/v1/job-types`, 2026-07-03), 등록/수정 미구현
 - [x] 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/skills`, `/api/v1/employee-skills`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 부서/직급 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`) — 조회 API 구현 완료(`GET /api/v1/departments`, `/positions`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
-- [ ] 프로젝트 CRUD API (`PJT_MST`)
-- [ ] 투입 관리 API (`PJT_ASGN_HIS`)
+- [x] 프로젝트 CRUD API (`PJT_MST`) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/projects`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
+- [x] 투입 관리 API (`PJT_ASGN_HIS`) — 조회/등록/수정 및 ALLOC_RT 100% 초과 검증 구현, 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [ ] 가동률 계산 API (`HR_AVAIL_SNAP`)
 - [ ] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`)
 - [ ] 대시보드 집계 API (직무 유형별 분포 포함)
@@ -855,4 +858,7 @@
 | 2026-07-03 | v3.0 | 16개 테이블 전체 Pydantic v2 조회(Out) 스키마 작성 완료 — 실 서버 컨테이너 내 실제 임포트 및 ORM 데이터(`PERM_JSON` JSONB, KST 타임존) 검증까지 수행(`novauser` 계정 `docker` 그룹 권한 확인 후 `sg docker`로 직접 접근). `SysUserOut`에서 `ENCR_PWD` 의도적 제외 확인. Phase 3 진행률 20%→28%로 갱신, §8 큐에서 완료 항목 제거 및 재번호(1~9) | — |
 | 2026-07-03 | v3.1 | 부서/직급/직무 코드 조회 API 구현 — `GET /api/v1/departments`·`/positions`·`/job-types` 신규 라우터·리포지토리 추가, 실 서버에서 `curl`로 실제 응답(10건/12건) 및 `openapi.json` 경로 등록 확인. Phase 3 진행률 28%→33%로 갱신, §11 "부서/직급 코드 API" 완료 체크, "직무 유형 CRUD API"는 조회만 완료로 갱신 | — |
 | 2026-07-03 | v3.2 | §8 다음 작업 1번(기술 CRUD API) 완료 처리 — `SkillCreate`/`SkillUpdate`, `EmployeeSkillCreate`/`EmployeeSkillUpdate` 스키마 및 리포지토리·라우터(`app/api/v1/skills.py`, `app/api/v1/employee_skills.py`) 신규 작성, `employees.py` 패턴 재사용. 실 서버 재빌드 후 `curl`로 등록/조회/수정 및 422(범위 밖 `PRFCY_LEVL`)/409(FK 위반) 응답 확인. Phase 3 진행률 33%→39%로 갱신, §11 "기술 CRUD API" 완료 체크, §8 큐에서 제거 및 재번호(1~8) | — |
+| 2026-07-03 | v3.3 | §8 다음 작업 1번(프로젝트 CRUD API) 완료 처리 — `ProjectCreate`/`ProjectUpdate`/`ProjectListResponse` 스키마(`PJT_STAT_CD`는 `PJT_STAT_CODES` 상수 기반 `Literal` 검증) 및 리포지토리·라우터(`app/repositories/pjt_mst.py`, `app/api/v1/projects.py`) 신규 작성, `employees.py`의 skip/limit 페이지네이션 패턴 재사용. 실 서버 재빌드 후 `curl`로 등록/조회/수정, 409(`PJT_CD` 중복), 422(잘못된 상태값), 404(존재하지 않는 ID) 응답 전부 확인. Phase 3 진행률 39%→44%로 갱신, §11 "프로젝트 CRUD API" 완료 체크, §8 큐에서 제거 및 재번호(1~7) | — |
+| 2026-07-03 | v3.4 | §8 다음 작업 1번(투입 관리 API) 완료 처리 — `AssignmentCreate`/`AssignmentUpdate`/`AssignmentListResponse` 스키마 및 리포지토리·라우터(`app/repositories/pjt_asgn_his.py`, `app/api/v1/assignments.py`) 신규 작성. ERD §3.9/설계서 §5.5의 "동일 사원 동일 기간 ALLOC_RT 합계 100% 초과 금지" 규칙을 `sum_overlapping_alloc_rt` 헬퍼로 구현해 등록/수정 시 409로 거부하도록 적용(집계 대상 상태 MVP 해석은 §9 리스크로 별도 기록). 실 서버 재빌드 후 임시 테스트 데이터로 100%/초과/취소 제외/404 케이스 전부 확인 후 테스트 데이터 삭제. Phase 3 진행률 44%→50%로 갱신, §11 "투입 관리 API" 완료 체크, §9 리스크 1건 추가, §8 큐에서 제거 및 재번호(1~6) | — |
+| 2026-07-03 | v3.5 | §8 다음 작업 1번(JWT 인증 API) 완료 처리 — `backend/app/core/security.py`(비밀번호 해싱, JWT 발급/검증), `backend/app/schemas/auth.py`, `backend/app/repositories/sys_user_mst.py`, `backend/app/api/v1/auth.py`(`POST /api/v1/auth/{login,refresh,logout}`) 신규 작성. 실 서버 재빌드 중 `passlib[bcrypt]==1.7.4`/`bcrypt>=4.1` 비호환 버그 발견해 `backend/requirements.txt`에 `bcrypt==4.0.1` 고정으로 해결(§9 리스크 기록). 임시 역할·사용자 데이터로 로그인/토큰 갱신/로그아웃 및 401 경로 전부 확인 후 삭제. `.env`의 `JWT_SECRET_KEY`는 이미 설정되어 있어 별도 수정 불필요. Phase 3 진행률 50%→56%로 갱신, §11 "JWT 인증 API" 완료 체크, §9 리스크 2건 추가(로그아웃 무효화 미구현, bcrypt 호환성), §8 큐에서 제거 및 재번호(1~5) | — |
 
