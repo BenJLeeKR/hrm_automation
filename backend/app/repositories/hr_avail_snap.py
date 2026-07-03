@@ -6,6 +6,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.selectable import Subquery
 
+from app.models.hr_empl_mst import HrEmplMst
 from app.models.pjt_asgn_his import PjtAsgnHis
 
 # 가동률 계산 대상 투입 조건 (backend/docs/AVAILABILITY_CALC_SPEC.md §2) —
@@ -30,23 +31,13 @@ class AvailabilityCalcResult:
     DATA_QUALITY_WARNING: bool
 
 
-def compute_availability(db: Session, *, empl_id: uuid.UUID, snap_dt: date) -> AvailabilityCalcResult:
-    """`AVAILABILITY_CALC_SPEC.md` §2/§4 로직 그대로 구현한 단건 계산.
-
-    기준일(`snap_dt`) 현재 유효한 투입(§2 조건)의 `ALLOC_RT` 합계로 `AVAIL_STAT_CD`/
-    `AVAIL_STRT_DT`를 산정한다. 100% 이상이면서 집계 대상 중 `ASGN_END_DT`가 NULL인
-    행이 있으면 `AVAIL_STRT_DT=None`으로 두고 `DATA_QUALITY_WARNING=True`로 표시한다.
-    """
-    stmt = select(PjtAsgnHis.ALLOC_RT, PjtAsgnHis.ASGN_END_DT).where(
-        PjtAsgnHis.EMPL_ID == empl_id,
-        PjtAsgnHis.ASGN_STAT_CD == "ACTIVE",
-        PjtAsgnHis.ASGN_STRT_DT <= snap_dt,
-        or_(PjtAsgnHis.ASGN_END_DT.is_(None), PjtAsgnHis.ASGN_END_DT >= snap_dt),
-        PjtAsgnHis.ASGN_TYPE_CD.in_(_CALC_TARGET_ASGN_TYPE_CODES),
-    )
-    rows = db.execute(stmt).all()
-
-    tot_alloc_rt = sum(row.ALLOC_RT for row in rows)
+def _classify(
+    *, empl_id: uuid.UUID, snap_dt: date, alloc_rows: list
+) -> AvailabilityCalcResult:
+    """`AVAILABILITY_CALC_SPEC.md` §2/§4 산정 로직 — 투입 건 목록(ALLOC_RT/ASGN_END_DT)에서
+    `AVAIL_STAT_CD`/`AVAIL_STRT_DT`를 계산한다. 단건 계산(`compute_availability`)과
+    전체 목록 계산(`list_availability`)이 동일한 로직을 공유하기 위해 추출했다."""
+    tot_alloc_rt = sum(row.ALLOC_RT for row in alloc_rows)
     avail_rt = max(0, 100 - tot_alloc_rt)
 
     if tot_alloc_rt == 0:
@@ -54,7 +45,7 @@ def compute_availability(db: Session, *, empl_id: uuid.UUID, snap_dt: date) -> A
     elif tot_alloc_rt < 100:
         avail_stat_cd, avail_strt_dt, data_quality_warning = "PARTIAL", snap_dt, False
     else:
-        end_dates = [row.ASGN_END_DT for row in rows]
+        end_dates = [row.ASGN_END_DT for row in alloc_rows]
         if any(end_dt is None for end_dt in end_dates):
             avail_stat_cd, avail_strt_dt, data_quality_warning = "FULL", None, True
         else:
@@ -71,6 +62,64 @@ def compute_availability(db: Session, *, empl_id: uuid.UUID, snap_dt: date) -> A
         AVAIL_STAT_CD=avail_stat_cd,
         DATA_QUALITY_WARNING=data_quality_warning,
     )
+
+
+def compute_availability(db: Session, *, empl_id: uuid.UUID, snap_dt: date) -> AvailabilityCalcResult:
+    """`AVAILABILITY_CALC_SPEC.md` §2/§4 로직 그대로 구현한 단건 계산.
+
+    기준일(`snap_dt`) 현재 유효한 투입(§2 조건)의 `ALLOC_RT` 합계로 `AVAIL_STAT_CD`/
+    `AVAIL_STRT_DT`를 산정한다. 100% 이상이면서 집계 대상 중 `ASGN_END_DT`가 NULL인
+    행이 있으면 `AVAIL_STRT_DT=None`으로 두고 `DATA_QUALITY_WARNING=True`로 표시한다.
+    """
+    stmt = select(PjtAsgnHis.ALLOC_RT, PjtAsgnHis.ASGN_END_DT).where(
+        PjtAsgnHis.EMPL_ID == empl_id,
+        PjtAsgnHis.ASGN_STAT_CD == "ACTIVE",
+        PjtAsgnHis.ASGN_STRT_DT <= snap_dt,
+        or_(PjtAsgnHis.ASGN_END_DT.is_(None), PjtAsgnHis.ASGN_END_DT >= snap_dt),
+        PjtAsgnHis.ASGN_TYPE_CD.in_(_CALC_TARGET_ASGN_TYPE_CODES),
+    )
+    rows = db.execute(stmt).all()
+    return _classify(empl_id=empl_id, snap_dt=snap_dt, alloc_rows=rows)
+
+
+def list_availability(
+    db: Session,
+    *,
+    snap_dt: date,
+    jikmu_id: uuid.UUID | None = None,
+    dept_id: uuid.UUID | None = None,
+) -> list[AvailabilityCalcResult]:
+    """재직 사원 전체 대상 가동률 일괄 계산 (SCR-010 "가동 가능 인력" 화면용).
+
+    사원별로 `compute_availability`를 반복 호출하면 N+1 쿼리가 발생하므로, 대상 사원의
+    투입 이력을 한 번에 조회한 뒤 파이썬에서 사원별로 묶어 동일한 산정 로직(`_classify`)을
+    적용한다. `HR_AVAIL_SNAP_GEN` 배치(Phase 7, 미구현)와 마찬가지로 결과를 테이블에
+    저장하지 않는 즉시 계산이다.
+    """
+    employee_stmt = select(HrEmplMst.EMPL_ID).where(HrEmplMst.EMPL_STAT_CD == "ACTIVE")
+    if jikmu_id is not None:
+        employee_stmt = employee_stmt.where(HrEmplMst.JIKMU_ID == jikmu_id)
+    if dept_id is not None:
+        employee_stmt = employee_stmt.where(HrEmplMst.DEPT_ID == dept_id)
+    employee_ids = list(db.scalars(employee_stmt))
+    if not employee_ids:
+        return []
+
+    assignment_stmt = select(PjtAsgnHis.EMPL_ID, PjtAsgnHis.ALLOC_RT, PjtAsgnHis.ASGN_END_DT).where(
+        PjtAsgnHis.EMPL_ID.in_(employee_ids),
+        PjtAsgnHis.ASGN_STAT_CD == "ACTIVE",
+        PjtAsgnHis.ASGN_STRT_DT <= snap_dt,
+        or_(PjtAsgnHis.ASGN_END_DT.is_(None), PjtAsgnHis.ASGN_END_DT >= snap_dt),
+        PjtAsgnHis.ASGN_TYPE_CD.in_(_CALC_TARGET_ASGN_TYPE_CODES),
+    )
+    rows_by_empl: dict[uuid.UUID, list] = {empl_id: [] for empl_id in employee_ids}
+    for row in db.execute(assignment_stmt):
+        rows_by_empl[row.EMPL_ID].append(row)
+
+    return [
+        _classify(empl_id=empl_id, snap_dt=snap_dt, alloc_rows=rows_by_empl[empl_id])
+        for empl_id in employee_ids
+    ]
 
 
 def active_alloc_rt_subquery(as_of: date) -> Subquery:
