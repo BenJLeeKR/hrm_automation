@@ -84,7 +84,7 @@ export const employees: Employee[] = [
     allocation: 0,
     availableDate: '즉시',
     status: 'ACTIVE',
-    email: 'hong@bwware.co.kr',
+    email: 'hong@blueward.co.kr',
     phone: '010-1234-5678',
     hireDate: '2018-03-02',
     skills: [
@@ -109,7 +109,7 @@ export const employees: Employee[] = [
     allocation: 100,
     availableDate: '2026-10-01',
     status: 'ACTIVE',
-    email: 'kimcs@bwware.co.kr',
+    email: 'kimcs@blueward.co.kr',
     phone: '010-2345-6789',
     hireDate: '2020-01-06',
     skills: [
@@ -134,7 +134,7 @@ export const employees: Employee[] = [
     allocation: 160,
     availableDate: '2026-12-01',
     status: 'ACTIVE',
-    email: 'leeyh@bwware.co.kr',
+    email: 'leeyh@blueward.co.kr',
     phone: '010-3456-7890',
     hireDate: '2023-07-03',
     skills: [
@@ -159,7 +159,7 @@ export const employees: Employee[] = [
     allocation: 80,
     availableDate: '2027-01-01',
     status: 'ACTIVE',
-    email: 'parkmj@bwware.co.kr',
+    email: 'parkmj@blueward.co.kr',
     phone: '010-4567-8901',
     hireDate: '2019-09-16',
     skills: [
@@ -183,7 +183,7 @@ export const employees: Employee[] = [
     allocation: 80,
     availableDate: '2027-03-01',
     status: 'ACTIVE',
-    email: 'choisy@bwware.co.kr',
+    email: 'choisy@blueward.co.kr',
     phone: '010-5678-9012',
     hireDate: '2015-02-02',
     skills: [
@@ -207,7 +207,7 @@ export const employees: Employee[] = [
     allocation: 80,
     availableDate: '2027-04-01',
     status: 'ACTIVE',
-    email: 'jungjw@bwware.co.kr',
+    email: 'jungjw@blueward.co.kr',
     phone: '010-6789-0123',
     hireDate: '2017-11-01',
     skills: [
@@ -230,7 +230,7 @@ export const employees: Employee[] = [
     allocation: 0,
     availableDate: '즉시',
     status: 'ACTIVE',
-    email: 'kanghn@bwware.co.kr',
+    email: 'kanghn@blueward.co.kr',
     phone: '010-7890-1234',
     hireDate: '2024-01-02',
     skills: [
@@ -253,7 +253,7 @@ export const employees: Employee[] = [
     allocation: 50,
     availableDate: '2026-09-01',
     status: 'ACTIVE',
-    email: 'yoonsj@bwware.co.kr',
+    email: 'yoonsj@blueward.co.kr',
     phone: '010-8901-2345',
     hireDate: '2021-06-14',
     skills: [
@@ -278,7 +278,7 @@ export const employees: Employee[] = [
     allocation: 100,
     availableDate: '2026-08-31',
     status: 'ACTIVE',
-    email: 'limdh@bwware.co.kr',
+    email: 'limdh@blueward.co.kr',
     phone: '010-9012-3456',
     hireDate: '2016-08-22',
     skills: [
@@ -303,7 +303,7 @@ export const employees: Employee[] = [
     allocation: 40,
     availableDate: '2026-09-15',
     status: 'ACTIVE',
-    email: 'hanjm@bwware.co.kr',
+    email: 'hanjm@blueward.co.kr',
     phone: '010-0123-4567',
     hireDate: '2023-03-02',
     skills: [
@@ -327,7 +327,7 @@ export const employees: Employee[] = [
     allocation: 100,
     availableDate: '2026-11-30',
     status: 'ACTIVE',
-    email: 'ohsh@bwware.co.kr',
+    email: 'ohsh@blueward.co.kr',
     phone: '010-1112-2233',
     hireDate: '2013-05-13',
     skills: [
@@ -351,7 +351,7 @@ export const employees: Employee[] = [
     allocation: 0,
     availableDate: '즉시',
     status: 'ACTIVE',
-    email: 'seojw@bwware.co.kr',
+    email: 'seojw@blueward.co.kr',
     phone: '010-2223-3344',
     hireDate: '2021-02-01',
     skills: [
@@ -373,7 +373,7 @@ export const employees: Employee[] = [
     allocation: 50,
     availableDate: '2026-10-15',
     status: 'ACTIVE',
-    email: 'moongy@bwware.co.kr',
+    email: 'moongy@blueward.co.kr',
     phone: '010-3334-4455',
     hireDate: '2018-10-08',
     skills: [
@@ -397,7 +397,7 @@ export const employees: Employee[] = [
     allocation: 0,
     availableDate: '즉시',
     status: 'LEAVE',
-    email: 'baejh@bwware.co.kr',
+    email: 'baejh@blueward.co.kr',
     phone: '010-4445-5566',
     hireDate: '2022-04-11',
     skills: [
@@ -621,13 +621,13 @@ export const recommendations: RecommendationRow[] = [
 ]
 
 export const systemUsers: SystemUser[] = [
-  { id: 'U-001', loginId: 'admin', email: 'admin@bwware.co.kr', role: 'ADMIN', linkedEmployee: '-', lastLogin: '2026-07-01 09:12', status: 'ACTIVE' },
-  { id: 'U-002', loginId: 'hr_mgr', email: 'hr@bwware.co.kr', role: 'HR_MGR', linkedEmployee: '최수연 (BW-005)', lastLogin: '2026-07-01 08:40', status: 'ACTIVE' },
-  { id: 'U-003', loginId: 'pm_ohsh', email: 'ohsh@bwware.co.kr', role: 'PM', linkedEmployee: '오세훈 (BW-011)', lastLogin: '2026-06-30 18:22', status: 'ACTIVE' },
-  { id: 'U-004', loginId: 'pm_lee', email: 'pmlee@bwware.co.kr', role: 'PM', linkedEmployee: '임도현 (BW-009)', lastLogin: '2026-06-30 17:05', status: 'ACTIVE' },
-  { id: 'U-005', loginId: 'lead_kim', email: 'kimcs@bwware.co.kr', role: 'TEAM_LEAD', linkedEmployee: '김철수 (BW-002)', lastLogin: '2026-06-29 11:33', status: 'ACTIVE' },
-  { id: 'U-006', loginId: 'exec_ceo', email: 'ceo@bwware.co.kr', role: 'EXEC', linkedEmployee: '-', lastLogin: '2026-06-28 09:00', status: 'ACTIVE' },
-  { id: 'U-007', loginId: 'viewer01', email: 'viewer@bwware.co.kr', role: 'VIEWER', linkedEmployee: '-', lastLogin: '2026-05-10 14:20', status: 'INACTIVE' },
+  { id: 'U-001', loginId: 'admin', email: 'admin@blueward.co.kr', role: 'ADMIN', linkedEmployee: '-', lastLogin: '2026-07-01 09:12', status: 'ACTIVE' },
+  { id: 'U-002', loginId: 'hr_mgr', email: 'hr@blueward.co.kr', role: 'HR_MGR', linkedEmployee: '최수연 (BW-005)', lastLogin: '2026-07-01 08:40', status: 'ACTIVE' },
+  { id: 'U-003', loginId: 'pm_ohsh', email: 'ohsh@blueward.co.kr', role: 'PM', linkedEmployee: '오세훈 (BW-011)', lastLogin: '2026-06-30 18:22', status: 'ACTIVE' },
+  { id: 'U-004', loginId: 'pm_lee', email: 'pmlee@blueward.co.kr', role: 'PM', linkedEmployee: '임도현 (BW-009)', lastLogin: '2026-06-30 17:05', status: 'ACTIVE' },
+  { id: 'U-005', loginId: 'lead_kim', email: 'kimcs@blueward.co.kr', role: 'TEAM_LEAD', linkedEmployee: '김철수 (BW-002)', lastLogin: '2026-06-29 11:33', status: 'ACTIVE' },
+  { id: 'U-006', loginId: 'exec_ceo', email: 'ceo@blueward.co.kr', role: 'EXEC', linkedEmployee: '-', lastLogin: '2026-06-28 09:00', status: 'ACTIVE' },
+  { id: 'U-007', loginId: 'viewer01', email: 'viewer@blueward.co.kr', role: 'VIEWER', linkedEmployee: '-', lastLogin: '2026-05-10 14:20', status: 'INACTIVE' },
 ]
 
 export const auditLogs: AuditLog[] = [

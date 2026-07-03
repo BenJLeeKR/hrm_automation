@@ -20,7 +20,7 @@ const OVER_ALLOC_OPTIONS = [
 
 export default function SettingsPage() {
   const [tab, setTab] = useState('GENERAL')
-  const [orgName, setOrgName] = useState('비더블유웨어(주)')
+  const [orgName, setOrgName] = useState('(주)블루어드')
   const [threshold, setThreshold] = useState('100')
   const [overAlloc, setOverAlloc] = useState('WARN')
 
@@ -60,7 +60,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="org-domain">이메일 도메인</Label>
-                <Input id="org-domain" defaultValue="bwware.co.kr" />
+                <Input id="org-domain" defaultValue="blueward.co.kr" />
               </div>
               <Separator />
               <div className="flex justify-end">

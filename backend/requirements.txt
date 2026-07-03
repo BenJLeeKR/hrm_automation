@@ -13,3 +13,7 @@ bcrypt==4.0.1
 redis==5.2.1
 openpyxl==3.1.5
 python-multipart==0.0.20
+
+# 테스트 전용 의존성 (Phase 3 "완료 기준" — Pytest 단위 테스트)
+pytest==8.3.4
+httpx==0.28.1

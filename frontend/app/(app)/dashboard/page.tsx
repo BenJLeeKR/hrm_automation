@@ -23,7 +23,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="대시보드"
-        description="브라이트웨이브 인력 리소스 현황을 한눈에 확인하세요."
+        description="블루어드 인력 리소스 현황을 한눈에 확인하세요."
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
