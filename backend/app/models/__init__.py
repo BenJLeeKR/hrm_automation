@@ -1,8 +1,32 @@
-# Phase 2에서 테이블별 ORM 모델을 추가할 때 이 파일에서 각 모델 모듈을 import한다.
-# alembic/env.py가 `import app.models`를 통해 이 파일을 로드하므로, 여기서 import되지
-# 않은 모델은 Base.metadata에 등록되지 않아 autogenerate 대상에서 누락된다.
+# 이 파일에서 각 모델 모듈을 import해야 alembic/env.py의 `import app.models`를 통해
+# Base.metadata에 등록되고 autogenerate 대상에 포함된다.
 #
-# 예시 (Phase 2 §8 다음 작업 5~6번에서 추가 예정):
-# from app.models.hr_dept_mst import HrDeptMst
-# from app.models.hr_empl_mst import HrEmplMst
-# ...
+# §8 다음 작업 5번 (7개 테이블):
+from app.models.hr_dept_mst import HrDeptMst
+from app.models.hr_empl_mst import HrEmplMst
+from app.models.hr_jikgup_mst import HrJikgupMst
+from app.models.hr_jikmu_mst import HrJikmuMst
+from app.models.hr_skill_mst import HrSkillMst
+from app.models.pjt_asgn_his import PjtAsgnHis
+from app.models.pjt_mst import PjtMst
+
+# §8 다음 작업 6번 (SYS_USER_MST, SYS_ROLE_MST, SYS_AUDIT_LOG):
+from app.models.sys_audit_log import SysAuditLog
+from app.models.sys_role_mst import SysRoleMst
+from app.models.sys_user_mst import SysUserMst
+
+# ERD 16개 테이블 중 나머지(HR_EMPL_SKILL_REL, HR_EMPL_ROLE_REL, HR_AVAIL_SNAP,
+# PJT_RSRC_REQ, PJT_RCMD_RSLT, SYS_BATCH_HIS)는 후속 작업에서 추가 예정.
+
+__all__ = [
+    "HrDeptMst",
+    "HrJikgupMst",
+    "HrJikmuMst",
+    "HrSkillMst",
+    "HrEmplMst",
+    "PjtMst",
+    "PjtAsgnHis",
+    "SysRoleMst",
+    "SysUserMst",
+    "SysAuditLog",
+]

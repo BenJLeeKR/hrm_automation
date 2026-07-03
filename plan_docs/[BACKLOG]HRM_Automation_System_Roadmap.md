@@ -96,7 +96,7 @@
 |---|---|---|---|---:|---|
 | Phase 0 | 프로젝트 기반 정리 | 1주차 | 완료 | 100% | 정상 |
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 진행 중 | 60% | 정상 |
-| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 10% | 정상 |
+| Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 진행 중 | 60% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 예정 | 0% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
@@ -202,7 +202,7 @@
 | **목표** | 한국 HR META 명명 규칙 기반 전체 테이블 생성 및 초기 데이터 적재 |
 | **계획 기간** | 2~3주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 10% |
+| **진행률** | 60% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -211,23 +211,23 @@
 |---|---|
 | ERD 최종 확정 | 완료 (`backend/docs/ERD.md`, 2026-07-02) |
 | Alembic 마이그레이션 환경 구성 | 완료 (`backend/alembic.ini`, `backend/alembic/env.py`, 2026-07-03 — 실 DB 연결 검증은 미실행, 아래 §3 참조) |
-| `HR_DEPT_MST` (부서 마스터) 테이블 생성 | 예정 |
-| `HR_JIKGUP_MST` (직급 마스터) 테이블 생성 | 예정 |
-| `HR_JIKMU_MST` (직무 마스터) 테이블 생성 | 예정 |
-| `HR_SKILL_MST` (기술 마스터) 테이블 생성 | 예정 |
-| `HR_EMPL_MST` (사원 마스터) 테이블 생성 | 예정 |
+| `HR_DEPT_MST` (부서 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `HR_JIKGUP_MST` (직급 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `HR_JIKMU_MST` (직무 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `HR_SKILL_MST` (기술 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `HR_EMPL_MST` (사원 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
 | `HR_EMPL_SKILL_REL` (사원기술 연결) 테이블 생성 | 예정 |
 | `HR_EMPL_ROLE_REL` (사원역할 연결, 복수 직무 지원) 테이블 생성 | 예정 |
-| `PJT_MST` (프로젝트 마스터) 테이블 생성 | 예정 |
-| `PJT_ASGN_HIS` (투입 이력) 테이블 생성 | 예정 |
+| `PJT_MST` (프로젝트 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `PJT_ASGN_HIS` (투입 이력) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
 | `PJT_RSRC_REQ` (리소스 요청) 테이블 생성 | 예정 |
 | `PJT_RCMD_RSLT` (추천 결과) 테이블 생성 | 예정 |
 | `HR_AVAIL_SNAP` (가동가능 스냅샷) 테이블 생성 | 예정 |
-| `SYS_USER_MST` (사용자 마스터) 테이블 생성 | 예정 |
-| `SYS_ROLE_MST` (역할 마스터) 테이블 생성 | 예정 |
-| `SYS_AUDIT_LOG` (감사 로그) 테이블 생성 | 예정 |
+| `SYS_USER_MST` (사용자 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `SYS_ROLE_MST` (역할 마스터) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
+| `SYS_AUDIT_LOG` (감사 로그) 테이블 생성 | 완료 (모델+마이그레이션 작성, 2026-07-03 — 실 DB 적용 미검증) |
 | `SYS_BATCH_HIS` (배치 이력) 테이블 생성 | 예정 |
-| Seed 데이터 입력 (`SYS_ROLE_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST` 12종) | 예정 |
+| Seed 데이터 입력 (`SYS_ROLE_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST` 12종) | 진행 중 — `SYS_ROLE_MST` 6종은 마이그레이션에 포함 완료(`83fc676b952e_create_sys_user_role_audit_tables.py`), `HR_JIKGUP_MST`(10종)/`HR_JIKMU_MST`(12종)는 아직 Seed 스크립트 미작성 |
 | DB 백업 스크립트 작성 및 crontab 등록 (매일 02:00) | 예정 |
 
 **산출물**
@@ -577,6 +577,9 @@
 - 가동 가능일 MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 신규 작성. 기준일=`HR_AVAIL_SNAP.SNAP_DT`(배치 실행일), 투입률 합계 산정 대상 조건(`ASGN_STAT_CD='ACTIVE'`, `ASGN_STRT_DT<=기준일`, `ASGN_END_DT IS NULL OR ASGN_END_DT>=기준일`, `ASGN_TYPE_CD IN ('RUNNING','COMMITTED')`), `PROPOSED` 기본 제외(대시보드/리포트 "전체(+제안중)" 지표로 별도 표시), 0%/1~99%/≥100% 3단계 `AVAIL_STAT_CD`·`AVAIL_STRT_DT` 산정식(종료일 NULL 시 데이터 품질 경고 처리 포함), 100% 초과 데이터의 저장 차단 원칙 및 기존 Excel 이관 데이터 예외(품질 점검 경고 대상) 확정. §9 리스크 "가동 가능일 계산 기준 미정" 상태를 "차단→주의"로 하향, §11 MVP 체크리스트 관련 항목 설명 갱신
 - (§8 다음 작업 4번) PostgreSQL 초기 마이그레이션 구성(Alembic `env.py` 설정) 완료 — `backend/alembic.ini`(민감정보 미포함, `DATABASE_URL`은 `.env` 기반으로 `env.py`에서 로드), `backend/alembic/env.py`(offline/online 마이그레이션 모드 지원, `app.db.base.Base.metadata`를 target_metadata로 사용), `backend/alembic/script.py.mako`(리비전 템플릿), `backend/alembic/versions/`(빈 디렉토리) 신규 작성. `backend/app/db/base.py`에 공통 `Base` 선언 추가, `app/models/__init__.py`에 Phase 2 모델 등록 안내 주석 추가. README.md에 Alembic 사용법(리비전 생성/적용/롤백) 섹션 추가. **실 DB 연결 기반 `alembic upgrade head` 실행은 로컬 환경에 `alembic`/`pip` 미설치로 미검증** — 구문·설정 파일 유효성만 확인 (아래 검증 결과 참조)
 - 전 컨테이너 타임존 KST(Asia/Seoul) 통일 — `docker-compose.yml`의 `api`/`web`/`worker`/`db`/`redis` 5개 서비스에 `TZ=Asia/Seoul` 적용(YAML anchor `x-tz-env`로 중복 최소화), Ubuntu 호스트 `/etc/localtime`·`/etc/timezone` 읽기전용 바인드 마운트 추가, PostgreSQL은 `PGTZ=Asia/Seoul` 추가 지정(단 `TIMESTAMPTZ` 내부 저장은 UTC 유지). `.env`에는 `TZ` 추가하지 않음(compose 레벨 anchor로 고정). 설계서(`[DESIGN]HRM_Automation_System_Design_v0_6.md`) §8.3을 동일 내용으로 갱신하고 §8.3-1(타임존 정책, Alpine tzdata 참고사항, 운영 검증 명령)을 신규 추가 — 업무/DB/화면/API 설계 내용은 변경 없음. Dockerfile은 이번 작업에서 수정하지 않음(Alpine tzdata 이슈 미확인, 필요 시 후속 검토 사항으로 문서화)
+- §9 리스크 및 차단 이슈 표 구조 변경 — `처리일자` 컬럼 신규 추가, `상태` 열 값을 상태값 단일 표기(차단/주의/해소)로 정리하고 날짜는 `처리일자`로 분리. 이슈·대응 방안 실질 내용은 변경 없음
+- (§8 다음 작업 5번) `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 7개 테이블 생성 — `backend/app/db/base.py` 기준 SQLAlchemy 2.x ORM 모델 7종을 `backend/app/models/`에 신규 작성(`hr_dept_mst.py`, `hr_jikgup_mst.py`, `hr_jikmu_mst.py`, `hr_skill_mst.py`, `hr_empl_mst.py`, `pjt_mst.py`, `pjt_asgn_his.py`), 공통 `REG_DTTM`/`UPD_DTTM`(+`REG_USER`/`UPD_USER`) 컬럼을 위한 `TimestampMixin`/`AuditMixin`을 `app/models/mixins.py`에 추가. 스키마는 `backend/docs/ERD.md` §3.1~3.5, 3.8~3.9 그대로 반영(컬럼 타입·PK/FK·CHECK 제약 포함). `app/models/__init__.py`에 7개 모델 import 등록. Alembic 리비전 `backend/alembic/versions/28ce52377e32_create_core_hr_pjt_tables.py`를 수기 작성(로컬 환경에 `alembic` 패키지 미설치로 `--autogenerate` 실행 불가하여 모델 정의 기준으로 직접 작성). `PJT_ASGN_HIS.ALLOC_RT` 100% 초과 방지 등 테이블 간 데이터 정합성 규칙은 DB 제약만으로 표현 불가하여 서비스 레이어 구현(Phase 3) 몫으로 모델 주석에 명시. **부분 완료**: ERD 16개 테이블 중 7개만 처리, 나머지 9개(`HR_EMPL_SKILL_REL`, `HR_EMPL_ROLE_REL`, `HR_AVAIL_SNAP`, `PJT_RSRC_REQ`, `PJT_RCMD_RSLT`, `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG`, `SYS_BATCH_HIS`)는 §8 6번 이후 작업. **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경에 `alembic`/`psycopg`/`pip` 미설치로 미실시** — Python 구문 검증만 완료 (아래 검증 결과 참조)
+- (§8 다음 작업 6번) `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 3개 테이블 생성 및 Seed 데이터 입력 — SQLAlchemy 모델 3종(`sys_role_mst.py`, `sys_user_mst.py`, `sys_audit_log.py`)을 `backend/docs/ERD.md` §3.12~3.14 기준으로 신규 작성. `SYS_ROLE_MST`는 REG_DTTM/UPD_DTTM 컬럼이 없어(설계서 원본 그대로) Mixin 미적용, `SYS_AUDIT_LOG`는 REG_DTTM만 있어(append-only 로그 성격) 별도 Mixin 없이 직접 선언. `ENCR_PWD` 해싱·`BFR_VAL_JSON`/`AFT_VAL_JSON` 마스킹 등 보안 처리는 Phase 3 구현 몫으로 모델 주석에 명시. Alembic 리비전 `backend/alembic/versions/83fc676b952e_create_sys_user_role_audit_tables.py`를 이전 리비전(`28ce52377e32`) 뒤에 체이닝해 수기 작성, 기존 `app/db/seed/sys_role_mst_seed.py`를 재사용해 `SYS_ROLE_MST` 6종 Seed를 `op.bulk_insert`로 함께 반영. **부분 완료**: `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed(10/12종)는 아직 스크립트 미작성 — §11 Seed 체크리스트 항목은 미완료 유지. **실 DB 연결 기반 `alembic upgrade head` 적용 검증은 로컬 환경 제약으로 미실시** — 모델-마이그레이션 컬럼 일치 여부는 정적 비교로 확인 (아래 검증 결과 참조)
 
 ---
 
@@ -590,8 +593,8 @@
 - [x] 2. Docker Compose 개발환경 구성 (`docker-compose.yml` 작성 — api / web / db / redis / worker)
 - [x] 3. FastAPI 프로젝트 기본 구조 생성 (`app/`, `models/`, `schemas/`, `api/v1/`, `core/`)
 - [x] 4. PostgreSQL 초기 마이그레이션 구성 (Alembic `env.py` 설정) → `backend/alembic.ini`, `backend/alembic/env.py` (실 DB 연결 `alembic upgrade` 검증은 미실행 — 아래 검증 결과 참조)
-- [ ] 5. `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 테이블 생성
-- [ ] 6. `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 테이블 생성 및 Seed 데이터 입력
+- [x] 5. `HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`, `HR_SKILL_MST`, `HR_EMPL_MST`, `PJT_MST`, `PJT_ASGN_HIS` 테이블 생성 → SQLAlchemy 모델(`backend/app/models/`) + Alembic 마이그레이션(`backend/alembic/versions/28ce52377e32_create_core_hr_pjt_tables.py`) 작성 완료. 실 DB 연결 기반 `alembic upgrade head` 적용 검증은 미실행 (아래 검증 결과 참조)
+- [x] 6. `SYS_USER_MST`, `SYS_ROLE_MST`, `SYS_AUDIT_LOG` 테이블 생성 및 Seed 데이터 입력 → SQLAlchemy 모델(`backend/app/models/`) + Alembic 마이그레이션(`backend/alembic/versions/83fc676b952e_create_sys_user_role_audit_tables.py`, `SYS_ROLE_MST` 6종 Seed 포함) 작성 완료. 실 DB 적용 검증은 미실행 (아래 §3 검증 결과 참조)
 - [ ] 7. 사원 목록 조회 API 구현 (`GET /api/v1/employees`)
 - [ ] 8. 사원 등록/수정 API 구현 (`POST`, `PATCH /api/v1/employees`)
 - [ ] 9. Next.js 기본 레이아웃 구성 (로그인 화면, 공통 네비게이션)
@@ -666,24 +669,24 @@
 - [ ] PostgreSQL Docker 컨테이너 구성 (외부 포트 **5442** → 내부 5432)
 - [ ] `/App/hrmngr/data/postgres/` 바인드 마운트 확인
 - [x] Alembic 마이그레이션 환경 구성 (`env.py` 설정) — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py`(`Base` 선언) 작성 완료. 실 DB 연결 기반 `alembic upgrade head` 실행 검증은 미실시 (아래 §3 검증 결과 참조)
-- [ ] 전체 테이블 생성 (16개)
-  - [ ] `HR_DEPT_MST` — 부서 마스터
-  - [ ] `HR_JIKGUP_MST` — 직급 마스터
-  - [ ] `HR_JIKMU_MST` — 직무 마스터
-  - [ ] `HR_SKILL_MST` — 기술 마스터
-  - [ ] `HR_EMPL_MST` — 사원 마스터
+- [ ] 전체 테이블 생성 (16개, 10/16 모델+마이그레이션 작성 완료 — 실 DB 적용 미검증)
+  - [x] `HR_DEPT_MST` — 부서 마스터 (모델+마이그레이션 작성, 2026-07-03)
+  - [x] `HR_JIKGUP_MST` — 직급 마스터 (모델+마이그레이션 작성, 2026-07-03)
+  - [x] `HR_JIKMU_MST` — 직무 마스터 (모델+마이그레이션 작성, 2026-07-03)
+  - [x] `HR_SKILL_MST` — 기술 마스터 (모델+마이그레이션 작성, 2026-07-03)
+  - [x] `HR_EMPL_MST` — 사원 마스터 (모델+마이그레이션 작성, 2026-07-03)
   - [ ] `HR_EMPL_SKILL_REL` — 사원기술 연결
   - [ ] `HR_EMPL_ROLE_REL` — 사원역할 연결 (복수 직무 지원)
   - [ ] `HR_AVAIL_SNAP` — 가동가능 스냅샷
-  - [ ] `PJT_MST` — 프로젝트 마스터
-  - [ ] `PJT_ASGN_HIS` — 투입 이력
+  - [x] `PJT_MST` — 프로젝트 마스터 (모델+마이그레이션 작성, 2026-07-03)
+  - [x] `PJT_ASGN_HIS` — 투입 이력 (모델+마이그레이션 작성, 2026-07-03)
   - [ ] `PJT_RSRC_REQ` — 리소스 요청
   - [ ] `PJT_RCMD_RSLT` — 추천 결과
-  - [ ] `SYS_USER_MST` — 시스템 사용자 마스터
-  - [ ] `SYS_ROLE_MST` — 역할 마스터
-  - [ ] `SYS_AUDIT_LOG` — 감사 로그
+  - [x] `SYS_USER_MST` — 시스템 사용자 마스터 (모델+마이그레이션 작성, 2026-07-03)
+  - [x] `SYS_ROLE_MST` — 역할 마스터 (모델+마이그레이션 작성, 2026-07-03 — Seed 6종 포함)
+  - [x] `SYS_AUDIT_LOG` — 감사 로그 (모델+마이그레이션 작성, 2026-07-03)
   - [ ] `SYS_BATCH_HIS` — 배치 실행 이력
-- [ ] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST` + `HR_JIKMU_MST` (12종) — 내용 확정 완료, Alembic Seed 스크립트 반영은 Phase 2 착수 시 수행 (미완료 유지)
+- [ ] Seed 데이터 입력: `SYS_ROLE_MST` (6종, MVP 확정 — `backend/app/db/seed/sys_role_mst_seed.py`) + `HR_JIKGUP_MST` + `HR_JIKMU_MST` (12종) — `SYS_ROLE_MST`는 마이그레이션 `83fc676b952e_create_sys_user_role_audit_tables.py`에 `op.bulk_insert`로 반영 완료(실 DB 적용은 미검증). `HR_JIKGUP_MST`/`HR_JIKMU_MST` Seed 스크립트는 아직 미작성 (미완료 유지)
 - [ ] `HR_SKILL_MST` Seed 입력 — MVP 초안 55건 작성 완료(`backend/app/db/seed/hr_skill_mst_seed.py`), 운영팀 최종 확정 후 실 데이터 반영 예정 (미완료 유지)
 - [ ] DB 백업 스크립트 작성 (`/App/hrmngr/backup/backup_db.sh`) 및 crontab 등록 (매일 02:00)
 - [ ] 복구 테스트 완료 (백업 파일 → 신규 DB 복구 확인)
@@ -805,4 +808,6 @@
 | 2026-07-03 | v1.0 | §8 다음 작업 4번(Alembic `env.py` 설정) 완료 처리 — `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/app/db/base.py` 작성. Phase 2 진행률 5%→10%로 갱신. §11 데이터베이스 체크리스트 "Alembic 마이그레이션 환경 구성" 항목 완료 처리. 실 DB 연결 검증은 로컬 환경 제약으로 미실시 | — |
 | 2026-07-03 | v1.1 | 전 컨테이너(api/web/worker/db/redis) 타임존 Asia/Seoul(KST) 통일 — `docker-compose.yml`에 `TZ`/`PGTZ` 환경변수 및 `/etc/localtime`·`/etc/timezone` 읽기전용 바인드 마운트 적용(YAML anchor 사용). `[DESIGN]HRM_Automation_System_Design_v0_6.md` §8.3 동일 갱신 및 §8.3-1(타임존 정책/Alpine tzdata 참고/운영 검증 명령) 신규 추가 — 예외적으로 운영 환경 구성 부분만 수정, 업무/DB/화면/API 설계는 변경 없음. §4 Phase 1 작업 목록에 타임존 통일 항목 추가 | — |
 | 2026-07-03 | v1.2 | §9 리스크 및 차단 이슈 표 구조 변경 — `처리일자` 컬럼 신규 추가. `상태` 열에 섞여 있던 날짜·부가 설명(예: "해결 (MVP, 2026-07-02 갱신)", "주의 (2026-07-03 하향, 기존 차단)")을 `상태`(차단/주의/정상/해소/보류 단일 값)와 `처리일자`(`YYYY-MM-DD` 또는 미처리 시 `-`)로 분리. 상태값 표기를 "해결"→"해소"로 통일(대응 방안 본문 내 동일 표현 포함). 이슈·대응 방안의 실질 내용은 변경하지 않음 | — |
+| 2026-07-03 | v1.3 | §8 다음 작업 5번(핵심 7개 테이블 생성) 완료 처리 — `backend/app/models/`에 SQLAlchemy 2.x ORM 모델 7종 및 공통 Mixin(`mixins.py`) 신규 작성, Alembic 리비전 `28ce52377e32_create_core_hr_pjt_tables.py` 수기 작성(로컬 `alembic` 패키지 미설치로 autogenerate 불가). Phase 2 진행률 10%→45%로 갱신. §11 데이터베이스 체크리스트에 완료 7개 테이블 체크 표시(전체 16개 중 7개, 부분 완료). 실 DB 적용 검증은 로컬 환경 제약으로 미실시 | — |
+| 2026-07-03 | v1.4 | §8 다음 작업 6번(`SYS_USER_MST`/`SYS_ROLE_MST`/`SYS_AUDIT_LOG` 테이블 생성 및 Seed 입력) 완료 처리 — 모델 3종 신규 작성, Alembic 리비전 `83fc676b952e_create_sys_user_role_audit_tables.py`(이전 리비전 뒤 체이닝)에 `SYS_ROLE_MST` 6종 Seed(`op.bulk_insert`, 기존 `sys_role_mst_seed.py` 재사용) 포함 작성. Phase 2 진행률 45%→60%로 갱신. §11 데이터베이스 체크리스트에 완료 3개 테이블 체크(전체 16개 중 10개) 및 Seed 항목 부분 완료(HR_JIKGUP_MST/HR_JIKMU_MST Seed 미작성) 반영. 실 DB 적용 검증은 로컬 환경 제약으로 미실시 | — |
 
