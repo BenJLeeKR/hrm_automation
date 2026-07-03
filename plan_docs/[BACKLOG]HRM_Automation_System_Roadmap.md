@@ -251,7 +251,7 @@
 | **목표** | 핵심 업무 도메인 REST API 구현 및 인증·권한·감사 로그 적용 |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 33% |
+| **진행률** | 39% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -268,7 +268,7 @@
 | CORS 설정 (포트 3030 허용) | 완료 (Phase 1, `backend/app/main.py`) |
 | 사원 CRUD API (`HR_EMPL_MST`) | 진행 중 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/employees`, 퇴직 처리용 삭제(DELETE)는 미구현) |
 | 부서/직급/직무 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`, `HR_JIKMU_MST`) | 완료 (조회 API만 구현 — `GET /api/v1/departments`, `/positions`, `/job-types`, 2026-07-03. 등록/수정은 §11 "직무 유형 CRUD API" 항목으로 별도 관리) |
-| 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) | 예정 |
+| 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) | 완료 (조회/등록/수정 구현 — `GET`/`POST`/`PATCH /api/v1/skills`, `/api/v1/employee-skills`, 실 서버 컨테이너 재빌드 후 curl 검증 완료, 2026-07-03) |
 | 프로젝트 CRUD API (`PJT_MST`) | 예정 |
 | 투입 관리 API (`PJT_ASGN_HIS`) | 예정 |
 | 가동률 계산 API (`HR_AVAIL_SNAP`) | 예정 |
@@ -602,6 +602,7 @@
 - **Phase 2 완료 — 실 서버 최종 검증 (`alembic upgrade head`, 16개 테이블, Seed, 백업)** — 사용자 확인 하에 `sudo docker compose`로 실 서버에 직접 접근해 이번 세션에서 미실행 상태로 남아있던 검증을 전부 수행: `docker compose up -d --build api worker`로 최신 코드 반영 후 `alembic upgrade head` 실행, `83fc676b952e`→`370c95546556`(현재 head)까지 대기 중이던 7개 리비전 전부 정상 적용 확인. `\dt` 결과 ERD 16개 테이블 + `alembic_version` 총 17개 relation 확인, `SELECT COUNT(*)`로 `SYS_ROLE_MST`(6)/`HR_JIKGUP_MST`(10)/`HR_JIKMU_MST`(12) Seed 정상 삽입 확인, `curl /health`·`curl /api/v1/employees` 정상 응답 확인. 이전까지 "실 DB 미검증"으로 남아있던 6개 테이블(`HR_EMPL_SKILL_REL`/`HR_EMPL_ROLE_REL`/`HR_AVAIL_SNAP`/`PJT_RSRC_REQ`/`PJT_RCMD_RSLT`/`SYS_BATCH_HIS`)과 Seed 3종을 전부 "실 서버 DB 적용 검증 완료"로 갱신(§4/§11). 추가로 `backup/backup_db.sh`를 실 서버에서 수동 실행해 `pg_dump` 백업 파일(`hrm_20260703_132344.sql.gz`, `CREATE TABLE` 17건 포함) 정상 생성을 확인 — Phase 2 "완료 기준" 3개 항목(테이블 생성/Seed 입력/백업 파일 생성)이 전부 충족되어 **Phase 2를 100% 완료로 전환**. crontab 자동 등록(매일 02:00)은 별도 배치 운영 항목(`SYS_DB_BACKUP`, Phase 7)으로 이미 분리되어 있어 Phase 2 완료 판정에 영향 없음. §8 큐를 Phase 3 잔여 작업(Pydantic 스키마·API 구현·인증·감사 로그 등 11개 항목) 중심으로 전면 재구성. 참고: `worker` 컨테이너는 Phase 7까지 placeholder라 실행 후 종료→재시작을 반복하는 것이 의도된 정상 상태임을 로그로 확인(`docker compose logs worker`)
 - **Pydantic v2 스키마 작성 — 16개 테이블 전체 조회(Out) 스키마 완료 (§8 다음 작업 1번)** — 사용자가 현재 `novauser` 계정도 `docker` 그룹 권한을 갖고 있음을 알려주어(`sg docker -c "..."`로 그룹 즉시 적용 확인), 이후 `sudo` 없이 직접 실 서버 컨테이너에 접근해 작업. 기존 `EmployeeOut`(1개) 외 나머지 15개 테이블 도메인에 대해 `backend/app/schemas/`에 조회 전용 스키마 신규 작성 — `hr_dept_mst.py`(`DepartmentOut`), `hr_jikgup_mst.py`(`PositionOut`), `hr_jikmu_mst.py`(`JobTypeOut`), `hr_skill_mst.py`(`SkillOut`), `hr_empl_skill_rel.py`(`EmployeeSkillOut`), `hr_empl_role_rel.py`(`EmployeeRoleOut`), `hr_avail_snap.py`(`AvailabilitySnapshotOut`), `pjt_mst.py`(`ProjectOut`), `pjt_asgn_his.py`(`AssignmentOut`), `pjt_rsrc_req.py`(`ResourceRequestOut`), `pjt_rcmd_rslt.py`(`RecommendationResultOut`), `sys_user_mst.py`(`SysUserOut` — `ENCR_PWD`는 설계서 §11 보안 원칙에 따라 스키마에서 의도적으로 제외), `sys_role_mst.py`(`RoleOut`), `sys_audit_log.py`(`AuditLogOut`), `sys_batch_his.py`(`BatchHistoryOut`). 각 모델의 Mixin 종류(`TimestampMixin`/`AuditMixin`/단독 `REG_DTTM`)를 정확히 반영해 필드 구성. **검증을 이례적으로 강하게 수행**: `docker compose up -d --build api`로 이미지 재빌드 후, 컨테이너 내부에서 실제 `python3 -c "import ..."`로 15개 스키마 전부 정상 임포트 확인, `HR_JIKGUP_MST`/`SYS_ROLE_MST` 실 데이터 행을 SQLAlchemy로 조회해 `PositionOut`/`RoleOut`으로 `model_validate()` 변환까지 성공 확인(`RoleOut`에서 `PERM_JSON` JSONB 필드와 `REG_DTTM`의 KST 타임존 정상 역직렬화 확인). `ENCR_PWD`가 `SysUserOut.model_fields`에 없음을 코드로 재확인. Phase 3 진행률 20%→28%로 갱신(FastAPI 구조/`/health`/CORS/SQLAlchemy 모델/Pydantic 스키마 5개 항목 완료). §8 큐에서 완료 항목 제거 및 나머지 재번호(1~9)
 - **부서/직급/직무 코드 조회 API 구현 (§8 다음 작업 1번)** — `backend/app/repositories/codes.py`(신규, `HR_DEPT_MST`/`HR_JIKGUP_MST`/`HR_JIKMU_MST` 세 코드 마스터가 소규모라 백로그 항목과 동일하게 한 모듈로 묶어 구현) 및 `backend/app/api/v1/codes.py`(신규, `GET /api/v1/departments`·`/positions`·`/job-types`, 각 정렬 컬럼(`DEPT_ORD`/`JIKGUP_ORD`/`SORT_ORD`) 기준 정렬 + `use_yn` 필터)를 `employees.py`/`hr_empl_mst.py`와 동일한 리포지토리+라우터 패턴으로 작성. `backend/app/api/v1/router.py`에 등록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api` 재빌드 후 `curl /api/v1/departments`(0건, `HR_DEPT_MST` Seed 없어 정상)·`/positions`(10건)·`/job-types`(12건) 정상 응답 확인, `openapi.json`에서 3개 경로 전부 등록 확인. Phase 3 진행률 28%→33%로 갱신, §11 "부서/직급 코드 API" 완료 체크(범위상 조회만 구현이라 "직무 유형 CRUD API" 항목은 조회만 완료로 별도 표기, 등록/수정 미구현 유지). §8 큐에서 완료 항목 제거 및 재번호(1~9)
+- **기술 CRUD API 구현 (§8 다음 작업 1번)** — `employees.py` 패턴을 그대로 재사용해 조회/등록/수정(GET/POST/PATCH) 구현. `backend/app/schemas/hr_skill_mst.py`에 `SkillCreate`/`SkillUpdate` 추가, `backend/app/schemas/hr_empl_skill_rel.py`에 `EmployeeSkillCreate`/`EmployeeSkillUpdate` 추가(`PRFCY_LEVL`은 ERD CHECK 제약(1~5)과 동일하게 `Field(ge=1, le=5)`로 검증). `backend/app/repositories/hr_skill_mst.py`(신규, `list_skills`/`get_skill`/`create_skill`/`update_skill`, `skill_grp_cd`/`use_yn` 필터), `backend/app/repositories/hr_empl_skill_rel.py`(신규, `list_employee_skills`/`get_employee_skill`/`create_employee_skill`/`update_employee_skill`, `empl_id`/`skill_id` 필터) 작성. 라우터 `backend/app/api/v1/skills.py`(`GET`/`POST /api/v1/skills`, `PATCH /api/v1/skills/{skill_id}`), `backend/app/api/v1/employee_skills.py`(`GET`/`POST /api/v1/employee-skills`, `PATCH /api/v1/employee-skills/{empl_skill_id}`) 신규 작성, `backend/app/api/v1/router.py`에 등록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api` 재빌드 후 `POST /api/v1/skills`(정상 생성 확인), `GET /api/v1/skills`(`use_yn` 기본 필터 동작 확인), `PATCH /api/v1/skills/{id}`(부분 업데이트 확인), `POST /api/v1/employee-skills`에 `PRFCY_LEVL=9`(범위 밖) 전달 시 422, 존재하지 않는 `EMPL_ID`로 전달 시 409(FK 위반→`IntegrityError` 변환) 정상 확인. 현재 `HR_EMPL_MST`에 실 데이터가 없어 정상 케이스(유효 FK)의 등록/조회까지는 검증하지 못함 — 검증 결과 참조. Phase 3 진행률 33%→39%로 갱신. §8 큐에서 완료 항목 제거 및 재번호(1~8)
 
 ---
 
@@ -610,17 +611,16 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 기술 CRUD API 구현 (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)
-- [ ] 2. 프로젝트 CRUD API 구현 (`PJT_MST`)
-- [ ] 3. 투입 관리 API 구현 (`PJT_ASGN_HIS`)
-- [ ] 4. JWT 인증 API 구현 (`SYS_USER_MST` 기반)
-- [ ] 5. RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반)
-- [ ] 6. `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
-- [ ] 7. 사원 퇴직 처리 API 구현 (`DELETE /api/v1/employees/{empl_id}` — `EMPL_STAT_CD='RETIRED'` 전환)
-- [ ] 8. 페이지네이션 공통 처리 구현 (현재 `employees.py`에 한정된 skip/limit을 공통 모듈로 추출)
-- [ ] 9. OpenAPI 문서(`/docs`) 확인
+- [ ] 1. 프로젝트 CRUD API 구현 (`PJT_MST`)
+- [ ] 2. 투입 관리 API 구현 (`PJT_ASGN_HIS`)
+- [ ] 3. JWT 인증 API 구현 (`SYS_USER_MST` 기반)
+- [ ] 4. RBAC 권한 미들웨어 구현 (`SYS_ROLE_MST` 기반)
+- [ ] 5. `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
+- [ ] 6. 사원 퇴직 처리 API 구현 (`DELETE /api/v1/employees/{empl_id}` — `EMPL_STAT_CD='RETIRED'` 전환)
+- [ ] 7. 페이지네이션 공통 처리 구현 (현재 `employees.py`에 한정된 skip/limit을 공통 모듈로 추출)
+- [ ] 8. OpenAPI 문서(`/docs`) 확인
 
-> 참고: "부서/직급/직무 코드 조회 API"와 "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
+> 참고: "부서/직급/직무 코드 조회 API", "Pydantic v2 스키마 작성 — 나머지 15개 테이블 도메인", "기술 CRUD API 구현(`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)"은 2026-07-03에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
 > 참고: 순서는 §4 Phase 3 "주요 작업" 표 나열 순서를 기준으로 구성했다. 실제 우선순위(예: 인증을 CRUD API보다 먼저)는 착수 전 재확인 가능.
 
@@ -733,7 +733,7 @@
 - [ ] `SYS_AUDIT_LOG` 감사 로그 미들웨어 구현
 - [ ] 사원 CRUD API (`HR_EMPL_MST` — `JIKMU_ID` 필드 포함) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/employees`, 2026-07-03), 퇴직 처리용 삭제(DELETE)는 미구현
 - [ ] 직무 유형 CRUD API (`HR_JIKMU_MST`) — 조회만 구현(`GET /api/v1/job-types`, 2026-07-03), 등록/수정 미구현
-- [ ] 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`)
+- [x] 기술 CRUD API (`HR_SKILL_MST`, `HR_EMPL_SKILL_REL`) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/skills`, `/api/v1/employee-skills`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 부서/직급 코드 API (`HR_DEPT_MST`, `HR_JIKGUP_MST`) — 조회 API 구현 완료(`GET /api/v1/departments`, `/positions`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [ ] 프로젝트 CRUD API (`PJT_MST`)
 - [ ] 투입 관리 API (`PJT_ASGN_HIS`)
@@ -854,4 +854,5 @@
 | 2026-07-03 | v2.9 | **Phase 2 100% 완료** — 실 서버에서 `alembic upgrade head`(7개 리비전 적용), 16개 테이블 생성(`\dt`), Seed 3종 삽입(`SELECT COUNT(*)`), `pg_dump` 백업 파일 생성을 전부 실측 검증 완료. §4/§11의 "실 DB 미검증" 표기 전량을 "실 서버 DB 적용 검증 완료"로 갱신, Phase 2 완료 기준 3개 항목 충족 처리. §8 다음 작업을 Phase 3(FastAPI 백엔드, 20%) 잔여 작업 11개 항목으로 전면 재구성 | — |
 | 2026-07-03 | v3.0 | 16개 테이블 전체 Pydantic v2 조회(Out) 스키마 작성 완료 — 실 서버 컨테이너 내 실제 임포트 및 ORM 데이터(`PERM_JSON` JSONB, KST 타임존) 검증까지 수행(`novauser` 계정 `docker` 그룹 권한 확인 후 `sg docker`로 직접 접근). `SysUserOut`에서 `ENCR_PWD` 의도적 제외 확인. Phase 3 진행률 20%→28%로 갱신, §8 큐에서 완료 항목 제거 및 재번호(1~9) | — |
 | 2026-07-03 | v3.1 | 부서/직급/직무 코드 조회 API 구현 — `GET /api/v1/departments`·`/positions`·`/job-types` 신규 라우터·리포지토리 추가, 실 서버에서 `curl`로 실제 응답(10건/12건) 및 `openapi.json` 경로 등록 확인. Phase 3 진행률 28%→33%로 갱신, §11 "부서/직급 코드 API" 완료 체크, "직무 유형 CRUD API"는 조회만 완료로 갱신 | — |
+| 2026-07-03 | v3.2 | §8 다음 작업 1번(기술 CRUD API) 완료 처리 — `SkillCreate`/`SkillUpdate`, `EmployeeSkillCreate`/`EmployeeSkillUpdate` 스키마 및 리포지토리·라우터(`app/api/v1/skills.py`, `app/api/v1/employee_skills.py`) 신규 작성, `employees.py` 패턴 재사용. 실 서버 재빌드 후 `curl`로 등록/조회/수정 및 422(범위 밖 `PRFCY_LEVL`)/409(FK 위반) 응답 확인. Phase 3 진행률 33%→39%로 갱신, §11 "기술 CRUD API" 완료 체크, §8 큐에서 제거 및 재번호(1~8) | — |
 
