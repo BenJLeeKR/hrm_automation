@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.selectable import Subquery
 
 from app.models.hr_empl_mst import HrEmplMst
+from app.models.hr_empl_skill_rel import HrEmplSkillRel
 from app.models.pjt_asgn_his import PjtAsgnHis
 
 # 가동률 계산 대상 투입 조건 (backend/docs/AVAILABILITY_CALC_SPEC.md §2) —
@@ -88,6 +89,8 @@ def list_availability(
     snap_dt: date,
     jikmu_id: uuid.UUID | None = None,
     dept_id: uuid.UUID | None = None,
+    skill_id: uuid.UUID | None = None,
+    min_prfcy_levl: int | None = None,
 ) -> list[AvailabilityCalcResult]:
     """재직 사원 전체 대상 가동률 일괄 계산 (SCR-010 "가동 가능 인력" 화면용).
 
@@ -95,12 +98,21 @@ def list_availability(
     투입 이력을 한 번에 조회한 뒤 파이썬에서 사원별로 묶어 동일한 산정 로직(`_classify`)을
     적용한다. `HR_AVAIL_SNAP_GEN` 배치(Phase 7, 미구현)와 마찬가지로 결과를 테이블에
     저장하지 않는 즉시 계산이다.
+
+    `skill_id`/`min_prfcy_levl`(로드맵 §8 "직무 유형·기술·숙련도 복합 필터 검색 API 구현")는
+    `HR_EMPL_SKILL_REL`에 해당 기술을 보유(숙련도 조건 포함)한 사원만 포함시키는 필터다.
+    `min_prfcy_levl`만 단독으로 주어지면(기준이 될 기술이 없어) 무시한다.
     """
     employee_stmt = select(HrEmplMst.EMPL_ID).where(HrEmplMst.EMPL_STAT_CD == "ACTIVE")
     if jikmu_id is not None:
         employee_stmt = employee_stmt.where(HrEmplMst.JIKMU_ID == jikmu_id)
     if dept_id is not None:
         employee_stmt = employee_stmt.where(HrEmplMst.DEPT_ID == dept_id)
+    if skill_id is not None:
+        skill_stmt = select(HrEmplSkillRel.EMPL_ID).where(HrEmplSkillRel.SKILL_ID == skill_id)
+        if min_prfcy_levl is not None:
+            skill_stmt = skill_stmt.where(HrEmplSkillRel.PRFCY_LEVL >= min_prfcy_levl)
+        employee_stmt = employee_stmt.where(HrEmplMst.EMPL_ID.in_(skill_stmt))
     employee_ids = list(db.scalars(employee_stmt))
     if not employee_ids:
         return []

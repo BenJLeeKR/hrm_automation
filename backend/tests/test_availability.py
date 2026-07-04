@@ -1,6 +1,9 @@
 import uuid
 from datetime import date
 
+from sqlalchemy import select
+
+from app.models.hr_skill_mst import HrSkillMst
 from app.models.pjt_mst import PjtMst
 
 
@@ -82,6 +85,38 @@ def test_availability_list_filters_by_jikmu_id(client, admin_token, dept, jikgup
     )
     assert resp.status_code == 200
     assert all(i["EMPL_ID"] != empl_id for i in resp.json())
+
+
+def test_availability_list_filters_by_skill_and_min_prfcy_levl(client, admin_token, db_session, dept, jikgup):
+    """skill_id + min_prfcy_levl 필터는 해당 기술을 그 숙련도 이상으로 보유한 사원만 포함해야 한다."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    skilled_empl_id = _create_employee(client, headers, dept, jikgup)
+    unskilled_empl_id = _create_employee(client, headers, dept, jikgup)
+    skill = db_session.scalars(select(HrSkillMst).limit(1)).first()
+
+    create_resp = client.post(
+        "/api/v1/employee-skills",
+        headers=headers,
+        json={"EMPL_ID": skilled_empl_id, "SKILL_ID": str(skill.SKILL_ID), "PRFCY_LEVL": 4},
+    )
+    assert create_resp.status_code == 201
+
+    resp = client.get(
+        "/api/v1/availability",
+        headers=headers,
+        params={"dept_id": str(dept.DEPT_ID), "skill_id": str(skill.SKILL_ID), "min_prfcy_levl": 3},
+    )
+    assert resp.status_code == 200
+    result_ids = {i["EMPL_ID"] for i in resp.json()}
+    assert skilled_empl_id in result_ids
+    assert unskilled_empl_id not in result_ids
+
+    resp_higher_bar = client.get(
+        "/api/v1/availability",
+        headers=headers,
+        params={"dept_id": str(dept.DEPT_ID), "skill_id": str(skill.SKILL_ID), "min_prfcy_levl": 5},
+    )
+    assert skilled_empl_id not in {i["EMPL_ID"] for i in resp_higher_bar.json()}
 
 
 def test_viewer_cannot_view_availability_list(client, viewer_token):

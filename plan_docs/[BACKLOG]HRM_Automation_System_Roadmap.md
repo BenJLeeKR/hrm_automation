@@ -99,7 +99,7 @@
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 완료 | 100% | 정상 |
-| Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 75% | 정상 |
+| Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 88% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 38% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
 | Phase 8 | 파일럿 운영 및 정식 전환 | 8주차 | 예정 | 0% | 정상 |
@@ -344,7 +344,7 @@
 | **목표** | 직무 유형·기술·가동 가능일 기반 인력 검색 및 점수 기반 추천 구현 |
 | **계획 기간** | 5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 75% |
+| **진행률** | 88% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -353,7 +353,7 @@
 |---|---|
 | 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조) | 예정 (매일 01:00 배치 `HR_AVAIL_SNAP_GEN`은 Phase 7 미구현 — 즉시 계산 API로 대체 중, §9 참조) |
 | 즉시 투입 가능 인력 조회 API 구현 | 완료 (`GET /api/v1/availability`, 2026-07-04 "가동 가능 인력 조회 화면 구현" 작업에서 완료 — 이 표에 반영 누락되어 있던 것을 이번에 바로잡음) |
-| 직무 유형·기술·숙련도 복합 필터 검색 API 구현 | 예정 (`GET /api/v1/availability`가 직무 유형·부서 필터는 지원하나 기술·숙련도 필터는 아직 미구현) |
+| 직무 유형·기술·숙련도 복합 필터 검색 API 구현 | 완료 (`GET /api/v1/availability`에 `skill_id`/`min_prfcy_levl` 쿼리 파라미터 신규 추가, 기존 직무 유형·부서 필터와 함께 복합 적용, 실 서버 검증 완료, 2026-07-04) |
 | 추천 점수 산정 로직 구현 (직무 일치 15% + 기술 35% + 숙련도 25% + 가동일 15% + 유사경험 7% + 역할적합도 3%) | 완료 (`backend/app/repositories/pjt_rcmd_rslt.py`, 각 항목 산정 방식은 설계서에 세부 공식이 없어 MVP 해석 적용 — §9 리스크 참조, 2026-07-04) |
 | `PJT_RSRC_REQ` 인력 요청 등록 API 구현 | 완료 (`POST /api/v1/resource-requests`, 실 서버 검증 완료, 2026-07-04) |
 | `PJT_RCMD_RSLT` 추천 결과 저장 및 조회 API 구현 | 완료 (`POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}`, 실 서버 검증 완료, 2026-07-04) |
@@ -641,6 +641,7 @@
 - **기술/직무유형 화면 그룹 필터 하드코딩 버그 수정 (사용자 질의)** — 사용자가 "각 화면의 검색 필터가 DB에서 조회되는지 하드코딩인지"를 질의해 전 화면을 감사 — `HR_SKILL_MST` 표준 Seed 재작성(바로 위 항목) 직후라 기술 관리(`/skills`) 화면의 "기술 그룹" 필터가 `frontend/lib/options.ts`에 하드코딩된 옛 7개 그룹만 사용해 새 Seed의 13개 그룹 중 다수가 필터로 선택 불가능한 상태임을 발견, 사용자 확인 후 즉시 수정. 하드코딩된 `skillGroupOptions`를 제거하고 화면에서 실제로 불러온 데이터의 `SKILL_GRP_CD` distinct 값으로 필터·등록 모달 그룹 목록을 동적 생성(`useMemo`). 직무 유형(`/job-types`) 화면의 "그룹" 필터도 동일한 문제 가능성이 있어 함께 점검·수정 — 단 등록/수정 모달은 설계서(SCR-006)가 명시한 고정 3종(TECHNICAL/MANAGEMENT/ANALYSIS)을 그대로 유지(신규 등록 시 그룹명 난립 방지 목적, 필터와는 별개 사안이라 분리 유지). 나머지 화면(가동 가능 인력·리소스 추천의 조직/직무유형/기술 필터)은 이미 실 API 기반이라 문제없음을 확인, 상태/유형 계열 필터(프로젝트 상태·투입 유형 등)는 DB CHECK 제약과 동일한 고정 열거값이라 하드코딩이 정상 설계임도 함께 확인. 백엔드 변경 없음(프론트엔드 전용), 재빌드 후 `/skills`·`/job-types` 페이지 200 렌더링 확인, pytest 55개 그대로 통과
 - **설정 화면 구현 — 사용자 관리·감사 로그 조회 백엔드 API 신규 구현 (§8 다음 작업 1번)** — 기존 저장소에 `/settings` 화면(일반설정/사용자관리/감사로그 3개 탭, `UsersTable`/`AuditLogTable` 컴포넌트로 UI는 이미 완성되어 있었으나 전부 `lib/mock-data.ts` 기반)이 있었으나 백엔드 API가 전혀 없어 신규 구현. **사용자 관리(SCR-015)**: `backend/app/schemas/sys_user_mst.py`에 `UserCreate`(비밀번호 정책 검증 — 8자 이상+영문+숫자+특수문자, `field_validator`로 구현) 추가, `repositories/sys_user_mst.py`에 `list_users`/`create_user` 추가, `backend/app/api/v1/users.py`(신규) — `GET /users`(목록), `POST /users`(등록, 비밀번호는 기존 `core/security.hash_password`로 해시 저장 후 평문 필드 제외), `GET /users/roles`(신규 — 등록 모달의 "역할" 드롭다운용, 기존 `SYS_ROLE_MST`에 목록 조회 API가 아예 없어 `repositories/sys_role_mst.py`도 함께 신규 작성), 권한 `settings_users.view/create`(설계서 접근 권한 "A(Admin 전용)"과 기존 Seed `PERM_JSON`이 이미 일치). **감사 로그(SCR-016)**: `repositories/sys_audit_log.py`에 `list_audit_logs`(신규 — `SYS_USER_MST`와 조인해 화면에 필요한 `USER_LGID` 함께 반환, 사용자 로그인ID/행위코드/대상테이블/기간 필터 지원) 추가, `schemas/sys_audit_log.py`에 `AuditLogListItemOut`/`AuditLogListResponse`(기존 `PaginatedResponse` 재사용) 추가, `backend/app/api/v1/audit_logs.py`(신규) — `GET /audit-logs`, 권한 `settings_audit_logs.view`(Admin 전용). 두 라우터 모두 `api/v1/router.py`에 등록. **범위를 의도적으로 축소한 부분**: 계정 수정(`PATCH /users/{id}`)·비활성화(`DELETE /users/{id}`)는 이번 범위에서 제외(등록·조회까지만 구현), 감사 로그 Excel 내보내기(`GET /audit-logs/export`)도 제외 — 둘 다 §9 리스크로 기록. 프론트엔드는 `UsersTable`/`AuditLogTable` 두 컴포넌트를 실 API로 재작성 — 사용자 목록은 역할·활성상태 필터를 실 `SYS_ROLE_MST` 데이터 기준으로 동적 생성(스킬/직무유형 화면과 동일한 원칙 적용), 감사 로그는 서버 측 필터(행위코드·사용자 검색)와 클라이언트 측 보강 검색을 함께 사용. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 사용자 등록(201, 응답에 비밀번호/해시 미노출 확인), 약한 비밀번호 422, 로그인 ID 중복 409, 감사 로그 목록 조회(56건 확인, 기존 세션에서 쌓인 실제 로그)·행위코드 필터 정상 동작 확인, `/settings` 페이지 200 렌더링 확인. 검증에 사용한 임시 사용자 계정은 SQL로 삭제. `backend/tests/test_users.py`·`test_audit_logs.py`(신규) 총 8개 케이스 추가(등록/약한 비밀번호 422/중복 409/VIEWER 403, 감사 로그 기본조회/필터/VIEWER 403 — pytest 55→63개 전부 통과). §4 Phase 4 "설정 화면 구현" 항목 완료로 갱신(진행률 88%→94%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §9-1 체크리스트에서 "감사 로그 조회 API 없음" 항목 해소 처리, §8 큐에서 완료 항목 제거
 - **Excel Import/Export UI 구현 — §8 큐 마지막 항목, 기존 백엔드 API 프론트엔드 연동 (§8 다음 작업 1번)** — 사원 목록 화면(SCR-003)에 Import/Export UI가 전혀 없었으나, 백엔드 `GET/POST /api/v1/employees/{export,import}`는 이전 세션에서 이미 구현·미검증 상태로 존재해 신규 프론트엔드 연동 작업으로 진행. `frontend/lib/api.ts`에 `apiUploadFile`(FormData 업로드)·`apiDownloadFile`(Blob 다운로드+`Content-Disposition` 파일명 파싱+브라우저 저장 트리거) 신규 추가, `ApiError`에 구조화된 검증 오류(`{total_rows, error_count, errors}`)를 담기 위한 선택적 `detail` 필드 추가. `frontend/components/employees/employee-import-dialog.tsx`(신규) — 파일 선택 후 업로드, 성공 시 신규/수정 건수 표시, 422 검증 실패 시 행별 오류(행/컬럼/값/사유) 테이블로 표시. `employees/page.tsx` 헤더에 "Excel 가져오기"/"Excel 내보내기" 버튼 추가(다른 화면들과 동일하게 클라이언트 측 권한 버튼 게이팅은 하지 않음 — 기존 전 화면 공통 패턴, 백엔드 `require_permission("employees","excel")`이 실제 차단 담당). **작업 중 실제 라우팅 버그 발견 및 수정**: `GET /export`가 `GET /{empl_id}`(UUID 경로 파라미터) 라우트보다 뒤에 등록되어 있어, FastAPI가 등록 순서대로 매칭하는 특성상 "export" 문자열이 UUID로 파싱 시도되어 실제로는 항상 422를 반환하고 있었음(한 번도 정상 동작한 적 없는 기존 버그) — `backend/app/api/v1/employees.py`에서 `/export`·`/import` 라우트 정의를 `/{empl_id}` 라우트보다 앞으로 이동해 수정. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 수정 전 재현(422 확인) → 수정 후 정상 동작 확인(Export가 지정된 헤더 순서의 xlsx 반환, 잘못된 값이 포함된 파일 Import 시 행 번호가 정확한 422 오류 목록 반환), `/employees` 페이지 200 렌더링 확인. `backend/tests/test_employees_excel.py`(신규, 라우팅 버그 회귀 방지 목적 명시) 2개 케이스 추가(pytest 63→65개 전부 통과). **알려진 한계**: 사원 목록 화면 자체는 여전히 목데이터 기반이라(§9-1 기존 항목과 동일 사안) Import 성공 후에도 화면 목록이 실시간으로 갱신되지는 않음 — 새로 만들지 않고 기존 항목을 그대로 참조. §4 Phase 4 "Excel Import/Export UI 구현" 항목 완료로 갱신(진행률 94%→100%, Phase 4 전체 완료), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐가 이번 항목 제거로 전부 소진(빈 큐)
+- **직무 유형·기술·숙련도 복합 필터 검색 API 구현 (§8 다음 작업 1번)** — Phase 4 완료로 재구성된 Phase 5 잔여 항목. 기존 `GET /api/v1/availability`(SCR-010 "가동 가능 인력")는 `jikmu_id`/`dept_id` 필터만 지원하고 기술·숙련도 필터가 없어, `backend/app/repositories/hr_avail_snap.py`의 `list_availability`에 `skill_id`/`min_prfcy_levl` 파라미터를 추가 — 대상 사원 필터링 단계에서 `HR_EMPL_SKILL_REL`(`SKILL_ID` 일치 + `PRFCY_LEVL >= min_prfcy_levl`)을 만족하는 사원만 포함하도록 서브쿼리로 구현(기존 N+1 방지용 일괄 계산 구조는 그대로 유지). `backend/app/api/v1/availability.py`에 동일 쿼리 파라미터 추가(`min_prfcy_levl`은 1~5 범위 검증, `skill_id` 없이 단독 지정 시 무시하도록 리포지토리 주석에 명시). 프론트엔드 `/availability` 화면은 기존에 이미 클라이언트 측 검색어로 보유 기술명을 필터링하고 있어 이번 범위에서는 화면 변경 없이 백엔드 API만 구현(최소 단위 원칙). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 사원 2명 중 1명에게만 기술을 등록한 뒤 `skill_id`+`min_prfcy_levl=3` 조회 시 해당 사원만 포함되고, `min_prfcy_levl=5`(실제 등록값 4 미만 요구)로 올리면 제외됨을 확인. `backend/tests/test_availability.py`에 케이스 1개 추가(pytest 65→66개 전부 통과). Phase 5 진행률 75%→88%로 갱신(8개 항목 중 7개 완료, 잔여 1개는 Phase 7 배치 선행 필요), §3/§4/§11 항목 갱신, §8 큐를 다음 순서인 Phase 6(AI 질의응답 연동, 38%)의 "자연어 조건 파싱 구현"으로 재구성 — 단 이 항목은 사용자가 이전에 "AI Chat 화면 구현과 분리해 별도 후속 작업으로 진행"하기로 확정한 사안이라 착수 전 범위 재확인 권장
 
 ---
 
@@ -649,9 +650,9 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 직무 유형·기술·숙련도 복합 필터 검색 API 구현 (Phase 5, `GET /api/v1/availability`에 기술·숙련도 필터 추가)
+- [ ] 1. 자연어 조건 파싱 구현 (Phase 6, `JIKMU_CD`/`SKILL_NM`/가동일 키워드 인식 — 사용자 확정: AI Chat 1차 범위와 분리된 후속 작업)
 
-> 참고: "Excel Import/Export UI 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — 이로써 Phase 4가 100% 완료되어, §3/§4 로드맵상 다음 순서인 Phase 5(리소스 검색 및 추천 기능 구축, 75%)의 남은 "주요 작업" 표 항목으로 큐를 재구성했다. Phase 5의 나머지 항목("가동 가능일 자동 계산 로직 구현")은 Phase 7 배치 구현이 선행되어야 해(§9 리스크 참조) 이번 큐에는 포함하지 않았다 — Phase 7 착수 전까지는 이번 1번 항목이 유일한 큐 항목이다.
+> 참고: "직무 유형·기술·숙련도 복합 필터 검색 API 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `GET /api/v1/availability`에 `skill_id`/`min_prfcy_levl` 파라미터를 추가해 Phase 5 진행률이 75%→88%로 상승했다. Phase 5의 유일한 잔여 항목("가동 가능일 자동 계산 로직 구현")은 Phase 7 배치 구현이 선행되어야 해(§9 리스크 참조) 큐에 포함하지 않았고, §3/§4 로드맵상 다음 순서인 Phase 6(AI 질의응답 연동, 38%)의 "주요 작업" 표에서 가장 앞선 미완료 항목으로 큐를 재구성했다. 단, Phase 6의 자연어 파싱·SQL 조회·권한 필터링·환각 방지 4개 항목은 지난 턴에 사용자가 "AI Chat 화면 구현과 분리해 별도 후속 작업으로 진행"하기로 명시적으로 확정한 사안이라, 착수 전 범위·우선순위를 사용자에게 재확인하는 것을 권장한다.
 
 > 참고: "설정 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 사용자 관리·감사 로그 조회만 구현했고, 계정 수정/비활성화·감사 로그 Excel 내보내기는 후속 작업으로 분리했다(§9 리스크 참조).
 
@@ -873,7 +874,8 @@
 - [x] 프로젝트 CRUD API (`PJT_MST`) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/projects`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 투입 관리 API (`PJT_ASGN_HIS`) — 조회/등록/수정 및 ALLOC_RT 100% 초과 검증 구현, 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 가동률 계산 API (`HR_AVAIL_SNAP`) — `GET /api/v1/availability/{empl_id}` 즉시 계산 API 구현, 실 서버 검증 완료 (2026-07-03). 스냅샷 저장·배치 자동화는 Phase 7 `HR_AVAIL_SNAP_GEN` 몫으로 별도 유지
-- [x] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`) — `POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 (2026-07-04). 직무 유형·기술·숙련도 복합 필터 "검색"(추천과 별개) API는 미구현
+- [x] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`) — `POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 (2026-07-04)
+- [x] 직무 유형·기술·숙련도 복합 필터 검색 API — `GET /api/v1/availability`에 `skill_id`/`min_prfcy_levl` 쿼리 파라미터 신규 추가(기존 직무 유형·부서 필터와 복합 적용), 실 서버 검증 완료 (2026-07-04)
 - [x] 대시보드 집계 API (직무 유형별 분포 포함) — SCR-002 설계서 명시 4개 엔드포인트 및 프론트엔드 목데이터(`lib/mock-data.ts`) 기반 4개 엔드포인트(데이터 품질, 이달 종료 예정, 최근 입사자, 월별 인력 추이) 총 8개 전부 구현, 실 서버 검증 완료 (2026-07-03)
 - [x] Excel Import/Export API — Export(`GET /api/v1/employees/export`) + Import(`POST /api/v1/employees/import`) 전부 구현, 실 서버 검증 완료 (2026-07-03). Import 정책(마스터 미존재 시 전체 실패/`EMPL_NO` Upsert/부분 실패 시 전체 롤백)은 사용자 확정 사항 반영
 - [x] 페이지네이션 공통 처리 구현 — `PaginationParams`/`PaginatedResponse` 공통 모듈로 추출, 3개 라우터 적용 및 실 서버 검증 완료 (2026-07-03)
@@ -908,7 +910,7 @@
 
 - [ ] 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — 기준일 `SNAP_DT` 기준 `ACTIVE`+`RUNNING/COMMITTED` 투입만 집계, `PROPOSED` 제외, 0%=`AVAILABLE`/1~99%=`PARTIAL`/≥100%=`FULL`(`MAX(ASGN_END_DT)+1`); 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조) — 매일 01:00 배치(`HR_AVAIL_SNAP_GEN`)만 미구현, 즉시 계산 API는 완료
 - [x] 즉시 투입 가능 인력 조회 API 구현 (`AVAIL_STAT_CD='AVAILABLE'`) — `GET /api/v1/availability`, 직무 유형·부서 필터 포함, 실 서버 검증 완료 (2026-07-04)
-- [ ] 직무 유형·기술·숙련도 복합 필터 검색 API 구현
+- [x] 직무 유형·기술·숙련도 복합 필터 검색 API 구현 — `GET /api/v1/availability`에 `skill_id`/`min_prfcy_levl` 파라미터 추가, 실 서버 검증 완료 (2026-07-04)
 - [x] 추천 점수 산정 로직 구현 (2026-07-04)
   - 직무 유형 일치 15% + 기술 매칭 35% + 숙련도 25% + 가동일 15% + 유사 경험 7% + 역할 적합도 3%
   - 설계서에 항목별 세부 산정 공식이 없어 MVP 해석 적용(§9 리스크 참조) — `backend/app/repositories/pjt_rcmd_rslt.py`
@@ -1030,4 +1032,5 @@
 | 2026-07-04 | v6.8 | 사용자 질의("검색 필터가 DB에서 조회되는지, 하드코딩인지")로 전 화면 필터 데이터 소스 감사 — `HR_SKILL_MST` 표준 Seed 재작성(v6.7) 직후라 **기술 관리(`/skills`) 화면의 "기술 그룹" 필터가 `lib/options.ts`에 하드코딩된 옛 7개 그룹**을 그대로 사용 중이라 새 Seed의 13개 그룹 중 다수가 필터로 선택 불가능한 버그를 발견 — 즉시 수정: 하드코딩된 `skillGroupOptions`를 제거하고 화면에서 실제로 불러온 데이터의 `SKILL_GRP_CD` distinct 값으로 필터·등록 모달 그룹 목록을 동적 생성. 직무 유형(`/job-types`) 화면의 "그룹" 필터도 동일한 방식으로 실 데이터 기반으로 전환하되, 등록/수정 모달은 설계서(SCR-006)가 명시한 고정 3종(TECHNICAL/MANAGEMENT/ANALYSIS)을 그대로 유지(신규 등록 시 그룹명 난립 방지 목적, 필터와 별개 문제이므로 분리 유지). 감사 결과 나머지 화면(가동 가능 인력·리소스 추천의 조직/직무유형/기술 필터)은 이미 실 API 기반, 상태/유형 계열 필터는 DB CHECK 제약과 동일한 고정 열거값이라 하드코딩이 정상 설계임을 확인. 재빌드 후 `/skills`·`/job-types` 페이지 200 렌더링, pytest 55개 그대로 통과(백엔드 변경 없음) 확인. §9 리스크 1건 추가(해소 처리, 발견·수정 내용 기록) | — |
 | 2026-07-04 | v6.9 | §8 다음 작업 1번(설정 화면 구현) 완료 처리 — 기존 `/settings` 화면(사용자관리/감사로그 탭 UI는 이미 완성, 전부 목데이터)을 백엔드 실 API로 연동. 백엔드 API가 전혀 없어 신규 구현: `GET/POST /api/v1/users`(등록 시 비밀번호 정책 검증 + 해시 저장), `GET /api/v1/users/roles`(역할 드롭다운용, `SYS_ROLE_MST` 목록 API 자체가 없어 신규), `GET /api/v1/audit-logs`(`SYS_USER_MST` 조인, 사용자/행위/테이블/기간 필터). 계정 수정·비활성화, 감사 로그 Excel 내보내기, `tgt_id` 단건 필터는 후속 작업으로 분리(§9 리스크 3건 추가), 기존 리스크 "사원 상세 '변경 이력' 탭 미구현"도 "API는 확보, tgt_id 필터+화면 연동 남음"으로 부분 해소 갱신. `backend/tests/test_users.py`·`test_audit_logs.py` 신규 작성(8개 케이스, pytest 55→63개 전부 통과). 실 서버에서 사용자 등록/약한 비밀번호 422/중복 409, 감사 로그 조회/필터 전부 검증 완료. Phase 4 진행률 88%→94%로 갱신, §3/§4/§11/§9-1 항목 갱신, §8 큐에서 완료 항목 제거(Excel Import/Export UI만 남음) | — |
 | 2026-07-04 | v7.0 | §8 다음 작업 1번(Excel Import/Export UI 구현) 완료 처리 — §8 큐 마지막 항목. 사원 목록 화면(`/employees`)에 "Excel 가져오기/내보내기" 버튼 신규 추가, 기존 백엔드 `GET/POST /api/v1/employees/{export,import}` API에 연동(`frontend/lib/api.ts`에 `apiUploadFile`/`apiDownloadFile` 헬퍼 및 `ApiError.detail` 필드 신규 추가, `components/employees/employee-import-dialog.tsx` 신규). **검증 중 실제 라우팅 버그 발견**: `GET /export`가 `GET /{empl_id}`(UUID 경로) 라우트보다 뒤에 등록되어 있어 "export"가 UUID 파싱 실패로 항상 422를 반환하던, 한 번도 정상 동작한 적 없던 기존 버그 — 라우트 등록 순서를 수정해 해결, `backend/tests/test_employees_excel.py` 신규 작성(회귀 방지 2개 케이스, pytest 63→65개 전부 통과). 사원 목록 화면 자체는 여전히 목데이터 기반이라 Import 성공 후 화면 목록은 갱신되지 않음(기존 §9-1 리스크와 동일 사안, 신규 아님). Phase 4 진행률 94%→100%로 갱신(Phase 4 전체 완료), §3/§4/§9/§11 항목 갱신, §8 큐가 이번 항목 제거로 완전히 소진(빈 큐) — 다음 라운드는 Phase 5(75%) 잔여 항목 또는 §9-1 후속 보완 체크리스트 중에서 우선순위 재확정 필요 | — |
+| 2026-07-04 | v7.1 | §8 다음 작업 1번(직무 유형·기술·숙련도 복합 필터 검색 API 구현) 완료 처리 — `GET /api/v1/availability`에 `skill_id`/`min_prfcy_levl` 쿼리 파라미터 신규 추가, `list_availability` 리포지토리 함수가 `HR_EMPL_SKILL_REL` 조건을 서브쿼리로 결합해 기존 직무 유형·부서 필터와 복합 적용(N+1 방지 구조는 그대로 유지). 프론트엔드 화면은 이미 클라이언트 측 기술명 검색을 지원해 이번 범위에서는 변경하지 않음(최소 단위 원칙). `backend/tests/test_availability.py`에 필터 케이스 1개 추가(pytest 65→66개 전부 통과), 실 서버 HTTP 호출로 기술·숙련도 조건 필터링 정상 동작 확인. Phase 5 진행률 75%→88%로 갱신(8개 중 7개 완료), §3/§4/§11 항목 갱신, §8 큐를 Phase 6 "자연어 조건 파싱 구현"으로 재구성(사용자 이전 확정에 따라 착수 전 범위 재확인 권장) | — |
 

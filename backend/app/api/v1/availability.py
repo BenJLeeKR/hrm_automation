@@ -21,15 +21,27 @@ router = APIRouter(prefix="/availability", tags=["availability"])
 def get_availability_list(
     jikmu_id: uuid.UUID | None = Query(None, description="직무 유형 ID로 필터링 (HR_JIKMU_MST.JIKMU_ID)"),
     dept_id: uuid.UUID | None = Query(None, description="부서 ID로 필터링 (HR_DEPT_MST.DEPT_ID)"),
+    skill_id: uuid.UUID | None = Query(None, description="기술 ID로 필터링 (HR_SKILL_MST.SKILL_ID)"),
+    min_prfcy_levl: int | None = Query(
+        None, ge=1, le=5, description="최소 숙련도(1~5) — skill_id와 함께 사용, 단독 지정 시 무시됨"
+    ),
     snap_dt: date | None = Query(None, description="기준일 — 생략 시 오늘 날짜"),
     db: Session = Depends(get_db),
 ) -> list[AvailabilityCalcOut]:
     """재직 사원 전체 가동률 일괄 조회 (로드맵 §8 다음 작업 1번, SCR-010 "가동 가능 인력").
 
     `GET /availability/{empl_id}`(단건)와 동일한 즉시 계산 로직을 재직 사원 전체에
-    적용한다 — `HR_AVAIL_SNAP` 테이블에는 저장하지 않는다.
+    적용한다 — `HR_AVAIL_SNAP` 테이블에는 저장하지 않는다. `skill_id`/`min_prfcy_levl`은
+    직무 유형·부서 필터에 이어 기술·숙련도 조건까지 복합 적용하기 위한 필터다.
     """
-    results = list_availability(db, snap_dt=snap_dt or date.today(), jikmu_id=jikmu_id, dept_id=dept_id)
+    results = list_availability(
+        db,
+        snap_dt=snap_dt or date.today(),
+        jikmu_id=jikmu_id,
+        dept_id=dept_id,
+        skill_id=skill_id,
+        min_prfcy_levl=min_prfcy_levl,
+    )
     return [AvailabilityCalcOut(**result.__dict__) for result in results]
 
 
