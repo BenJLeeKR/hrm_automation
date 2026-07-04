@@ -53,7 +53,9 @@ def _build_summary(items: list[ResourceSearchItem], *, skipped_skills: list[str]
     if not items:
         return "조건에 맞는 인력을 찾지 못했습니다."
 
-    preview = ", ".join(f"{i.EMPL_NM}({i.EMPL_NO}, 가동률 {i.AVAIL_RT}%)" for i in items[:5])
+    # AVAIL_RT는 "가동 가능률"(100 - 현재 투입률)이다 — "가동률"(투입률, TOT_ALLOC_RT)과
+    # 반대 의미라 혼동하기 쉬워, 테스트 질의 검증 중 발견해 표기를 명확히 했다.
+    preview = ", ".join(f"{i.EMPL_NM}({i.EMPL_NO}, 가동 가능률 {i.AVAIL_RT}%)" for i in items[:5])
     remaining = len(items) - 5
     summary = f"조건에 맞는 인력 {len(items)}명을 찾았습니다: {preview}"
     if remaining > 0:
