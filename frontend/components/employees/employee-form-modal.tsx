@@ -24,12 +24,17 @@ interface PositionOption {
   JIKGUP_ID: string
   JIKGUP_NM: string
 }
+interface JobTypeOption {
+  JIKMU_ID: string
+  JIKMU_NM: string
+}
 interface EditableEmployee {
   EMPL_ID: string
   EMPL_NO: string
   EMPL_NM: string
   DEPT_ID: string
   JIKGUP_ID: string
+  JIKMU_ID: string | null
   EMPL_STAT_CD: EmployeeStatus
   EMAIL_ADDR: string | null
   MPHONE_NO: string | null
@@ -41,16 +46,18 @@ interface Props {
   onSaved: () => void
   departments: DepartmentOption[]
   positions: PositionOption[]
+  jobTypes: JobTypeOption[]
   /** 전달 시 수정 모드로 동작한다 — 사번은 수정 불가(등록 시에만 입력). */
   employee?: EditableEmployee
 }
 
-export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, positions, employee }: Props) {
+export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, positions, jobTypes, employee }: Props) {
   const isEdit = Boolean(employee)
   const [name, setName] = useState(employee?.EMPL_NM ?? '')
   const [empNo, setEmpNo] = useState(employee?.EMPL_NO ?? '')
   const [deptId, setDeptId] = useState(employee?.DEPT_ID ?? '')
   const [jikgupId, setJikgupId] = useState(employee?.JIKGUP_ID ?? '')
+  const [jikmuId, setJikmuId] = useState(employee?.JIKMU_ID ?? '')
   const [status, setStatus] = useState(employee?.EMPL_STAT_CD ?? 'ACTIVE')
   const [email, setEmail] = useState(employee?.EMAIL_ADDR ?? '')
   const [phone, setPhone] = useState(employee?.MPHONE_NO ?? '')
@@ -59,12 +66,17 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
 
   const deptOptions = departments.map((d) => ({ label: d.DEPT_NM, value: d.DEPT_ID }))
   const positionOptions = positions.map((p) => ({ label: p.JIKGUP_NM, value: p.JIKGUP_ID }))
+  const jobTypeOptions = [
+    { label: '선택 안 함', value: '' },
+    ...jobTypes.map((j) => ({ label: j.JIKMU_NM, value: j.JIKMU_ID })),
+  ]
 
   function reset() {
     setName(employee?.EMPL_NM ?? '')
     setEmpNo(employee?.EMPL_NO ?? '')
     setDeptId(employee?.DEPT_ID ?? '')
     setJikgupId(employee?.JIKGUP_ID ?? '')
+    setJikmuId(employee?.JIKMU_ID ?? '')
     setStatus(employee?.EMPL_STAT_CD ?? 'ACTIVE')
     setEmail(employee?.EMAIL_ADDR ?? '')
     setPhone(employee?.MPHONE_NO ?? '')
@@ -83,6 +95,7 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
       EMPL_NM: name,
       DEPT_ID: deptId,
       JIKGUP_ID: jikgupId,
+      JIKMU_ID: jikmuId || null,
       EMPL_STAT_CD: status,
       EMAIL_ADDR: email || null,
       MPHONE_NO: phone || null,
@@ -131,6 +144,9 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
         </FormField>
         <FormField label="직급" required>
           <Select value={jikgupId} onValueChange={setJikgupId} options={positionOptions} placeholder="직급 선택" />
+        </FormField>
+        <FormField label="직무 유형">
+          <Select value={jikmuId} onValueChange={setJikmuId} options={jobTypeOptions} placeholder="직무 유형 선택" />
         </FormField>
         <FormField label="이메일">
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@blueward.co.kr" />

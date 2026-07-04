@@ -323,6 +323,7 @@ export default function EmployeesPage() {
         onSaved={reload}
         departments={departments}
         positions={positions}
+        jobTypes={jobTypes}
       />
       <EmployeeImportDialog open={openImport} onOpenChange={setOpenImport} />
     </div>

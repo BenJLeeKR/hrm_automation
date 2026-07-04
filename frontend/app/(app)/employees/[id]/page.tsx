@@ -94,6 +94,7 @@ interface EmployeeDetailData {
   employee: EmployeeOut
   departments: DepartmentOut[]
   positions: PositionOut[]
+  jobTypes: JobTypeOut[]
   skillCatalog: SkillOut[]
   deptName: string
   positionName: string
@@ -137,6 +138,7 @@ async function loadEmployeeDetail(id: string): Promise<EmployeeDetailData> {
     employee,
     departments,
     positions,
+    jobTypes,
     skillCatalog: skills,
     deptName: departments.find((d) => d.DEPT_ID === employee.DEPT_ID)?.DEPT_NM ?? '-',
     positionName: positions.find((p) => p.JIKGUP_ID === employee.JIKGUP_ID)?.JIKGUP_NM ?? '-',
@@ -227,6 +229,7 @@ export default function EmployeeDetailPage({
     employee,
     departments,
     positions,
+    jobTypes,
     skillCatalog,
     deptName,
     positionName,
@@ -397,6 +400,7 @@ export default function EmployeeDetailPage({
         onSaved={reload}
         departments={departments}
         positions={positions}
+        jobTypes={jobTypes}
         employee={employee}
       />
       <EmployeeSkillFormModal
