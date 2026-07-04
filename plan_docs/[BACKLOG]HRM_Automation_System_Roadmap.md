@@ -100,7 +100,7 @@
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 81% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 75% | 정상 |
-| Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
+| Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 38% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
 | Phase 8 | 파일럿 운영 및 정식 전환 | 8주차 | 예정 | 0% | 정상 |
 
@@ -380,22 +380,22 @@
 |---|---|
 | **목표** | LLM API 기반 자연어 인력 검색·추천 기능 구현 (SQL 조회 기반, 권한 필터 적용) |
 | **계획 기간** | 7주차 |
-| **개발 상태** | 예정 |
-| **진행률** | 0% |
+| **개발 상태** | 진행 중 |
+| **진행률** | 38% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
 
 | 작업 | 상태 |
 |---|---|
-| LLM 연동 인터페이스 추상화 (멀티 LLM 전환 가능 구조) | 예정 (§8 다음 작업 진행 예정 — DeepSeek API 실 연동 확인 완료, 2026-07-04) |
+| LLM 연동 인터페이스 추상화 (멀티 LLM 전환 가능 구조) | 완료 (`backend/app/services/ai_chat.py`의 `call_llm` — `LLM_PROVIDER` 설정값으로 공급자 분기, 현재 DeepSeek만 지원. `backend/app/core/config.py`에 `LLM_PROVIDER`/`DEEPSEEK_*` 필드 신규 추가, 실 서버에서 DeepSeek API 실제 인증 호출 검증 완료, 2026-07-04) |
 | 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 인식) | 예정 (사용자 확정: §8 "AI Chat 화면 구현"과 분리해 별도 후속 작업으로 진행 — 아래 참고) |
 | 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 | 예정 (사용자 확정: 위와 동일하게 별도 후속 작업으로 분리) |
 | 권한 필터링 후 LLM 컨텍스트 전달 구현 | 예정 (조건 파싱·SQL 조회 흐름과 함께 후속 작업) |
 | 환각 방지 시스템 프롬프트 적용 | 예정 (조건 파싱·SQL 조회 흐름과 함께 후속 작업) |
-| `POST /api/v1/ai/chat` 엔드포인트 구현 | 예정 (§8 다음 작업 진행 예정 — 1차 범위는 LLM 단순 호출/응답만 구현, 조건 파싱·DB 조회는 제외) |
-| AI Chat 화면 구현 (`/ai-chat`) | 예정 (§8 다음 작업 진행 예정 — 1차 범위는 자유 대화형 LLM 챗 UI만 구현) |
-| 테스트 질의 10개 이상 검증 (직무 유형 포함) | 예정 |
+| `POST /api/v1/ai/chat` 엔드포인트 구현 | 완료 (1차 범위 — LLM 단순 호출/응답만 구현, 조건 파싱·DB 조회는 제외, 권한 `ai_chat.view`(전 역할), 실 서버 검증 완료, 2026-07-04) |
+| AI Chat 화면 구현 (`/ai-chat`) | 완료 (기존 프로토타입의 SQL·결과 테이블 표시용 목데이터 제거, 자유 대화형 UI를 실 API로 연동, 실 서버 검증 완료, 2026-07-04) |
+| 테스트 질의 10개 이상 검증 (직무 유형 포함) | 예정 (조건 파싱·SQL 조회 흐름 구현 후 함께 진행 — 현재는 LLM 단순 호출만 있어 "직무 유형 인식" 등 검증 대상 자체가 아직 없음) |
 
 **산출물**
 
@@ -505,7 +505,7 @@
 | 프로젝트 종료 예정자 조회 | 이번 달/30일 이내 종료 예정자 | 예정 | 높음 | `reports.py`, `PJT_ASGN_HIS` | |
 | 팀별 가동률 조회 | 부서별 평균 `TOT_ALLOC_RT` | 예정 | 중간 | `dashboard.py`, `HR_AVAIL_SNAP` | |
 | 리소스 추천 | `PJT_RCMD_RSLT` 점수 기반 후보 추천 | 완료 (`POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 — 2026-07-04) | 중간 | `recommendations.py`, `pjt_rcmd_rslt.py` | 6개 항목 가중 점수(직무15%+기술35%+숙련도25%+가동일15%+유사경험7%+역할적합도3%) — 항목별 세부 산정 공식은 설계서에 없어 MVP 해석 적용, §9 참조 |
-| AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 예정 | 중간 | `ai_service.py`, `POST /api/v1/ai/chat` | Phase 6 |
+| AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 진행 중 (LLM 단순 호출/응답만 완료 — `POST /api/v1/ai/chat`, `app/services/ai_chat.py`. 조건 파싱·SQL 조회·요약 흐름은 후속 작업, 2026-07-04) | 중간 | `ai_chat.py`, `POST /api/v1/ai/chat` | Phase 6 |
 | 주간 리포트 | `PJT_WEEKLY_RPT` 자동 발송 | 예정 | 중간 | `report_service.py`, Teams Webhook | 매주 월요일 09:00 |
 | 감사 로그 | `SYS_AUDIT_LOG` 변경 이력 기록 | 완료 (로그인 및 5개 라우터의 등록/수정 행위 기록 구현, 실 서버 검증 완료 — 2026-07-03. Import 등 미구현 기능 관련 로그, 조회 API는 별도) | 높음 | `sys_audit_log.py`, `app/core/audit.py` | 로그인·CRUD·Import 포함 |
 | 사용자 인증/권한 | JWT + RBAC (`SYS_USER_MST`, `SYS_ROLE_MST`) | 완료 (JWT 로그인/토큰갱신/로그아웃 및 RBAC 전 라우터(`employees`/`skills`/`employee-skills`/`projects`/`assignments`/`codes`) 적용 완료 — 2026-07-03) | 높음 | `auth.py`, `security.py`, `deps.py` | 6개 역할 |
@@ -635,6 +635,7 @@
 - **투입 관리 화면 구현 — 목데이터를 실 API로 연동, 등록 모달 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/assignments/page.tsx`(검색/유형/상태 필터, 공수 초과 배정 감지 배너)를 백엔드 `PJT_ASGN_HIS` API로 연동. 투입 관리 API(`GET/POST/PATCH /api/v1/assignments`, ALLOC_RT 100% 초과 검증 포함)는 이미 완전히 구현되어 있어 백엔드 변경 없이 프론트엔드만 재작성. `GET /assignments` + `GET /employees`/`projects`(사번·성명·프로젝트명 조인, 다른 상세 화면들과 동일한 클라이언트 조인 패턴 재사용)를 병렬 조회해 목록을 실 데이터로 렌더링, 공수 초과 배정 감지 배너도 목데이터 계산 로직을 `ASGN_STAT_CD='ACTIVE'` 건의 `ALLOC_RT` 합계 기준 실 데이터 계산으로 교체. **기존 프로토타입에 없던 "투입 등록" 모달을 설계서(SCR-009) 기준으로 신규 작성** — 사원/프로젝트 검색 선택(Select), 프로젝트 유형(RUNNING/COMMITTED/PROPOSED), 역할·기간·투입률·비고 입력 후 `POST /assignments` 호출, 동일 사원·겹치는 기간 합계 100% 초과 시 백엔드가 반환하는 409 오류 메시지를 폼에 그대로 노출(설계서의 "예상 총 투입률 미리보기"는 별도 계산 로직이 필요해 이번 범위에서 제외, 서버 검증 메시지로 대체 — 사유 주석 명시). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 부서·사원·프로젝트로 투입 60% 등록 성공 후 동일 기간 50% 추가 등록 시 409(합계 110% 초과) 정상 거부 확인, `/assignments` 페이지 200 렌더링, 목록 조회 응답에 사번/성명/프로젝트명 조인 결과 정상 확인. 검증에 사용한 임시 데이터는 SQL로 삭제. 백엔드 변경 없어 pytest는 31개 그대로 유지. §4 Phase 4 "투입 관리 화면 구현" 항목 완료로 갱신(진행률 69%→75%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **가동 가능 인력 조회 화면 구현 — 목데이터를 실 API로 연동, 일괄 조회 API 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/availability/page.tsx`(즉시/부분/기간 3개 탭, 검색·조직 필터)를 백엔드 가동률 계산 API로 연동. 기존 `GET /api/v1/availability/{empl_id}`는 사원 1명씩만 계산하는 단건 API라 화면에 필요한 "전체 사원 목록 조회"가 불가능해, `backend/app/repositories/hr_avail_snap.py`에 `list_availability`(신규) 추가 — 재직 사원 전체의 투입 이력을 한 번에 조회한 뒤 파이썬에서 사원별로 묶어 계산해 N+1 쿼리를 방지했다. 기존 `compute_availability`(단건)와 계산 로직이 완전히 같아야 하므로 `_classify` 헬퍼로 판정 로직을 추출해 두 함수가 공유하도록 리팩터링(동작 변경 없는 순수 추출, 기존 단건 API 회귀 위험 최소화). `backend/app/api/v1/availability.py`에 `GET /availability`(신규, `jikmu_id`/`dept_id`/`snap_dt` 필터, `require_permission("availability","view")`) 추가 — 백로그 항목이 명시한 "직무 유형 필터"를 여기서 지원. 프론트엔드는 이 신규 API + `employees`/`departments`/`job-types`/`skills`/`employee-skills`(다른 화면들과 동일한 클라이언트 조인 패턴)를 병렬 조회해 탭(AVAILABLE=즉시/PARTIAL=부분/FULL=기간)·조직·직무 유형·검색 필터를 실 데이터로 구현, 탭 구성이 `AVAILABILITY_CALC_SPEC.md`의 `AVAIL_STAT_CD` 3종과 정확히 1:1 대응됨을 확인해 별도 매핑 없이 그대로 사용. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 투입 이력이 없는 임시 사원이 `AVAILABLE`로, 활성 투입 50%가 있는 사원이 `PARTIAL`로 정확히 분류됨을 확인, `dept_id`/`jikmu_id` 필터가 대상 사원을 정확히 포함/제외함을 확인, `/availability` 페이지 200 렌더링 확인. `backend/tests/test_availability.py`(신규)에 즉시 가동 분류/부분 가동 분류/직무유형 필터/VIEWER 접근 제한(설계서상 VIEWER 제외 확인) 4개 케이스 추가(pytest 31→35개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 4 "가동 가능 인력 조회 화면 구현" 항목 완료로 갱신(진행률 75%→81%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **리소스 추천 화면 구현 — 백엔드 API 신규 구현(추천 알고리즘 최초 구현) + 프론트엔드 실 연동 (§8 다음 작업 1번)** — 다른 Phase 4 화면들과 달리 이번 항목은 백엔드 API 자체가 전혀 없어(모델·스키마 출력 타입만 존재) 추천 로직을 처음부터 구현. **`PJT_RSRC_REQ`(리소스 요청)**: `ResourceRequestCreate` 스키마·`repositories/pjt_rsrc_req.py`·`POST /api/v1/resource-requests`(권한 `recommendations.create`) 신규. **`PJT_RCMD_RSLT`(추천 결과)**: `repositories/pjt_rcmd_rslt.py`에 6개 항목 가중 점수(직무 유형 일치 15%+기술 매칭 35%+숙련도 25%+가동 가능일 15%+유사 경험 7%+역할 적합도 3%, 합 100점) 산정 로직 신규 구현 — 재직 사원 전체를 대상으로 요청 조건과 대조해 채점 후 상위 10명을 저장(재실행 시 이전 결과 삭제 후 재저장). 가동 가능일 판정은 §8 앞서 구현한 `list_availability`(전 사원 가동률 일괄 계산)를 그대로 재사용. `POST /api/v1/recommendations/score`(점수 실행+저장), `GET /api/v1/recommendations/{req_id}`(과거 결과 조회) 추가, `api/v1/router.py`에 라우터 등록. **설계서에 항목별 세부 산정 공식이 없어 MVP 해석을 적용**(직무 일치는 이진 판정, 기술 매칭은 보유 비율, 숙련도는 매칭 기술 평균, 가동일은 희망일 이내 여부 이진 판정, 유사경험은 요청 역할명과 일치하는 과거 완료 투입 건수 — §9 리스크로 기록, 운영팀 확인 필요). 기존 §9 리스크 "PJT_RCMD_RSLT 추천 점수 가중치 표기 불일치"도 이번 구현으로 로드맵 수치 기준 확정되어 해소 처리. 프론트엔드는 기존 프로토타입(`frontend/app/(app)/recommendations/page.tsx`, 요건 입력 폼+결과 카드 UI는 이미 완성)을 실 API로 재작성 — 프로젝트/직무 유형/기술 Select를 실 마스터 데이터로 교체, "추천 인력 조회" 클릭 시 리소스 요청 등록→점수 계산을 순차 호출 후 결과에 사원명·직무명·보유기술을 조인해 표시. **범위를 의도적으로 축소한 부분**: 설계서의 다중 기술 칩 선택은 단일 선택으로 축소(백엔드는 배열을 이미 지원), "이 후보로 투입 요청" 버튼(실제 투입 등록 연동)은 결과 조회까지만 구현하고 제외 — 둘 다 §9 리스크로 기록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 부서·사원·프로젝트로 리소스 요청 등록 → 추천 실행 → 해당 사원이 결과에 포함되고 투입 이력이 없어 가동일 점수(15점) 만점 획득 확인, 동일 요청 재실행 시 이전 결과가 정확히 교체됨을 확인, 존재하지 않는 요청으로 실행 시 404, `/recommendations` 페이지 200 렌더링 확인. `backend/tests/test_recommendations.py`(신규)에 요청 등록/점수 실행 및 조회/재실행 시 결과 교체/404/VIEWER 403 5개 케이스 추가(pytest 35→40개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 5(리소스 검색 및 추천 기능 구축, 지금까지 0%였던 별도 Phase) "주요 작업" 표의 관련 5개 항목(즉시 투입 가능 인력 조회 API·추천 점수 산정 로직·`PJT_RSRC_REQ` API·`PJT_RCMD_RSLT` API·리소스 추천 화면)을 완료로 갱신, Phase 5 진행률 0%→75%·상태 "예정→진행 중"으로 전환(§3 전체 로드맵 표 동일 갱신 — "즉시 투입 가능 인력 조회 API"와 "가동 가능 인력 화면 구현"은 지난 턴에 이미 완료되었으나 이 표에 반영이 누락되어 있던 것을 이번에 함께 바로잡음), §5 기능별 구현 상태·§11 체크리스트 항목 완료 체크, §8 큐에서 완료 항목 제거
+- **AI Chat 화면 구현 — LLM 연동 1차 범위(사용자 확정: 단순 호출/응답) 신규 구현 (§8 다음 작업 1번)** — 직전 턴에 사용자가 `.env`에 DeepSeek 연동 정보를 이미 설정해뒀음을 확인하고 실제 인증 호출로 연결 가능함을 검증한 데 이어, 이번 턴에 실제 구현을 진행. `backend/app/core/config.py`(`Settings`)에 `LLM_PROVIDER`/`DEEPSEEK_API_KEY`/`DEEPSEEK_BASE_URL`/`DEEPSEEK_MODEL_ID`/`OPENAI_API_KEY` 필드 신규 추가(그동안 `extra="ignore"`라 조용히 무시되고 있었음), `.env.example`도 실제 `.env` 구성(DeepSeek 기준)과 일치하도록 갱신(`.env` 자체는 수정하지 않음). `backend/app/services/ai_chat.py`(신규) — `call_llm(message)`가 `LLM_PROVIDER` 값으로 공급자를 분기하는 간단한 추상화(현재 DeepSeek만 지원, §4 Phase 6 "LLM 연동 인터페이스 추상화" 항목 충족), `httpx`로 DeepSeek `chat/completions`(OpenAI 호환) 호출, 실패 시 `LlmCallError`로 통일해 처리. `backend/app/schemas/ai_chat.py`(`ChatRequest`/`ChatResponse`), `backend/app/api/v1/ai_chat.py`(`POST /api/v1/ai/chat`, 권한 `ai_chat.view` — `PERM_JSON`상 전 역할 허용과 일치, LLM 실패 시 502) 신규 작성, `api/v1/router.py`에 등록. **1차 구현 범위는 사용자가 명시적으로 확정한 대로 LLM 단순 호출/응답만 다룸** — 자연어 조건 파싱·SQL 조회 연동·권한 필터링 기반 컨텍스트 전달·환각 방지 프롬프트는 후속 작업으로 분리(§4 Phase 6 표·§9-1 체크리스트에 반영). 프론트엔드는 기존 프로토타입(`frontend/app/(app)/ai-chat/page.tsx`)의 정적 캔드 응답(키워드 매칭 목데이터, SQL·결과 테이블 표시)을 제거하고 `POST /api/v1/ai/chat` 실 호출로 교체 — 응답 대기 중 로딩 표시, 실패 시 에러 메시지를 대화 버블로 표시. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 실제 DeepSeek API를 호출해 정상 답변 수신 확인, 무인증 401, 빈 메시지 422, `/ai-chat` 페이지 200 렌더링 확인. `backend/tests/test_ai_chat.py`(신규)에 정상 응답/무인증/빈 메시지/LLM 실패 시 502/VIEWER 접근 가능 5개 케이스 추가 — 반복 실행 가능성과 오프라인 실행을 위해 `call_llm`을 모킹해 실제 네트워크 호출 없이 검증(실제 DeepSeek 연동 자체는 수동 curl로 이미 확인)(pytest 40→45개 전부 통과). §4 Phase 6(AI 질의응답 연동, 지금까지 0%였던 별도 Phase) "주요 작업" 표의 관련 3개 항목(LLM 연동 인터페이스 추상화·`POST /api/v1/ai/chat`·AI Chat 화면) 완료로 갱신, Phase 6 진행률 0%→38%·상태 "예정→진행 중"으로 전환(§3 전체 로드맵 표 동일 갱신), §5·§11 체크리스트 항목 완료 체크, §9-1 체크리스트에 AI Chat 후속 항목 4건 추가, §8 큐에서 완료 항목 제거
 
 ---
 
@@ -643,10 +644,11 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. AI Chat 화면 구현 (`/ai-chat`)
-- [ ] 2. 리포트 화면 구현 (`/reports`)
-- [ ] 3. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
-- [ ] 4. Excel Import/Export UI 구현
+- [ ] 1. 리포트 화면 구현 (`/reports`)
+- [ ] 2. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
+- [ ] 3. Excel Import/Export UI 구현
+
+> 참고: "AI Chat 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 사용자 확정에 따라 1차 범위(LLM 단순 호출/응답)만 구현했고, 자연어 조건 파싱·SQL 조회 연동은 Phase 6 후속 작업으로 별도 분리했다(§4 Phase 6 표 참조).
 
 > 참고: "리소스 추천 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 백엔드 API(`PJT_RSRC_REQ`/`PJT_RCMD_RSLT`)가 없어 이번 작업에서 함께 신규 구현했다.
 
@@ -741,6 +743,12 @@
 
 **가동 가능 인력 (`/availability`)**
 - [ ] 기술·숙련도 필터 미구현 (`GET /api/v1/availability`는 직무 유형·부서 필터만 지원)
+
+**AI Chat (`/ai-chat`)**
+- [ ] 자연어 조건 파싱 미구현 — 직무 유형(`JIKMU_CD`)·기술명·가동일 등 키워드 인식 없이 LLM에 원문 그대로 전달
+- [ ] 파싱 결과 → SQL 조회 → 결과 요약 흐름 전체 미구현 — 현재는 DB 조회 없이 LLM 응답만 반환
+- [ ] 권한 필터링 후 LLM 컨텍스트 전달 미구현
+- [ ] 환각 방지 시스템 프롬프트 미적용
 
 **인증/감사 로그 (전역)**
 - [ ] 로그아웃 시 서버 측 즉시 토큰 무효화 미구현 (stateless JWT — Redis 블랙리스트 등 후속 검토)
@@ -865,7 +873,7 @@
 - [x] 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`) — 목데이터를 백엔드 실 API로 전량 교체, 등록 모달 신규 추가(기존 등록/100% 초과 검증 API 재사용), 공수 초과 배정 감지 로직 실 데이터 기준으로 교체, 실 서버 검증 완료 (2026-07-04)
 - [x] 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함) — 목데이터를 백엔드 실 API로 전량 교체, `GET /api/v1/availability`(일괄 조회) 신규 추가, 사원/부서/직무/기술 마스터 조인, 실 서버 검증 완료 (2026-07-04)
 - [x] 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`) — 목데이터를 백엔드 실 API로 전량 교체, `PJT_RSRC_REQ`/`PJT_RCMD_RSLT` API 신규 추가, 실 서버 검증 완료 (2026-07-04)
-- [ ] AI Chat 화면 구현 (`/ai-chat`)
+- [x] AI Chat 화면 구현 (`/ai-chat`) — 1차 범위(사용자 확정): LLM 단순 호출/응답 + 자유 대화형 UI만 구현, 실 서버에서 DeepSeek API 실제 호출로 검증 완료 (2026-07-04). 자연어 조건 파싱·DB 조회 연동은 후속 작업으로 분리
 - [ ] 리포트 화면 구현 (`/reports`)
 - [ ] 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
 - [ ] Excel Import/Export UI 구현
@@ -887,13 +895,13 @@
 
 ### AI 질의응답 `→ Phase 6`
 
-- [ ] LLM 호출 레이어 추상화 (OpenAI/Anthropic/사내 LLM 전환 가능 구조)
-- [ ] 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 키워드 인식 포함)
-- [ ] 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현
+- [x] LLM 호출 레이어 추상화 (OpenAI/Anthropic/사내 LLM 전환 가능 구조) — `backend/app/services/ai_chat.py`의 `call_llm`, `LLM_PROVIDER` 설정값 기준 분기(현재 DeepSeek만 지원), 실 서버에서 DeepSeek API 실제 인증 호출 검증 완료 (2026-07-04)
+- [ ] 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 키워드 인식 포함) — 사용자 확정에 따라 AI Chat 화면 1차 구현과 분리해 후속 작업으로 진행
+- [ ] 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 — 위와 동일하게 후속 작업으로 분리
 - [ ] 권한 필터링 후 LLM 컨텍스트 전달 구현
 - [ ] 환각 방지 시스템 프롬프트 적용
-- [ ] `POST /api/v1/ai/chat` 엔드포인트 구현
-- [ ] 테스트 질의 10개 이상 검증 (직무 유형 포함 질의 반드시 포함)
+- [x] `POST /api/v1/ai/chat` 엔드포인트 구현 — 1차 범위(LLM 단순 호출/응답만, 조건 파싱·DB 조회 제외), 권한 `ai_chat.view`(전 역할 허용), 실 서버 검증 완료 (2026-07-04)
+- [ ] 테스트 질의 10개 이상 검증 (직무 유형 포함 질의 반드시 포함) — 조건 파싱·SQL 조회 흐름 구현 후 진행
 
 ---
 
@@ -992,4 +1000,5 @@
 | 2026-07-04 | v6.2 | §8 다음 작업 1번(리소스 추천 화면 구현) 완료 처리 — 백엔드 API가 전혀 없어 추천 알고리즘을 신규 구현: `POST /api/v1/resource-requests`(`PJT_RSRC_REQ` 등록), `POST /api/v1/recommendations/score`(6개 항목 가중 점수 산정 후 `PJT_RCMD_RSLT` 저장 — 직무15%+기술35%+숙련도25%+가동일15%+유사경험7%+역할적합도3%), `GET /api/v1/recommendations/{req_id}`(과거 결과 조회) 추가. 설계서에 항목별 세부 산정 공식이 없어 MVP 해석 적용(§9 리스크 기록), 기존 리스크 "추천 점수 가중치 표기 불일치"는 로드맵 수치로 확정되어 해소. 프론트엔드는 기존 프로토타입을 실 API로 재작성(요건 입력 폼 실 마스터 연동, 결과에 사원명/직무/기술 조인). 다중 기술 선택과 "이 후보로 투입 요청" 버튼은 범위 제외(§9 리스크 기록). `backend/tests/test_recommendations.py` 신규 작성(5개 케이스, pytest 35→40개 전부 통과). 실 서버에서 요청 등록→추천 실행→결과 조회→재실행 시 결과 교체 전부 검증 완료. **Phase 5(리소스 검색 및 추천, 그동안 0%)를 처음으로 진행 상태로 전환**(0%→75%) — 이 참에 지난 턴 이미 완료됐던 "즉시 투입 가능 인력 조회 API"·"가동 가능 인력 화면 구현"이 Phase 5 표에 반영 누락되어 있던 것도 함께 바로잡음. §3/§5/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 | 2026-07-04 | v6.3 | AI Chat(Phase 6) 착수 전 사전 점검 — 사용자가 `.env`에 DeepSeek LLM 연동 정보(`LLM_PROVIDER`/`DEEPSEEK_API_KEY`/`DEEPSEEK_BASE_URL`/`DEEPSEEK_MODEL_ID`)를 이미 설정했다고 확인. 실행 환경에서 DeepSeek API 실제 인증 호출로 정상 응답을 확인해 네트워크·인증 문제없음을 검증. 사용자가 AI Chat 1차 구현 범위를 "LLM 단순 호출/응답 + 자유 대화형 UI"로 명시적으로 확정하고, 자연어 조건 파싱·SQL 조회 연동·권한 필터링·환각 방지·테스트 질의 검증은 별도 후속 작업으로 분리하기로 결정 — §4 Phase 6 "주요 작업" 표에 이 결정을 반영, §9 리스크 1건 추가(해소 처리, 결정 근거 기록). 코드 변경 없음(사전 점검·백로그 정리만 수행) | — |
 | 2026-07-04 | v6.4 | 사용자 요청으로 §9에 "9-1. 완료 표시된 화면의 미구현 세부 기능 — 후속 보완 체크리스트" 신규 섹션 추가 — 그동안 §7/§9 곳곳에 흩어져 기록되어 있던 "완료 처리했지만 조회 전용이거나 일부 기능이 빠진" 항목들(사원 관리 목록/상세, 프로젝트 상세, 리소스 추천, 가동 가능 인력, 인증/감사 로그, 기타 백엔드 6개 카테고리 총 13개 세부 항목)을 한 곳에 체크리스트로 통합해 향후 작업 시 누락되지 않도록 정리. 기존 리스크 항목 내용은 변경하지 않고 요약·상호 참조만 추가, 코드 변경 없음(문서 정리만 수행) | — |
+| 2026-07-04 | v6.5 | §8 다음 작업 1번(AI Chat 화면 구현) 완료 처리 — 사용자 확정 범위(LLM 단순 호출/응답만)로 구현. `backend/app/core/config.py`에 `LLM_PROVIDER`/`DEEPSEEK_*`/`OPENAI_API_KEY` 필드 신규 추가, `.env.example` 동기화(`.env`는 미수정). `backend/app/services/ai_chat.py`(신규) `call_llm`이 `LLM_PROVIDER` 기준 공급자 분기(현재 DeepSeek만 지원, LLM 연동 인터페이스 추상화 항목 충족), `POST /api/v1/ai/chat`(권한 `ai_chat.view`) 신규 추가. 프론트엔드는 기존 목데이터 캔드 응답(SQL·결과 테이블 표시)을 제거하고 실 API 연동으로 교체. 자연어 조건 파싱·SQL 조회 연동·권한 필터링·환각 방지는 §4 Phase 6 표·§9-1 체크리스트에 후속 작업으로 반영. `backend/tests/test_ai_chat.py` 신규 작성(`call_llm` 모킹으로 오프라인 검증, 5개 케이스, pytest 40→45개 전부 통과). 실 서버에서 DeepSeek API 실제 호출로 정상 응답 확인, 무인증 401, 빈 메시지 422, `/ai-chat` 페이지 200 렌더링 확인. Phase 6 진행률 0%→38%로 갱신(그동안 미착수였던 Phase 최초 진행), §3/§4/§5/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 

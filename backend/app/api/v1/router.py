@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    ai_chat,
     assignments,
     auth,
     availability,
@@ -25,3 +26,4 @@ api_router.include_router(auth.router)
 api_router.include_router(availability.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(recommendations.router)
+api_router.include_router(ai_chat.router)
