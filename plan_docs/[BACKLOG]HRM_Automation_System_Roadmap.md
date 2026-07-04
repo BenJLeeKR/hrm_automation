@@ -99,7 +99,7 @@
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 81% | 정상 |
-| Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 예정 | 0% | 정상 |
+| Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 75% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 예정 | 0% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
 | Phase 8 | 파일럿 운영 및 정식 전환 | 8주차 | 예정 | 0% | 정상 |
@@ -343,22 +343,22 @@
 |---|---|
 | **목표** | 직무 유형·기술·가동 가능일 기반 인력 검색 및 점수 기반 추천 구현 |
 | **계획 기간** | 5주차 |
-| **개발 상태** | 예정 |
-| **진행률** | 0% |
+| **개발 상태** | 진행 중 |
+| **진행률** | 75% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
 
 | 작업 | 상태 |
 |---|---|
-| 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조) | 예정 |
-| 즉시 투입 가능 인력 조회 API 구현 | 예정 |
-| 직무 유형·기술·숙련도 복합 필터 검색 API 구현 | 예정 |
-| 추천 점수 산정 로직 구현 (직무 일치 15% + 기술 35% + 숙련도 25% + 가동일 15% + 경험 10%) | 예정 |
-| `PJT_RSRC_REQ` 인력 요청 등록 API 구현 | 예정 |
-| `PJT_RCMD_RSLT` 추천 결과 저장 및 조회 API 구현 | 예정 |
-| 리소스 추천 화면 구현 (`/recommendations`) — 직무 유형 조건 포함 | 예정 |
-| 가동 가능 인력 화면 구현 (`/availability`) | 예정 |
+| 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조) | 예정 (매일 01:00 배치 `HR_AVAIL_SNAP_GEN`은 Phase 7 미구현 — 즉시 계산 API로 대체 중, §9 참조) |
+| 즉시 투입 가능 인력 조회 API 구현 | 완료 (`GET /api/v1/availability`, 2026-07-04 "가동 가능 인력 조회 화면 구현" 작업에서 완료 — 이 표에 반영 누락되어 있던 것을 이번에 바로잡음) |
+| 직무 유형·기술·숙련도 복합 필터 검색 API 구현 | 예정 (`GET /api/v1/availability`가 직무 유형·부서 필터는 지원하나 기술·숙련도 필터는 아직 미구현) |
+| 추천 점수 산정 로직 구현 (직무 일치 15% + 기술 35% + 숙련도 25% + 가동일 15% + 유사경험 7% + 역할적합도 3%) | 완료 (`backend/app/repositories/pjt_rcmd_rslt.py`, 각 항목 산정 방식은 설계서에 세부 공식이 없어 MVP 해석 적용 — §9 리스크 참조, 2026-07-04) |
+| `PJT_RSRC_REQ` 인력 요청 등록 API 구현 | 완료 (`POST /api/v1/resource-requests`, 실 서버 검증 완료, 2026-07-04) |
+| `PJT_RCMD_RSLT` 추천 결과 저장 및 조회 API 구현 | 완료 (`POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}`, 실 서버 검증 완료, 2026-07-04) |
+| 리소스 추천 화면 구현 (`/recommendations`) — 직무 유형 조건 포함 | 완료 (목데이터를 백엔드 실 API로 전량 교체, 실 서버 검증 완료, 2026-07-04) |
+| 가동 가능 인력 화면 구현 (`/availability`) | 완료 (2026-07-04 완료 — 이 표에 반영 누락되어 있던 것을 이번에 바로잡음, §4 Phase 4 표·§7·§11 참조) |
 
 **산출물**
 
@@ -500,11 +500,11 @@
 | 투입률 관리 | `ALLOC_RT` 합계 검증 및 표시 | 완료 (동일 사원·겹치는 기간 유효(`PLANNED`/`ACTIVE`) 투입 합계 100% 초과 시 409 거부 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `assignments.py`, `pjt_asgn_his.py`(repository) | 동일 기간 합계 100% 초과 방지 |
 | 종료 예정일 관리 | `ASGN_END_DT` 조회·알림 | 예정 | 높음 | `PJT_ASGN_HIS`, `PJT_ASGN_END_ALERT` 배치 | 30일 이내 종료 예정 알림 |
 | 가동 가능일 자동 계산 | `HR_AVAIL_SNAP` 기반 산정 | 진행 중 (즉시 계산 API `GET /api/v1/availability/{empl_id}` 구현 완료, 2026-07-03 — 매일 01:00 자동 스냅샷 생성 배치 `HR_AVAIL_SNAP_GEN`은 Phase 7 미구현) | 높음 | `availability.py`, `HR_AVAIL_SNAP_GEN` 배치 | 투입률 0%=AVAILABLE(기준일), 1~99%=PARTIAL(기준일), ≥100%=FULL(MAX(종료일)+1, 종료일 NULL 시 품질경고) — `PROPOSED` 제외, 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` |
-| 즉시 투입 가능 인력 조회 | `AVAIL_STAT_CD='AVAILABLE'` 필터 | 예정 | 높음 | `GET /api/v1/availability` | 직무 유형 필터 포함 |
-| 기술 기반 인력 검색 | 기술·숙련도·직무 복합 검색 | 예정 | 높음 | `recommendations.py` | `HR_EMPL_SKILL_REL` + `HR_JIKMU_MST` 조인 |
+| 즉시 투입 가능 인력 조회 | `AVAIL_STAT_CD='AVAILABLE'` 필터 | 완료 (`GET /api/v1/availability`, 직무 유형·부서 필터 포함, 실 서버 검증 완료 — 2026-07-04) | 높음 | `availability.py`, `hr_avail_snap.py` | 직무 유형 필터 포함 |
+| 기술 기반 인력 검색 | 기술·숙련도·직무 복합 검색 | 예정 | 높음 | `recommendations.py` | `HR_EMPL_SKILL_REL` + `HR_JIKMU_MST` 조인 — `GET /availability`는 직무 유형만 지원, 기술·숙련도 필터는 별도 구현 필요 |
 | 프로젝트 종료 예정자 조회 | 이번 달/30일 이내 종료 예정자 | 예정 | 높음 | `reports.py`, `PJT_ASGN_HIS` | |
 | 팀별 가동률 조회 | 부서별 평균 `TOT_ALLOC_RT` | 예정 | 중간 | `dashboard.py`, `HR_AVAIL_SNAP` | |
-| 리소스 추천 | `PJT_RCMD_RSLT` 점수 기반 후보 추천 | 예정 | 중간 | `recommendation_service.py` | 6개 항목 가중 점수 |
+| 리소스 추천 | `PJT_RCMD_RSLT` 점수 기반 후보 추천 | 완료 (`POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 — 2026-07-04) | 중간 | `recommendations.py`, `pjt_rcmd_rslt.py` | 6개 항목 가중 점수(직무15%+기술35%+숙련도25%+가동일15%+유사경험7%+역할적합도3%) — 항목별 세부 산정 공식은 설계서에 없어 MVP 해석 적용, §9 참조 |
 | AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 예정 | 중간 | `ai_service.py`, `POST /api/v1/ai/chat` | Phase 6 |
 | 주간 리포트 | `PJT_WEEKLY_RPT` 자동 발송 | 예정 | 중간 | `report_service.py`, Teams Webhook | 매주 월요일 09:00 |
 | 감사 로그 | `SYS_AUDIT_LOG` 변경 이력 기록 | 완료 (로그인 및 5개 라우터의 등록/수정 행위 기록 구현, 실 서버 검증 완료 — 2026-07-03. Import 등 미구현 기능 관련 로그, 조회 API는 별도) | 높음 | `sys_audit_log.py`, `app/core/audit.py` | 로그인·CRUD·Import 포함 |
@@ -634,6 +634,7 @@
 - **프로젝트 목록/상세 화면 구현 — 목데이터를 실 API로 연동, 단건 조회 API 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/projects/page.tsx`(검색/상태 필터, 등록 모달)와 `frontend/app/(app)/projects/[id]/page.tsx`(개요/투입 유형 구성/투입 인력 목록 탭)를 백엔드 `PJT_MST`/`PJT_ASGN_HIS` API로 연동. 사원 상세와 마찬가지로 프로젝트 단건 조회 API가 없어(목록/등록/수정만 존재) `backend/app/api/v1/projects.py`에 `GET /projects/{pjt_id}`(신규, 기존 `get_project` 리포지토리 재사용, `require_permission("projects","view")`, 404 처리) 추가. 목록 화면은 `GET /projects`(페이지네이션 응답)와 진행 중(`ACTIVE`) 투입 이력을 집계해 "투입 인원" 컬럼을 계산, "프로젝트 등록" 모달은 `POST /projects`로 실제 연동(설계서 SCR-007 목업에는 없었으나 백엔드 스키마상 필수인 `PJT_CD` 입력 필드를 등록 폼에 추가, 사유 주석 명시 — `PJT_CD`는 모델에 UNIQUE 제약이 있어 중복 시 409 정상 반환 확인). 상세 화면은 `GET /projects/{pjt_id}` + `GET /assignments?pjt_id=`(투입 이력) + `GET /employees`/`departments`/`job-types`(사원명·부서명·직무명 조인, 사원 상세 화면과 동일한 클라이언트 조인 패턴 재사용)를 병렬 조회해 개요·투입 유형 구성·투입 인력 테이블을 실 데이터로 렌더링, 총 투입 인원/평균 투입률은 `ASGN_STAT_CD='ACTIVE'` 건 기준으로 계산. **범위를 의도적으로 축소한 부분**: "수정"/"종료처리"/"인력 투입" 버튼은 사원 상세 화면과 동일한 이유(편집 폼을 이번 범위에서 다루지 않음)로 제외, 조회 전용으로 제공 — 별도 §9 리스크는 추가하지 않음(사원 상세와 동일한 유형의 기존 리스크로 통합 가능하나 화면이 달라 세부 후속 작업은 프로젝트 CRUD 착수 시 재확인). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: `docker compose up -d --build api web` 재빌드 성공, `POST /projects` 등록(201), 동일 코드 재등록 시 409, `GET /projects/{pjt_id}` 200/존재하지 않는 ID 404, `/projects`·`/projects/{pjt_id}` 페이지 200 렌더링 확인. `backend/tests/test_projects.py`(신규)에 등록/수정/상세조회/404/중복 409/VIEWER 조회 가능 5개 케이스 추가(pytest 26→31개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 4 "프로젝트 목록/상세 화면 구현" 항목 완료로 갱신(진행률 63%→69%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **투입 관리 화면 구현 — 목데이터를 실 API로 연동, 등록 모달 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/assignments/page.tsx`(검색/유형/상태 필터, 공수 초과 배정 감지 배너)를 백엔드 `PJT_ASGN_HIS` API로 연동. 투입 관리 API(`GET/POST/PATCH /api/v1/assignments`, ALLOC_RT 100% 초과 검증 포함)는 이미 완전히 구현되어 있어 백엔드 변경 없이 프론트엔드만 재작성. `GET /assignments` + `GET /employees`/`projects`(사번·성명·프로젝트명 조인, 다른 상세 화면들과 동일한 클라이언트 조인 패턴 재사용)를 병렬 조회해 목록을 실 데이터로 렌더링, 공수 초과 배정 감지 배너도 목데이터 계산 로직을 `ASGN_STAT_CD='ACTIVE'` 건의 `ALLOC_RT` 합계 기준 실 데이터 계산으로 교체. **기존 프로토타입에 없던 "투입 등록" 모달을 설계서(SCR-009) 기준으로 신규 작성** — 사원/프로젝트 검색 선택(Select), 프로젝트 유형(RUNNING/COMMITTED/PROPOSED), 역할·기간·투입률·비고 입력 후 `POST /assignments` 호출, 동일 사원·겹치는 기간 합계 100% 초과 시 백엔드가 반환하는 409 오류 메시지를 폼에 그대로 노출(설계서의 "예상 총 투입률 미리보기"는 별도 계산 로직이 필요해 이번 범위에서 제외, 서버 검증 메시지로 대체 — 사유 주석 명시). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 부서·사원·프로젝트로 투입 60% 등록 성공 후 동일 기간 50% 추가 등록 시 409(합계 110% 초과) 정상 거부 확인, `/assignments` 페이지 200 렌더링, 목록 조회 응답에 사번/성명/프로젝트명 조인 결과 정상 확인. 검증에 사용한 임시 데이터는 SQL로 삭제. 백엔드 변경 없어 pytest는 31개 그대로 유지. §4 Phase 4 "투입 관리 화면 구현" 항목 완료로 갱신(진행률 69%→75%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **가동 가능 인력 조회 화면 구현 — 목데이터를 실 API로 연동, 일괄 조회 API 신규 추가 (§8 다음 작업 1번)** — 기존 저장소에 이미 있던 `frontend/app/(app)/availability/page.tsx`(즉시/부분/기간 3개 탭, 검색·조직 필터)를 백엔드 가동률 계산 API로 연동. 기존 `GET /api/v1/availability/{empl_id}`는 사원 1명씩만 계산하는 단건 API라 화면에 필요한 "전체 사원 목록 조회"가 불가능해, `backend/app/repositories/hr_avail_snap.py`에 `list_availability`(신규) 추가 — 재직 사원 전체의 투입 이력을 한 번에 조회한 뒤 파이썬에서 사원별로 묶어 계산해 N+1 쿼리를 방지했다. 기존 `compute_availability`(단건)와 계산 로직이 완전히 같아야 하므로 `_classify` 헬퍼로 판정 로직을 추출해 두 함수가 공유하도록 리팩터링(동작 변경 없는 순수 추출, 기존 단건 API 회귀 위험 최소화). `backend/app/api/v1/availability.py`에 `GET /availability`(신규, `jikmu_id`/`dept_id`/`snap_dt` 필터, `require_permission("availability","view")`) 추가 — 백로그 항목이 명시한 "직무 유형 필터"를 여기서 지원. 프론트엔드는 이 신규 API + `employees`/`departments`/`job-types`/`skills`/`employee-skills`(다른 화면들과 동일한 클라이언트 조인 패턴)를 병렬 조회해 탭(AVAILABLE=즉시/PARTIAL=부분/FULL=기간)·조직·직무 유형·검색 필터를 실 데이터로 구현, 탭 구성이 `AVAILABILITY_CALC_SPEC.md`의 `AVAIL_STAT_CD` 3종과 정확히 1:1 대응됨을 확인해 별도 매핑 없이 그대로 사용. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 투입 이력이 없는 임시 사원이 `AVAILABLE`로, 활성 투입 50%가 있는 사원이 `PARTIAL`로 정확히 분류됨을 확인, `dept_id`/`jikmu_id` 필터가 대상 사원을 정확히 포함/제외함을 확인, `/availability` 페이지 200 렌더링 확인. `backend/tests/test_availability.py`(신규)에 즉시 가동 분류/부분 가동 분류/직무유형 필터/VIEWER 접근 제한(설계서상 VIEWER 제외 확인) 4개 케이스 추가(pytest 31→35개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 4 "가동 가능 인력 조회 화면 구현" 항목 완료로 갱신(진행률 75%→81%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
+- **리소스 추천 화면 구현 — 백엔드 API 신규 구현(추천 알고리즘 최초 구현) + 프론트엔드 실 연동 (§8 다음 작업 1번)** — 다른 Phase 4 화면들과 달리 이번 항목은 백엔드 API 자체가 전혀 없어(모델·스키마 출력 타입만 존재) 추천 로직을 처음부터 구현. **`PJT_RSRC_REQ`(리소스 요청)**: `ResourceRequestCreate` 스키마·`repositories/pjt_rsrc_req.py`·`POST /api/v1/resource-requests`(권한 `recommendations.create`) 신규. **`PJT_RCMD_RSLT`(추천 결과)**: `repositories/pjt_rcmd_rslt.py`에 6개 항목 가중 점수(직무 유형 일치 15%+기술 매칭 35%+숙련도 25%+가동 가능일 15%+유사 경험 7%+역할 적합도 3%, 합 100점) 산정 로직 신규 구현 — 재직 사원 전체를 대상으로 요청 조건과 대조해 채점 후 상위 10명을 저장(재실행 시 이전 결과 삭제 후 재저장). 가동 가능일 판정은 §8 앞서 구현한 `list_availability`(전 사원 가동률 일괄 계산)를 그대로 재사용. `POST /api/v1/recommendations/score`(점수 실행+저장), `GET /api/v1/recommendations/{req_id}`(과거 결과 조회) 추가, `api/v1/router.py`에 라우터 등록. **설계서에 항목별 세부 산정 공식이 없어 MVP 해석을 적용**(직무 일치는 이진 판정, 기술 매칭은 보유 비율, 숙련도는 매칭 기술 평균, 가동일은 희망일 이내 여부 이진 판정, 유사경험은 요청 역할명과 일치하는 과거 완료 투입 건수 — §9 리스크로 기록, 운영팀 확인 필요). 기존 §9 리스크 "PJT_RCMD_RSLT 추천 점수 가중치 표기 불일치"도 이번 구현으로 로드맵 수치 기준 확정되어 해소 처리. 프론트엔드는 기존 프로토타입(`frontend/app/(app)/recommendations/page.tsx`, 요건 입력 폼+결과 카드 UI는 이미 완성)을 실 API로 재작성 — 프로젝트/직무 유형/기술 Select를 실 마스터 데이터로 교체, "추천 인력 조회" 클릭 시 리소스 요청 등록→점수 계산을 순차 호출 후 결과에 사원명·직무명·보유기술을 조인해 표시. **범위를 의도적으로 축소한 부분**: 설계서의 다중 기술 칩 선택은 단일 선택으로 축소(백엔드는 배열을 이미 지원), "이 후보로 투입 요청" 버튼(실제 투입 등록 연동)은 결과 조회까지만 구현하고 제외 — 둘 다 §9 리스크로 기록. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 부서·사원·프로젝트로 리소스 요청 등록 → 추천 실행 → 해당 사원이 결과에 포함되고 투입 이력이 없어 가동일 점수(15점) 만점 획득 확인, 동일 요청 재실행 시 이전 결과가 정확히 교체됨을 확인, 존재하지 않는 요청으로 실행 시 404, `/recommendations` 페이지 200 렌더링 확인. `backend/tests/test_recommendations.py`(신규)에 요청 등록/점수 실행 및 조회/재실행 시 결과 교체/404/VIEWER 403 5개 케이스 추가(pytest 35→40개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 5(리소스 검색 및 추천 기능 구축, 지금까지 0%였던 별도 Phase) "주요 작업" 표의 관련 5개 항목(즉시 투입 가능 인력 조회 API·추천 점수 산정 로직·`PJT_RSRC_REQ` API·`PJT_RCMD_RSLT` API·리소스 추천 화면)을 완료로 갱신, Phase 5 진행률 0%→75%·상태 "예정→진행 중"으로 전환(§3 전체 로드맵 표 동일 갱신 — "즉시 투입 가능 인력 조회 API"와 "가동 가능 인력 화면 구현"은 지난 턴에 이미 완료되었으나 이 표에 반영이 누락되어 있던 것을 이번에 함께 바로잡음), §5 기능별 구현 상태·§11 체크리스트 항목 완료 체크, §8 큐에서 완료 항목 제거
 
 ---
 
@@ -642,11 +643,12 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
-- [ ] 2. AI Chat 화면 구현 (`/ai-chat`)
-- [ ] 3. 리포트 화면 구현 (`/reports`)
-- [ ] 4. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
-- [ ] 5. Excel Import/Export UI 구현
+- [ ] 1. AI Chat 화면 구현 (`/ai-chat`)
+- [ ] 2. 리포트 화면 구현 (`/reports`)
+- [ ] 3. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
+- [ ] 4. Excel Import/Export UI 구현
+
+> 참고: "리소스 추천 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 백엔드 API(`PJT_RSRC_REQ`/`PJT_RCMD_RSLT`)가 없어 이번 작업에서 함께 신규 구현했다.
 
 > 참고: "가동 가능 인력 조회 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다.
 
@@ -693,7 +695,7 @@
 | 컨테이너 타임존이 Ubuntu 호스트 설정에 종속 | 낮음 | 주의 | `/etc/localtime`·`/etc/timezone` 바인드 마운트 방식이라 호스트 자체가 KST(Asia/Seoul)로 설정되어 있어야 컨테이너도 KST가 됨 — 배포 전 `timedatectl set-timezone Asia/Seoul` 확인 필요. Alpine 이미지(`redis`, `db`, `web`)는 `tzdata` 미설치 시 일부 CLI가 `TZ` 이름을 못 찾을 수 있음(바인드 마운트로 우회되나 완전 검증은 실 서버에서 필요) — 상세는 설계서 §8.3-1, `docker-compose.yml` 참조 | 2026-07-03 |
 | `HR_EMPL_ROLE_REL` 테이블 범위 포함 여부 미정 | 중간 | 해소 | 관계자 확인 완료 — Phase 2 데이터 모델 범위에 포함 확정. 로드맵 전체 테이블 수를 "15개→16개"로 정정, §4/§11 테이블 목록에 반영 완료 (`backend/docs/ERD.md` §5 참조) | 2026-07-02 |
 | `SYS_ROLE_MST` 세부 값(ROLE_NM/ROLE_DESC/PERM_JSON) 미정 | 중간 | 해소 | ROLE_NM/ROLE_DESC 및 화면×버튼 권한(`view`/`create`/`update`/`delete`/`excel`/`admin`) 기준 PERM_JSON MVP 확정 완료 — `backend/app/db/seed/sys_role_mst_seed.py`, `backend/docs/PERMISSION_MATRIX.md` 참조 | 2026-07-02 |
-| `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 주의 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기됨 — Phase 5 착수 시 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정 예정 | - |
+| `PJT_RCMD_RSLT` 추천 점수 가중치 표기 불일치 | 낮음 | 해소 | 설계 문서 §5 인용 구간과 로드맵 §4 Phase 5·§11 명시 가중치 수치가 다르게 표기되어 있었음 — 추천 점수 산정 로직 구현 시(2026-07-04) 로드맵 수치(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)로 확정해 `backend/app/repositories/pjt_rcmd_rslt.py`에 반영 완료 | 2026-07-04 |
 | `POSTGRES_PASSWORD` 노출 이력 (실 배포 트러블슈팅 중 채팅에 평문 공유됨) | 중간 | 해소 | 사용자가 `.env`의 `POSTGRES_PASSWORD`/`DATABASE_URL` 값을 즉시 교체(로테이션) 완료 확인 | 2026-07-03 |
 | UFW `5442`(PostgreSQL) 내부망 제한 규칙 미확인 | 낮음 | 해소 | UFW 규칙 대신 `docker-compose.yml`의 `db` 서비스 포트를 `127.0.0.1:5442:5432`로 바인딩해 외부 인터페이스 노출 자체를 차단(Docker가 UFW보다 우선하는 iptables 규칙을 추가하는 문제 회피) — `localhost`(호스트 로컬)에서만 접속 가능 | 2026-07-03 |
 | `PJT_ASGN_HIS` ALLOC_RT 100% 초과 검증 집계 범위 미확정 | 중간 | 주의 | ERD §3.9/설계서 §5.5는 "동일 사원 동일 기간 ALLOC_RT 합계 100% 초과 금지" 원칙만 명시하고 집계 대상 상태(`ASGN_STAT_CD`)를 특정하지 않아, MVP로 `PLANNED`/`ACTIVE`만 집계하고 `CANCELED`/`DONE`은 제외하는 것으로 구현(`backend/app/repositories/pjt_asgn_his.py` 주석 참조). `PROPOSED`(제안중)를 포함한 `ASGN_TYPE_CD` 구분은 이번 검증에 반영하지 않음 — 운영팀 확인 후 필요 시 조건 조정 예정 | 2026-07-03 |
@@ -712,6 +714,8 @@
 | `hrm-worker` 컨테이너가 재시작 루프 상태 | 중간 | 주의 | 사원 상세 화면 작업 중 `docker compose ps` 확인 과정에서 `hrm-worker` 컨테이너가 `Restarting (0)` 상태로 반복 재기동 중임을 발견 — 이번 작업과 무관한 기존 이슈로 원인 미조사(범위 밖). 백그라운드 배치/추천 작업이 필요한 Phase(§4 이후)에서 워커가 실제로 사용되기 전에 원인 확인 및 조치 필요 | 2026-07-03 |
 | `HR_SKILL_MST.SKILL_NM`에 유니크 제약 없음 — 중복 등록 시 오류 미발생 | 낮음 | 주의 | 기술 관리 화면(SCR-005) 실 API 연동 검증 중 동일 `SKILL_NM`으로 두 번 `POST /api/v1/skills`를 호출해도 둘 다 201로 성공함을 확인 — 설계서 유효성 검사 규칙("기술명 중복 시 '이미 등록된 기술명입니다' 오류")이 DB/API 레벨에서 미충족 상태. `backend/app/models/hr_skill_mst.py`에 `SKILL_NM` UNIQUE 제약이 없어 발생 — Alembic 마이그레이션 추가가 필요한 스키마 변경이라 "최소 단위" 원칙에 따라 이번 화면 작업 범위에서는 수정하지 않고 리스크로만 기록. 기존 데이터에 중복 이름이 이미 있을 가능성을 먼저 확인한 뒤 마이그레이션 적용 필요 | 2026-07-04 |
 | SSH 터널 등 접속 방식에 따라 프론트엔드가 백엔드에 연결 못하는 구조적 한계 | 높음 | 해소 | 사용자가 "SSH 터널로 `localhost:3030` 접속 시 로그인 화면에서 '서버에 연결할 수 없습니다' 오류"를 보고. 원인은 CORS가 아니라, 빌드 시점에 고정되는 `NEXT_PUBLIC_API_BASE_URL`이 서버의 LAN IP(`http://192.168.0.87:8000`)로 절대경로 고정되어 있어, SSH 로컬 포트 포워딩(`localhost:포트`만 가로챔)을 거치지 않고 클라이언트 PC가 그 LAN IP로 직접 연결을 시도하다 실패하는 구조였음(같은 LAN이 아니면 연결 자체 불가) — 요청이 서버에 도달하기 전에 실패해 `hrm-api` 로그에도 기록이 남지 않음과 일치. `frontend/next.config.mjs`에 `rewrites()`를 추가해 `/api/v1/*` 요청을 Next.js 서버가 Docker 내부망의 `api:8000` 컨테이너로 대신 전달하도록 프록시 구성 — 프론트엔드 코드는 `NEXT_PUBLIC_API_BASE_URL`이 빈 값이면 상대 경로로 호출하도록 이미 되어 있어 코드 변경 없이 프록시를 자동으로 타게 됨. 사용자가 `.env`의 `NEXT_PUBLIC_API_BASE_URL`을 빈 값으로 변경(AI는 `.env` 직접 수정 금지, 안내만 제공) 후 재빌드해 LAN IP 직접 접속과 SSH 터널(3030 포트 하나만 필요) 두 접속 방식을 하나의 빌드로 동시 지원하도록 구조적으로 해소 | 2026-07-04 |
+| 리소스 추천 점수 산정 공식이 설계서에 세부 정의되어 있지 않음 — MVP 해석 적용 | 중간 | 주의 | 설계서(SCR-011)는 6개 항목의 가중치 비율(직무 15%+기술 35%+숙련도 25%+가동일 15%+유사경험 7%+역할적합도 3%)만 명시하고 항목별 세부 산정 공식은 없음 — `backend/app/repositories/pjt_rcmd_rslt.py`에 MVP 해석으로 구현: 직무는 정확히 일치해야 만점(부분 유사 미고려), 기술은 요청 기술 대비 보유 비율, 숙련도는 매칭된 기술의 평균 숙련도(1~5) 비율, 가동일은 희망일 이내 가동 가능 여부의 이진 판정(부분 점수 없음), 유사경험은 요청 역할명과 일치하는 과거(DONE) 투입 건수(최대 3건=만점), 역할 적합도는 유사경험 존재 여부의 이진 판정. `REQ_SKILL_JSON`도 설계서에 내부 스키마가 없어 `{"SKILL_IDS": [...], "MIN_PRFCY_LEVL": n}` 구조로 자체 정의. 운영팀 확인 후 필요 시 산정 공식 조정 필요 | 2026-07-04 |
+| 리소스 추천 화면 UI 축소 — 다중 기술 선택·"이 후보로 투입 요청" 버튼 미구현 | 낮음 | 주의 | 설계서(SCR-011)는 기술을 여러 개 칩(chip)으로 추가/삭제할 수 있어야 하나, 이번 구현은 기존 프로토타입과 동일하게 단일 기술 선택만 지원(`REQ_SKILL_JSON.SKILL_IDS`는 배열이라 백엔드는 다중 기술을 이미 지원하나, 프론트엔드 입력 UI만 단일 선택으로 제한). 추천 결과에서 "이 후보로 투입 요청"(권한 A H P) 버튼으로 실제 투입(`PJT_ASGN_HIS`) 등록까지 이어지는 흐름도 이번 범위에서 제외 — 결과 조회까지만 구현. 두 가지 모두 후속 작업으로 분리 | 2026-07-04 |
 
 ---
 
@@ -804,7 +808,7 @@
 - [x] 프로젝트 CRUD API (`PJT_MST`) — 조회/등록/수정 구현(`GET`/`POST`/`PATCH /api/v1/projects`), 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 투입 관리 API (`PJT_ASGN_HIS`) — 조회/등록/수정 및 ALLOC_RT 100% 초과 검증 구현, 실 서버 HTTP 응답 확인 완료 (2026-07-03)
 - [x] 가동률 계산 API (`HR_AVAIL_SNAP`) — `GET /api/v1/availability/{empl_id}` 즉시 계산 API 구현, 실 서버 검증 완료 (2026-07-03). 스냅샷 저장·배치 자동화는 Phase 7 `HR_AVAIL_SNAP_GEN` 몫으로 별도 유지
-- [ ] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`)
+- [x] 리소스 검색/추천 API (`PJT_RSRC_REQ`, `PJT_RCMD_RSLT`) — `POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 (2026-07-04). 직무 유형·기술·숙련도 복합 필터 "검색"(추천과 별개) API는 미구현
 - [x] 대시보드 집계 API (직무 유형별 분포 포함) — SCR-002 설계서 명시 4개 엔드포인트 및 프론트엔드 목데이터(`lib/mock-data.ts`) 기반 4개 엔드포인트(데이터 품질, 이달 종료 예정, 최근 입사자, 월별 인력 추이) 총 8개 전부 구현, 실 서버 검증 완료 (2026-07-03)
 - [x] Excel Import/Export API — Export(`GET /api/v1/employees/export`) + Import(`POST /api/v1/employees/import`) 전부 구현, 실 서버 검증 완료 (2026-07-03). Import 정책(마스터 미존재 시 전체 실패/`EMPL_NO` Upsert/부분 실패 시 전체 롤백)은 사용자 확정 사항 반영
 - [x] 페이지네이션 공통 처리 구현 — `PaginationParams`/`PaginatedResponse` 공통 모듈로 추출, 3개 라우터 적용 및 실 서버 검증 완료 (2026-07-03)
@@ -827,7 +831,7 @@
 - [x] 프로젝트 목록/상세 화면 구현 (`/projects`, `/projects/[id]`) — 목데이터를 백엔드 실 API로 전량 교체, `GET /api/v1/projects/{pjt_id}` 신규 추가, 실 서버 검증 완료 (2026-07-04). 수정/종료처리/인력투입은 조회 전용으로 남겨 후속 과제로 분리
 - [x] 투입 관리 화면 구현 (`/assignments`, `PJT_ASGN_HIS`) — 목데이터를 백엔드 실 API로 전량 교체, 등록 모달 신규 추가(기존 등록/100% 초과 검증 API 재사용), 공수 초과 배정 감지 로직 실 데이터 기준으로 교체, 실 서버 검증 완료 (2026-07-04)
 - [x] 가동 가능 인력 조회 화면 구현 (`/availability` — 직무 유형 필터 포함) — 목데이터를 백엔드 실 API로 전량 교체, `GET /api/v1/availability`(일괄 조회) 신규 추가, 사원/부서/직무/기술 마스터 조인, 실 서버 검증 완료 (2026-07-04)
-- [ ] 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`)
+- [x] 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`) — 목데이터를 백엔드 실 API로 전량 교체, `PJT_RSRC_REQ`/`PJT_RCMD_RSLT` API 신규 추가, 실 서버 검증 완료 (2026-07-04)
 - [ ] AI Chat 화면 구현 (`/ai-chat`)
 - [ ] 리포트 화면 구현 (`/reports`)
 - [ ] 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
@@ -837,13 +841,14 @@
 
 ### 리소스 검색 및 추천 `→ Phase 5`
 
-- [ ] 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — 기준일 `SNAP_DT` 기준 `ACTIVE`+`RUNNING/COMMITTED` 투입만 집계, `PROPOSED` 제외, 0%=`AVAILABLE`/1~99%=`PARTIAL`/≥100%=`FULL`(`MAX(ASGN_END_DT)+1`); 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조)
-- [ ] 즉시 투입 가능 인력 조회 API 구현 (`AVAIL_STAT_CD='AVAILABLE'`)
+- [ ] 가동 가능일 자동 계산 로직 구현 (`HR_AVAIL_SNAP` 기반, MVP 산정 기준 확정 — 기준일 `SNAP_DT` 기준 `ACTIVE`+`RUNNING/COMMITTED` 투입만 집계, `PROPOSED` 제외, 0%=`AVAILABLE`/1~99%=`PARTIAL`/≥100%=`FULL`(`MAX(ASGN_END_DT)+1`); 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조) — 매일 01:00 배치(`HR_AVAIL_SNAP_GEN`)만 미구현, 즉시 계산 API는 완료
+- [x] 즉시 투입 가능 인력 조회 API 구현 (`AVAIL_STAT_CD='AVAILABLE'`) — `GET /api/v1/availability`, 직무 유형·부서 필터 포함, 실 서버 검증 완료 (2026-07-04)
 - [ ] 직무 유형·기술·숙련도 복합 필터 검색 API 구현
-- [ ] 추천 점수 산정 로직 구현
+- [x] 추천 점수 산정 로직 구현 (2026-07-04)
   - 직무 유형 일치 15% + 기술 매칭 35% + 숙련도 25% + 가동일 15% + 유사 경험 7% + 역할 적합도 3%
-- [ ] `PJT_RSRC_REQ` 인력 요청 등록 API 구현
-- [ ] `PJT_RCMD_RSLT` 추천 결과 저장 및 조회 API 구현
+  - 설계서에 항목별 세부 산정 공식이 없어 MVP 해석 적용(§9 리스크 참조) — `backend/app/repositories/pjt_rcmd_rslt.py`
+- [x] `PJT_RSRC_REQ` 인력 요청 등록 API 구현 — `POST /api/v1/resource-requests`, 실 서버 검증 완료 (2026-07-04)
+- [x] `PJT_RCMD_RSLT` 추천 결과 저장 및 조회 API 구현 — `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}`, 실 서버 검증 완료 (2026-07-04)
 
 ---
 
@@ -951,4 +956,5 @@
 | 2026-07-04 | v5.9 | §8 다음 작업 1번(프로젝트 목록/상세 화면 구현) 완료 처리 — 목데이터 기반 `/projects`·`/projects/[id]` 화면을 백엔드 `PJT_MST`/`PJT_ASGN_HIS` API로 연동. 사원 상세와 동일하게 프로젝트 단건 조회 API가 없어 `GET /api/v1/projects/{pjt_id}` 신규 추가. 목록은 `GET /projects` + 진행 중 투입 집계로 투입 인원 컬럼 계산, 등록 모달은 `POST /projects` 실 연동(설계서 목업에 없던 `PJT_CD` 필드는 백엔드 필수값이라 추가, 사유 주석 명시). 상세는 프로젝트 정보 + 투입 이력 + 사원/부서/직무 마스터 조인으로 개요·투입 유형 구성·투입 인력 테이블 실 데이터 렌더링. 수정/종료처리/인력투입 버튼은 사원 상세와 동일한 원칙으로 조회 전용 제공. `backend/tests/test_projects.py` 신규 작성(5개 케이스, pytest 26→31개 전부 통과). 실 서버에서 등록/중복 409/상세조회/404/렌더링 전부 검증 완료. Phase 4 진행률 63%→69%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 | 2026-07-04 | v6.0 | §8 다음 작업 1번(투입 관리 화면 구현) 완료 처리 — 목데이터 기반 `/assignments` 화면을 백엔드 `PJT_ASGN_HIS` API(이미 완전 구현되어 백엔드 변경 없음)로 연동. 사원/프로젝트 마스터 조인으로 목록 렌더링, 공수 초과 배정 감지 배너를 실 데이터 계산으로 교체. 기존 프로토타입에 없던 "투입 등록" 모달을 설계서(SCR-009) 기준 신규 작성 — 사원/프로젝트 Select, 유형/역할/기간/투입률 입력 후 `POST /assignments` 연동, 100% 초과 시 백엔드 409 메시지를 그대로 표시(예상 투입률 미리보기는 범위 제외). 실 서버에서 60%+50%(합계 110%) 등록 시 409 정상 거부, 페이지 렌더링, 조인 데이터 정상 확인. 백엔드 변경 없어 pytest 31개 그대로 유지. Phase 4 진행률 69%→75%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 | 2026-07-04 | v6.1 | §8 다음 작업 1번(가동 가능 인력 조회 화면 구현) 완료 처리 — 목데이터 기반 `/availability` 화면을 백엔드 API로 연동. 기존 단건 계산 API(`GET /availability/{empl_id}`)로는 전체 목록 조회가 불가해 `list_availability`(신규, N+1 방지를 위해 전체 투입 이력을 한 번에 조회 후 파이썬에서 집계) 및 `GET /availability`(신규, `jikmu_id`/`dept_id` 필터 지원 — 백로그 명시 "직무 유형 필터" 충족) 추가. 판정 로직을 `_classify` 헬퍼로 추출해 기존 단건 API와 공유(순수 리팩터링, 회귀 위험 최소화). 프론트엔드는 사원/부서/직무/기술 마스터 조인으로 즉시/부분/기간 3개 탭·조직·직무유형·검색 필터를 실 데이터로 구현. `backend/tests/test_availability.py` 신규 작성(4개 케이스, pytest 31→35개 전부 통과). 실 서버에서 즉시/부분 가동 분류, 직무유형 필터, VIEWER 접근 제한 전부 검증 완료. Phase 4 진행률 75%→81%로 갱신, §3/§4/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
+| 2026-07-04 | v6.2 | §8 다음 작업 1번(리소스 추천 화면 구현) 완료 처리 — 백엔드 API가 전혀 없어 추천 알고리즘을 신규 구현: `POST /api/v1/resource-requests`(`PJT_RSRC_REQ` 등록), `POST /api/v1/recommendations/score`(6개 항목 가중 점수 산정 후 `PJT_RCMD_RSLT` 저장 — 직무15%+기술35%+숙련도25%+가동일15%+유사경험7%+역할적합도3%), `GET /api/v1/recommendations/{req_id}`(과거 결과 조회) 추가. 설계서에 항목별 세부 산정 공식이 없어 MVP 해석 적용(§9 리스크 기록), 기존 리스크 "추천 점수 가중치 표기 불일치"는 로드맵 수치로 확정되어 해소. 프론트엔드는 기존 프로토타입을 실 API로 재작성(요건 입력 폼 실 마스터 연동, 결과에 사원명/직무/기술 조인). 다중 기술 선택과 "이 후보로 투입 요청" 버튼은 범위 제외(§9 리스크 기록). `backend/tests/test_recommendations.py` 신규 작성(5개 케이스, pytest 35→40개 전부 통과). 실 서버에서 요청 등록→추천 실행→결과 조회→재실행 시 결과 교체 전부 검증 완료. **Phase 5(리소스 검색 및 추천, 그동안 0%)를 처음으로 진행 상태로 전환**(0%→75%) — 이 참에 지난 턴 이미 완료됐던 "즉시 투입 가능 인력 조회 API"·"가동 가능 인력 화면 구현"이 Phase 5 표에 반영 누락되어 있던 것도 함께 바로잡음. §3/§5/§11 항목 완료 체크, §8 큐에서 완료 항목 제거 | — |
 
