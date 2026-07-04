@@ -13,7 +13,7 @@ import { StatCard } from '@/components/common/stat-card'
 import { ModalForm, FormField } from '@/components/common/modal-form'
 import { Input } from '@/components/ui/input'
 import { apiGet, apiPatch, apiPost, ApiError } from '@/lib/api'
-import { skillGroupOptions, useYnOptions } from '@/lib/options'
+import { useYnOptions } from '@/lib/options'
 
 // 백엔드 기술 마스터 API(로드맵 §8 "기술 관리 화면 구현", SCR-005) 응답 타입 —
 // 필드명은 backend/app/schemas/hr_skill_mst.py, hr_empl_skill_rel.py와 동일하게 유지한다.
@@ -27,7 +27,6 @@ interface EmployeeSkillOut {
   SKILL_ID: string
 }
 
-const groupSelectOptions = skillGroupOptions.filter((o) => o.value !== 'ALL')
 const useYnSelectOptions = useYnOptions.filter((o) => o.value !== 'ALL')
 
 async function loadSkills(): Promise<{ skills: SkillOut[]; userCountBySkillId: Map<string, number> }> {
@@ -71,6 +70,15 @@ export default function SkillsPage() {
   }
 
   useEffect(reload, [])
+
+  // 기술 그룹(SKILL_GRP_CD) 목록은 하드코딩하지 않고 실제 데이터에서 등장하는 값만 추출한다
+  // — 마스터에 그룹 코드에 대한 CHECK 제약이 없는 자유 문자열이라(hr_skill_mst.py 참조),
+  // 하드코딩하면 실제 등록된 그룹과 어긋날 수 있다(예: Seed 그룹 변경 시 필터가 낡아짐).
+  const groupOptions = useMemo(() => {
+    const groups = [...new Set(skills.map((s) => s.SKILL_GRP_CD))].sort()
+    return [{ label: '전체', value: 'ALL' }, ...groups.map((g) => ({ label: g, value: g }))]
+  }, [skills])
+  const groupSelectOptions = useMemo(() => groupOptions.filter((o) => o.value !== 'ALL'), [groupOptions])
 
   const filtered = useMemo(
     () =>
@@ -165,7 +173,7 @@ export default function SkillsPage() {
           <SearchInput value={keyword} onChange={setKeyword} placeholder="기술명 검색" />
         </FilterField>
         <FilterField label="기술 그룹">
-          <Select value={group} onValueChange={setGroup} options={skillGroupOptions} />
+          <Select value={group} onValueChange={setGroup} options={groupOptions} />
         </FilterField>
         <FilterField label="사용 여부">
           <Select value={useYn} onValueChange={setUseYn} options={useYnOptions} />
@@ -186,6 +194,7 @@ export default function SkillsPage() {
         onClose={() => setOpenForm(false)}
         skill={editing}
         onSaved={reload}
+        groupOptions={groupSelectOptions}
       />
     </div>
   )
@@ -196,14 +205,16 @@ function SkillFormModal({
   onClose,
   skill,
   onSaved,
+  groupOptions,
 }: {
   open: boolean
   onClose: () => void
   skill: SkillOut | null
   onSaved: () => void
+  groupOptions: { label: string; value: string }[]
 }) {
   const [name, setName] = useState(skill?.SKILL_NM ?? '')
-  const [group, setGroup] = useState(skill?.SKILL_GRP_CD ?? groupSelectOptions[0].value)
+  const [group, setGroup] = useState(skill?.SKILL_GRP_CD ?? groupOptions[0]?.value ?? '')
   const [useYn, setUseYn] = useState(String(skill?.USE_YN ?? true))
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -248,7 +259,7 @@ function SkillFormModal({
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: Kotlin" />
       </FormField>
       <FormField label="기술 그룹" required>
-        <Select value={group} onValueChange={setGroup} options={groupSelectOptions} />
+        <Select value={group} onValueChange={setGroup} options={groupOptions} />
       </FormField>
       <FormField label="사용 여부" required>
         <Select value={useYn} onValueChange={setUseYn} options={useYnSelectOptions} />

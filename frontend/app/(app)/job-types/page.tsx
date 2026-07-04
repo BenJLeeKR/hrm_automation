@@ -28,14 +28,13 @@ interface JobTypeOut {
 }
 
 // 설계서(SCR-006 등록/수정 모달)가 명시한 3개 그룹 — HR_JIKMU_MST.JIKMU_GRP_CD는
-// DB CHECK 제약이 없는 자유 문자열이지만, 등록 화면은 설계서 기준으로 이 3종만 제공한다.
-const groupFilterOptions = [
-  { label: '전체', value: 'ALL' },
+// DB CHECK 제약이 없는 자유 문자열이지만, "등록/수정 모달"은 설계서 기준으로 이 3종만
+// 제공한다(신규 등록 시 그룹을 임의 문자열로 늘리지 않도록 하는 의도적 제한).
+const MODAL_GROUP_OPTIONS = [
   { label: 'TECHNICAL', value: 'TECHNICAL' },
   { label: 'MANAGEMENT', value: 'MANAGEMENT' },
   { label: 'ANALYSIS', value: 'ANALYSIS' },
 ]
-const groupSelectOptions = groupFilterOptions.filter((o) => o.value !== 'ALL')
 const useYnSelectOptions = useYnOptions.filter((o) => o.value !== 'ALL')
 
 async function loadJobTypes(): Promise<JobTypeOut[]> {
@@ -70,6 +69,13 @@ export default function JobTypesPage() {
   }
 
   useEffect(reload, [])
+
+  // 필터 드롭다운은 등록 모달의 고정 3종 목록과 별개로, 실제 데이터에 등장하는 그룹만
+  // 노출한다 — 그룹 미등록(NULL) 데이터가 있어도 필터 목록이 항상 실 데이터와 일치한다.
+  const groupFilterOptions = useMemo(() => {
+    const groups = [...new Set(jobTypes.map((j) => j.JIKMU_GRP_CD).filter((g): g is string => !!g))].sort()
+    return [{ label: '전체', value: 'ALL' }, ...groups.map((g) => ({ label: g, value: g }))]
+  }, [jobTypes])
 
   const filtered = useMemo(
     () =>
@@ -180,7 +186,7 @@ function JobTypeFormModal({
 }) {
   const [code, setCode] = useState(jobType?.JIKMU_CD ?? '')
   const [name, setName] = useState(jobType?.JIKMU_NM ?? '')
-  const [group, setGroup] = useState(jobType?.JIKMU_GRP_CD ?? groupSelectOptions[0].value)
+  const [group, setGroup] = useState(jobType?.JIKMU_GRP_CD ?? MODAL_GROUP_OPTIONS[0].value)
   const [desc, setDesc] = useState(jobType?.JIKMU_DESC ?? '')
   const [sortOrd, setSortOrd] = useState(String(jobType?.SORT_ORD ?? 0))
   const [useYn, setUseYn] = useState(String(jobType?.USE_YN ?? true))
@@ -232,7 +238,7 @@ function JobTypeFormModal({
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 테크니컬 라이터" />
       </FormField>
       <FormField label="그룹" required>
-        <Select value={group} onValueChange={setGroup} options={groupSelectOptions} />
+        <Select value={group} onValueChange={setGroup} options={MODAL_GROUP_OPTIONS} />
       </FormField>
       <FormField label="설명">
         <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} placeholder="직무에 대한 설명을 입력하세요." />

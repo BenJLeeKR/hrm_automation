@@ -41,17 +41,6 @@ export const skillOptions: SelectOption[] = [
     .map((s) => ({ label: s.name, value: s.name })),
 ]
 
-export const skillGroupOptions: SelectOption[] = [
-  { label: '전체', value: 'ALL' },
-  { label: 'BACKEND', value: 'BACKEND' },
-  { label: 'FRONTEND', value: 'FRONTEND' },
-  { label: 'DB', value: 'DB' },
-  { label: 'CLOUD', value: 'CLOUD' },
-  { label: 'DEVOPS', value: 'DEVOPS' },
-  { label: 'DESIGN', value: 'DESIGN' },
-  { label: 'BUSINESS', value: 'BUSINESS' },
-]
-
 export const useYnOptions: SelectOption[] = [
   { label: '전체', value: 'ALL' },
   { label: '사용중', value: 'true' },
