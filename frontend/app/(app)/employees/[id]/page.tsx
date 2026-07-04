@@ -3,11 +3,12 @@
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, CalendarDays, Building2, Pencil } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, CalendarDays, Building2, Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EmployeeFormModal } from '@/components/employees/employee-form-modal'
+import { EmployeeSkillFormModal } from '@/components/employees/employee-skill-form-modal'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Tabs } from '@/components/ui/tabs'
@@ -93,6 +94,7 @@ interface EmployeeDetailData {
   employee: EmployeeOut
   departments: DepartmentOut[]
   positions: PositionOut[]
+  skillCatalog: SkillOut[]
   deptName: string
   positionName: string
   jobTypeName: string | null
@@ -135,6 +137,7 @@ async function loadEmployeeDetail(id: string): Promise<EmployeeDetailData> {
     employee,
     departments,
     positions,
+    skillCatalog: skills,
     deptName: departments.find((d) => d.DEPT_ID === employee.DEPT_ID)?.DEPT_NM ?? '-',
     positionName: positions.find((p) => p.JIKGUP_ID === employee.JIKGUP_ID)?.JIKGUP_NM ?? '-',
     jobTypeName: jobTypes.find((j) => j.JIKMU_ID === employee.JIKMU_ID)?.JIKMU_NM ?? null,
@@ -163,6 +166,7 @@ export default function EmployeeDetailPage({
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openEdit, setOpenEdit] = useState(false)
+  const [openAddSkill, setOpenAddSkill] = useState(false)
 
   function reload() {
     let cancelled = false
@@ -223,6 +227,7 @@ export default function EmployeeDetailPage({
     employee,
     departments,
     positions,
+    skillCatalog,
     deptName,
     positionName,
     jobTypeName,
@@ -230,6 +235,8 @@ export default function EmployeeDetailPage({
     assignments,
     currentUtilization,
   } = data
+  const ownedSkillIds = new Set(skills.map((s) => s.SKILL_ID))
+  const addableSkills = skillCatalog.filter((s) => !ownedSkillIds.has(s.SKILL_ID))
 
   return (
     <div>
@@ -306,6 +313,10 @@ export default function EmployeeDetailPage({
         <Card className="overflow-hidden p-0">
           <div className="flex items-center justify-between px-5 py-3">
             <p className="text-sm font-semibold">보유 기술 {skills.length}건</p>
+            <Button size="sm" variant="secondary" onClick={() => setOpenAddSkill(true)}>
+              <Plus className="size-4" />
+              기술 추가
+            </Button>
           </div>
           {skills.length === 0 ? (
             <EmptyState title="등록된 기술이 없습니다" />
@@ -387,6 +398,13 @@ export default function EmployeeDetailPage({
         departments={departments}
         positions={positions}
         employee={employee}
+      />
+      <EmployeeSkillFormModal
+        open={openAddSkill}
+        onOpenChange={setOpenAddSkill}
+        onSaved={reload}
+        emplId={employee.EMPL_ID}
+        skillOptions={addableSkills}
       />
     </div>
   )
