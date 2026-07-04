@@ -110,47 +110,47 @@ export function UtilizationMatrix() {
   )
 
   // (사번, 프로젝트) 단위 행 + 프로젝트가 2개 이상인 사원은 "소계" 행을 추가로 붙인다.
-  const flatRows = useMemo(() => {
+  // "사원" 정보는 그룹의 첫 행에만 채우고(rowSpan으로 병합), 나머지 행은 비워둔다.
+  const employeeGroups = useMemo(() => {
     if (!matrix) return []
-    return matrix.employees.flatMap((e) => {
+    return matrix.employees.map((e) => {
       const projectRows = e.rows.map((r) => ({
         key: `${e.empl_no}-${r.pjt_nm}-${r.asgn_type_cd}`,
-        empNo: e.empl_no,
-        name: e.empl_nm,
-        dept: e.dept_nm,
         project: `${ASGN_TYPE_ICON[r.asgn_type_cd]} ${r.pjt_nm}`,
         months: r.monthly,
         avg: r.avg,
         isSubtotal: false,
       }))
-      if (e.rows.length === 0) {
-        return [
-          {
-            key: `${e.empl_no}-empty`,
-            empNo: e.empl_no,
-            name: e.empl_nm,
-            dept: e.dept_nm,
-            project: '투입 없음',
-            months: e.subtotal,
-            avg: e.annual_avg,
-            isSubtotal: false,
-          },
-        ]
+      const rows =
+        e.rows.length === 0
+          ? [
+              {
+                key: `${e.empl_no}-empty`,
+                project: '투입 없음',
+                months: e.subtotal,
+                avg: e.annual_avg,
+                isSubtotal: false,
+              },
+            ]
+          : e.rows.length === 1
+            ? projectRows
+            : [
+                ...projectRows,
+                {
+                  key: `${e.empl_no}-subtotal`,
+                  project: '소계',
+                  months: e.subtotal,
+                  avg: e.annual_avg,
+                  isSubtotal: true,
+                },
+              ]
+      return {
+        key: e.empl_no,
+        empNo: e.empl_no,
+        name: e.empl_nm,
+        dept: e.dept_nm,
+        rows,
       }
-      if (e.rows.length === 1) return projectRows
-      return [
-        ...projectRows,
-        {
-          key: `${e.empl_no}-subtotal`,
-          empNo: e.empl_no,
-          name: e.empl_nm,
-          dept: e.dept_nm,
-          project: '▶ 소계',
-          months: e.subtotal,
-          avg: e.annual_avg,
-          isSubtotal: true,
-        },
-      ]
     })
   }, [matrix])
 
@@ -187,7 +187,10 @@ export function UtilizationMatrix() {
               <thead>
                 <tr>
                   <th className="sticky left-0 z-10 bg-card px-3 py-2 text-left text-xs font-semibold text-muted-foreground">
-                    사원 / 프로젝트
+                    사원
+                  </th>
+                  <th className="bg-card px-3 py-2 text-left text-xs font-semibold text-muted-foreground">
+                    프로젝트
                   </th>
                   {matrix.period.map((p) => (
                     <th key={p} className="min-w-12 px-1 py-2 text-center text-xs font-medium text-muted-foreground">
@@ -198,38 +201,45 @@ export function UtilizationMatrix() {
                 </tr>
               </thead>
               <tbody>
-                {flatRows.map((row) => (
-                  <tr key={row.key} className={cn(row.isSubtotal && 'bg-muted/40 font-semibold')}>
-                    <td className="sticky left-0 z-10 bg-card px-3 py-1.5">
-                      <div className="whitespace-nowrap">
-                        <span className="font-medium">
-                          {row.empNo} {row.name}
-                        </span>
-                        <span className="ml-2 text-xs text-muted-foreground">{row.dept}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">{row.project}</span>
-                      </div>
-                    </td>
-                    {row.months.map((v, i) => (
-                      <td key={i} className="px-0.5 py-0.5">
-                        <div
-                          className={cn(
-                            'flex h-8 items-center justify-center rounded text-xs font-medium tabular-nums',
-                            cellStyle(v),
-                          )}
-                          title={`${matrix.period[i]}: ${v}%`}
+                {employeeGroups.map((group) =>
+                  group.rows.map((row, i) => (
+                    <tr key={row.key} className={cn(row.isSubtotal && 'bg-muted/40 font-semibold')}>
+                      {i === 0 && (
+                        <td
+                          rowSpan={group.rows.length}
+                          className="sticky left-0 z-10 bg-card px-3 py-1.5 align-top"
                         >
-                          {v > 0 ? v : ''}
-                          {v > 100 && ' ⚠'}
-                        </div>
+                          <div className="whitespace-nowrap">
+                            <span className="font-medium">
+                              {group.empNo} {group.name}
+                            </span>
+                            <span className="ml-2 text-xs text-muted-foreground">{group.dept}</span>
+                          </div>
+                        </td>
+                      )}
+                      <td className="bg-card px-3 py-1.5 whitespace-nowrap text-xs">{row.project}</td>
+                      {row.months.map((v, mi) => (
+                        <td key={mi} className="px-0.5 py-0.5">
+                          <div
+                            className={cn(
+                              'flex h-8 items-center justify-center rounded text-xs font-medium tabular-nums',
+                              cellStyle(v),
+                            )}
+                            title={`${matrix.period[mi]}: ${v}%`}
+                          >
+                            {v > 0 ? v : ''}
+                            {v > 100 && ' ⚠'}
+                          </div>
+                        </td>
+                      ))}
+                      <td className="px-2 text-center">
+                        <span className={cn('text-sm font-semibold tabular-nums', row.avg > 100 && 'text-[#c0392b]')}>
+                          {row.avg}%
+                        </span>
                       </td>
-                    ))}
-                    <td className="px-2 text-center">
-                      <span className={cn('text-sm font-semibold tabular-nums', row.avg > 100 && 'text-[#c0392b]')}>
-                        {row.avg}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                    </tr>
+                  )),
+                )}
               </tbody>
               <tfoot>
                 <OrgAvgRow label="◆ 조직 평균 [수행중]" values={matrix.org_avg.running_only} />
@@ -267,7 +277,9 @@ function OrgAvgRow({ label, values, bold }: { label: string; values: number[]; b
   const avg = values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10 : 0
   return (
     <tr className={cn('border-t border-border', bold && 'font-semibold')}>
-      <td className="sticky left-0 z-10 bg-card px-3 py-2 text-xs text-muted-foreground">{label}</td>
+      <td colSpan={2} className="sticky left-0 z-10 bg-card px-3 py-2 text-xs text-muted-foreground">
+        {label}
+      </td>
       {values.map((v, i) => (
         <td key={i} className="px-1 py-2 text-center text-xs tabular-nums">
           {v}
