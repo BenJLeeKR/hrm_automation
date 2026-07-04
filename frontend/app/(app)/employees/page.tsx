@@ -317,7 +317,13 @@ export default function EmployeesPage() {
         }
       />
 
-      <EmployeeFormModal open={openCreate} onOpenChange={setOpenCreate} />
+      <EmployeeFormModal
+        open={openCreate}
+        onOpenChange={setOpenCreate}
+        onSaved={reload}
+        departments={departments}
+        positions={positions}
+      />
       <EmployeeImportDialog open={openImport} onOpenChange={setOpenImport} />
     </div>
   )
