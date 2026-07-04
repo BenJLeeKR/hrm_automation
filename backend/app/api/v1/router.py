@@ -11,6 +11,7 @@ from app.api.v1 import (
     employees,
     projects,
     recommendations,
+    reports,
     skills,
 )
 
@@ -27,3 +28,4 @@ api_router.include_router(availability.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(recommendations.router)
 api_router.include_router(ai_chat.router)
+api_router.include_router(reports.router)

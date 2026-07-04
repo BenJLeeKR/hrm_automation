@@ -9,13 +9,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { skillDistributionTop10 } from '@/lib/mock-data'
 
-export function SkillBarChart() {
+export interface SkillDistributionPoint {
+  name: string
+  count: number
+}
+
+export function SkillBarChart({ data }: { data: SkillDistributionPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart
-        data={skillDistributionTop10}
+        data={data}
         layout="vertical"
         margin={{ left: 12, right: 16, top: 4, bottom: 4 }}
       >
