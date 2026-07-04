@@ -8,7 +8,7 @@ interface StatCardProps {
   value: string
   unit?: string
   icon: LucideIcon
-  tone?: 'primary' | 'success' | 'warning' | 'info' | 'muted'
+  tone?: 'primary' | 'success' | 'warning' | 'info' | 'muted' | 'danger'
   trend?: { value: string; up: boolean }
   hint?: string
 }
@@ -22,6 +22,7 @@ const toneStyles: Record<
   warning: { bg: 'bg-[#fdf0dc]', fg: 'text-[#b46708]' },
   info: { bg: 'bg-[#dcf5f2]', fg: 'text-[#0b7268]' },
   muted: { bg: 'bg-secondary', fg: 'text-muted-foreground' },
+  danger: { bg: 'bg-[#fde8e8]', fg: 'text-[#c0392b]' },
 }
 
 export function StatCard({

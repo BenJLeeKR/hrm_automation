@@ -69,6 +69,10 @@ interface ProjectOut {
   PJT_ID: string
   PJT_NM: string
 }
+interface ProjectListResponse {
+  total: number
+  items: ProjectOut[]
+}
 interface AssignmentOut {
   ASGN_ID: string
   PJT_ID: string
@@ -109,13 +113,15 @@ async function loadEmployeeDetail(id: string): Promise<EmployeeDetailData> {
       apiGet<JobTypeOut[]>('/api/v1/job-types'),
       apiGet<SkillOut[]>('/api/v1/skills'),
       apiGet<EmployeeSkillOut[]>(`/api/v1/employee-skills?empl_id=${id}`),
-      apiGet<ProjectOut[]>('/api/v1/projects'),
+      // GET /projects는 배열이 아니라 {total, items} 페이지네이션 응답이다 — 사원 1인의
+      // 투입 이력에 등장할 수 있는 프로젝트를 전부 조인하기 위해 넉넉한 limit 사용
+      apiGet<ProjectListResponse>('/api/v1/projects?limit=200'),
       // 사원 1인의 투입 이력 전체를 보여주기 위해 페이지네이션 기본값(20건)보다 넉넉한 값 사용
       apiGet<AssignmentListResponse>(`/api/v1/assignments?empl_id=${id}&limit=200`),
     ])
 
   const skillById = new Map(skills.map((s) => [s.SKILL_ID, s]))
-  const projectById = new Map(projects.map((p) => [p.PJT_ID, p]))
+  const projectById = new Map(projects.items.map((p) => [p.PJT_ID, p]))
   const assignmentItems = assignments.items
 
   const currentUtilization = assignmentItems
