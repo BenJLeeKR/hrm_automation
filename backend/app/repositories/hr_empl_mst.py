@@ -66,12 +66,50 @@ def create_employee(db: Session, data: dict) -> HrEmplMst:
 
 
 def update_employee(db: Session, employee: HrEmplMst, data: dict) -> HrEmplMst:
-    """전달된 필드만 갱신 (부분 업데이트)."""
+    """전달된 필드만 갱신 (부분 업데이트).
+
+    `JIKMU_ID`(주 직무)가 변경되는 경우, `HrEmplRoleRel` 모델 docstring이 명시하는
+    "IS_PRIMARY=TRUE 행의 JIKMU_ID는 HR_EMPL_MST.JIKMU_ID와 일치해야 한다"는 규칙을
+    이 애플리케이션 레이어에서 함께 맞춰준다 — 그렇지 않으면 목록 화면의 "보유 역할"
+    배지가 옛 직무 유형을 계속 표시하게 된다(엑셀 임포트/목데이터로 생성된 기존
+    IS_PRIMARY 행이 갱신되지 않고 남기 때문).
+    """
+    old_jikmu_id = employee.JIKMU_ID
     for field, value in data.items():
         setattr(employee, field, value)
+
+    if "JIKMU_ID" in data and data["JIKMU_ID"] != old_jikmu_id:
+        _sync_primary_role(db, employee.EMPL_ID, data["JIKMU_ID"])
+
     db.commit()
     db.refresh(employee)
     return employee
+
+
+def _sync_primary_role(db: Session, empl_id: uuid.UUID, new_jikmu_id: uuid.UUID | None) -> None:
+    primary_role = db.scalar(
+        select(HrEmplRoleRel).where(HrEmplRoleRel.EMPL_ID == empl_id, HrEmplRoleRel.IS_PRIMARY.is_(True))
+    )
+    if new_jikmu_id is None:
+        if primary_role is not None:
+            db.delete(primary_role)
+        return
+
+    # 변경하려는 직무 유형이 이미 비주(non-primary) 역할로 등록돼 있으면 UNIQUE(EMPL_ID,
+    # JIKMU_ID) 위반을 피하기 위해 그 행을 주 역할로 승격하고, 기존 주 역할 행은 정리한다.
+    existing_target = db.scalar(
+        select(HrEmplRoleRel).where(HrEmplRoleRel.EMPL_ID == empl_id, HrEmplRoleRel.JIKMU_ID == new_jikmu_id)
+    )
+    if existing_target is not None:
+        existing_target.IS_PRIMARY = True
+        if primary_role is not None and primary_role.EMPL_ROLE_ID != existing_target.EMPL_ROLE_ID:
+            db.delete(primary_role)
+        return
+
+    if primary_role is not None:
+        primary_role.JIKMU_ID = new_jikmu_id
+    else:
+        db.add(HrEmplRoleRel(EMPL_ID=empl_id, JIKMU_ID=new_jikmu_id, IS_PRIMARY=True))
 
 
 def retire_employee(db: Session, employee: HrEmplMst, retir_dt: date | None = None) -> HrEmplMst:
