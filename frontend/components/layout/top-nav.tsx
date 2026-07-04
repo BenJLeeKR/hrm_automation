@@ -1,8 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Bell, Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react'
+import { Bell, Boxes, Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Dropdown, DropdownItem } from '@/components/ui/dropdown'
 import { logout } from '@/lib/auth'
@@ -25,9 +24,11 @@ export function TopNav({ onMenuClick }: TopNavProps) {
         <Menu className="size-5" />
       </button>
 
-      {/* 로고 */}
+      {/* 로고 — 기존 사이드바에서 제거한 아이콘+텍스트를 그대로 옮겨왔다 */}
       <div className="flex items-center gap-2.5">
-        <Image src="/Blueward-CI_Inverse.png" alt="Blueward" width={150} height={27} priority />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-nav-active-text">
+          <Boxes className="size-5" />
+        </div>
         <span className="hidden text-sm font-semibold text-nav-foreground sm:inline">
           HRM 자동화 시스템(Resource Mgmt)
         </span>
