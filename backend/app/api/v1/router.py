@@ -8,6 +8,7 @@ from app.api.v1 import (
     availability,
     codes,
     dashboard,
+    employee_roles,
     employee_skills,
     employees,
     projects,
@@ -23,6 +24,7 @@ api_router.include_router(employees.router)
 api_router.include_router(codes.router)
 api_router.include_router(skills.router)
 api_router.include_router(employee_skills.router)
+api_router.include_router(employee_roles.router)
 api_router.include_router(projects.router)
 api_router.include_router(assignments.router)
 api_router.include_router(auth.router)
