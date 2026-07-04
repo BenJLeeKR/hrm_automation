@@ -76,6 +76,16 @@ def search_resources(db: Session, parsed: ParsedResourceQuery, *, today: date | 
     skill_id = _resolve_skill_id(db, parsed.skills[0]) if parsed.skills else None
     skipped_skills = parsed.skills[1:] if len(parsed.skills) > 1 else []
 
+    # 조건은 있었는데 마스터 데이터에서 ID로 변환하지 못한 경우(예: 삭제된 부서명, 오타)
+    # 필터를 조용히 무시하고 전체 조회로 흘려보내면 안 된다 — 해당 조건은 만족할 수 없으므로
+    # 즉시 빈 결과로 반환한다. (`ai_parser.py`가 실제 마스터 데이터로만 값을 채우므로
+    # `/ai/chat` 정상 흐름에서는 거의 발생하지 않지만, 이 함수를 직접 호출하는 경우까지
+    # 방어한다.)
+    if (parsed.job_type and jikmu_id is None) or (parsed.department and dept_id is None):
+        return ResourceSearchResult(total=0, items=[], summary="조건에 맞는 인력을 찾지 못했습니다.", skipped_skills=[])
+    if parsed.skills and skill_id is None:
+        return ResourceSearchResult(total=0, items=[], summary="조건에 맞는 인력을 찾지 못했습니다.", skipped_skills=[])
+
     results = list_availability(
         db,
         snap_dt=today,
