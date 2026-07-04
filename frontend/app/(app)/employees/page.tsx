@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { UserPlus, Users } from 'lucide-react'
+import { Download, Upload, UserPlus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { FilterBar, FilterField } from '@/components/common/filter-bar'
 import { SearchInput } from '@/components/common/search-input'
@@ -14,6 +14,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { EmployeeStatusBadge } from '@/components/common/status-badge'
 import { UtilizationBar } from '@/components/common/utilization-progress'
 import { EmployeeFormModal } from '@/components/employees/employee-form-modal'
+import { EmployeeImportDialog } from '@/components/employees/employee-import-dialog'
 import { employees, positions } from '@/lib/mock-data'
 import { teamLabel } from '@/lib/labels'
 import {
@@ -23,6 +24,7 @@ import {
   jobTypeOptions,
 } from '@/lib/options'
 import type { Employee } from '@/lib/types'
+import { apiDownloadFile, ApiError } from '@/lib/api'
 
 // 사원의 `roles`(mock-data.ts)에는 신규 JIKMU_CD(예: DEVELOPER, DEVOPS)와 구 Excel
 // 코드(예: AA, TA, 컨설턴트, 사업관리)가 혼재되어 있다 — ERD `HR_JIKMU_MST` §3.3의
@@ -52,6 +54,21 @@ export default function EmployeesPage() {
   const [status, setStatus] = useState('ALL')
   const [jobType, setJobType] = useState('ALL')
   const [openCreate, setOpenCreate] = useState(false)
+  const [openImport, setOpenImport] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  async function handleExport() {
+    setExporting(true)
+    setExportError(null)
+    try {
+      await apiDownloadFile('/api/v1/employees/export', 'employees.xlsx')
+    } catch (err) {
+      setExportError(err instanceof ApiError ? err.message : 'Excel 내보내기에 실패했습니다.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const filtered = useMemo(() => {
     return employees.filter((e) => {
@@ -130,11 +147,21 @@ export default function EmployeesPage() {
         title="사원 관리"
         description="구성원 정보와 보유 역량, 현재 가동 현황을 관리합니다."
       >
+        <Button variant="outline" onClick={() => setOpenImport(true)}>
+          <Upload className="size-4" />
+          Excel 가져오기
+        </Button>
+        <Button variant="outline" onClick={handleExport} disabled={exporting}>
+          <Download className="size-4" />
+          {exporting ? '내보내는 중...' : 'Excel 내보내기'}
+        </Button>
         <Button onClick={() => setOpenCreate(true)}>
           <UserPlus className="size-4" />
           사원 등록
         </Button>
       </PageHeader>
+
+      {exportError && <p className="mb-4 text-sm text-destructive">{exportError}</p>}
 
       <FilterBar>
         <FilterField label="검색" className="min-w-56 flex-1">
@@ -176,6 +203,7 @@ export default function EmployeesPage() {
       />
 
       <EmployeeFormModal open={openCreate} onOpenChange={setOpenCreate} />
+      <EmployeeImportDialog open={openImport} onOpenChange={setOpenImport} />
     </div>
   )
 }
