@@ -13,6 +13,8 @@ bcrypt==4.0.1
 redis==5.2.1
 openpyxl==3.1.5
 python-multipart==0.0.20
+# 배치 스케줄러 (Phase 7 "HR_AVAIL_SNAP_GEN 배치 구현", 설계서 산출물 worker.py 기준)
+apscheduler==3.10.4
 
 # pytest는 테스트 전용 의존성 (Phase 3 "완료 기준" — Pytest 단위 테스트).
 # httpx는 테스트(TestClient) 외에도 AI Chat(app/services/ai_chat.py)의 LLM API 호출에

@@ -2,10 +2,11 @@ import uuid
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.selectable import Subquery
 
+from app.models.hr_avail_snap import HrAvailSnap
 from app.models.hr_empl_mst import HrEmplMst
 from app.models.hr_empl_skill_rel import HrEmplSkillRel
 from app.models.pjt_asgn_his import PjtAsgnHis
@@ -132,6 +133,32 @@ def list_availability(
         _classify(empl_id=empl_id, snap_dt=snap_dt, alloc_rows=rows_by_empl[empl_id])
         for empl_id in employee_ids
     ]
+
+
+def generate_avail_snap(db: Session, *, snap_dt: date) -> int:
+    """`HR_AVAIL_SNAP_GEN` 배치(로드맵 §8, 매일 01:00 실행) 본체 — `list_availability`와
+    동일한 산정 로직으로 재직 사원 전체의 가동률을 계산해 `HR_AVAIL_SNAP`에 스냅샷
+    행으로 저장한다. 재직 사원 전체 대상(부서/직무 필터 없음)이라는 점만 화면용
+    `list_availability` 호출과 다르다.
+
+    같은 `snap_dt`로 재실행해도 안전하도록(배치 수동 재실행 대비) 해당 날짜의 기존
+    스냅샷을 먼저 삭제한 뒤 새로 삽입한다 — 커밋은 호출부(배치 실행기)에서 담당한다.
+    """
+    db.execute(delete(HrAvailSnap).where(HrAvailSnap.SNAP_DT == snap_dt))
+
+    results = list_availability(db, snap_dt=snap_dt)
+    for result in results:
+        db.add(
+            HrAvailSnap(
+                EMPL_ID=result.EMPL_ID,
+                SNAP_DT=result.SNAP_DT,
+                TOT_ALLOC_RT=result.TOT_ALLOC_RT,
+                AVAIL_RT=result.AVAIL_RT,
+                AVAIL_STRT_DT=result.AVAIL_STRT_DT,
+                AVAIL_STAT_CD=result.AVAIL_STAT_CD,
+            )
+        )
+    return len(results)
 
 
 def active_alloc_rt_subquery(as_of: date) -> Subquery:
