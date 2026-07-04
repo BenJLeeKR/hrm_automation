@@ -3,10 +3,11 @@
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, CalendarDays, Building2 } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, CalendarDays, Building2, Pencil } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { EmployeeFormModal } from '@/components/employees/employee-form-modal'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Tabs } from '@/components/ui/tabs'
@@ -90,6 +91,8 @@ interface AssignmentListResponse {
 
 interface EmployeeDetailData {
   employee: EmployeeOut
+  departments: DepartmentOut[]
+  positions: PositionOut[]
   deptName: string
   positionName: string
   jobTypeName: string | null
@@ -130,6 +133,8 @@ async function loadEmployeeDetail(id: string): Promise<EmployeeDetailData> {
 
   return {
     employee,
+    departments,
+    positions,
     deptName: departments.find((d) => d.DEPT_ID === employee.DEPT_ID)?.DEPT_NM ?? '-',
     positionName: positions.find((p) => p.JIKGUP_ID === employee.JIKGUP_ID)?.JIKGUP_NM ?? '-',
     jobTypeName: jobTypes.find((j) => j.JIKMU_ID === employee.JIKMU_ID)?.JIKMU_NM ?? null,
@@ -157,8 +162,9 @@ export default function EmployeeDetailPage({
   const [data, setData] = useState<EmployeeDetailData | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [openEdit, setOpenEdit] = useState(false)
 
-  useEffect(() => {
+  function reload() {
     let cancelled = false
     loadEmployeeDetail(id)
       .then((result) => {
@@ -175,7 +181,9 @@ export default function EmployeeDetailPage({
     return () => {
       cancelled = true
     }
-  }, [id])
+  }
+
+  useEffect(reload, [id])
 
   if (notFound) {
     return (
@@ -211,7 +219,17 @@ export default function EmployeeDetailPage({
     )
   }
 
-  const { employee, deptName, positionName, jobTypeName, skills, assignments, currentUtilization } = data
+  const {
+    employee,
+    departments,
+    positions,
+    deptName,
+    positionName,
+    jobTypeName,
+    skills,
+    assignments,
+    currentUtilization,
+  } = data
 
   return (
     <div>
@@ -243,9 +261,12 @@ export default function EmployeeDetailPage({
                 )}
               </div>
             </div>
-            {/* 정보 수정/퇴직 처리 버튼은 실 API 연동(PATCH/DELETE) 자체는 구현되어 있으나,
-                편집 폼 UI를 이번 "사원 상세 화면 구현" 범위에서 다루지 않아 후속 작업으로
-                분리했다(§9 리스크 참조) — 조회 전용 화면으로 우선 제공한다. */}
+            {/* 퇴직 처리 버튼은 실 API(DELETE) 연동은 되어 있으나 편집 폼 UI가 아직 없어
+                후속 작업으로 분리했다(§9-1 참조) — 정보수정만 우선 제공한다. */}
+            <Button variant="secondary" onClick={() => setOpenEdit(true)}>
+              <Pencil className="size-4" />
+              정보수정
+            </Button>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-5 lg:grid-cols-4">
@@ -358,6 +379,15 @@ export default function EmployeeDetailPage({
           )}
         </Card>
       )}
+
+      <EmployeeFormModal
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        onSaved={reload}
+        departments={departments}
+        positions={positions}
+        employee={employee}
+      />
     </div>
   )
 }
