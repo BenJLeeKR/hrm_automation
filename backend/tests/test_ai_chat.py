@@ -63,3 +63,19 @@ def test_chat_resource_search_intent_bypasses_llm(client, admin_token, monkeypat
 
     assert resp.status_code == 200
     assert "찾" in resp.json()["reply"]
+
+
+def test_chat_resource_search_denied_for_role_without_availability_view(client, viewer_token, monkeypatch):
+    """VIEWER는 SCR-010(가동 가능 인력) 접근 권한이 없으므로, AI Chat을 통한 우회 조회도
+    차단하고 안내 메시지만 반환해야 한다(로드맵 §9 리스크 — 권한 필터링)."""
+
+    def _fail_if_called(message):
+        raise AssertionError("권한이 없는 resource_search에서는 call_llm도 호출되면 안 된다")
+
+    monkeypatch.setattr(ai_chat_module, "call_llm", _fail_if_called)
+    headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    resp = client.post("/api/v1/ai/chat", headers=headers, json={"message": "즉시 투입 가능한 PM 찾아줘"})
+
+    assert resp.status_code == 200
+    assert resp.json()["reply"] == "가동 인력 상세 조회 권한이 없습니다. 필요한 경우 관리자에게 권한을 요청하세요."
