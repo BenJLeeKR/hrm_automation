@@ -55,6 +55,20 @@ export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   return apiSend<T>('PATCH', path, body)
 }
 
+export async function apiDelete<T>(path: string): Promise<T> {
+  const accessToken = getAccessToken()
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  })
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null)
+    const message = typeof detail?.detail === 'string' ? detail.detail : `API 요청에 실패했습니다 (${res.status})`
+    throw new ApiError(res.status, message)
+  }
+  return res.json() as Promise<T>
+}
+
 export async function apiUploadFile<T>(path: string, file: File): Promise<T> {
   const accessToken = getAccessToken()
   const formData = new FormData()

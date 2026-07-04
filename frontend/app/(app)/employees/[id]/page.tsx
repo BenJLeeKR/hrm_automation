@@ -3,12 +3,13 @@
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, CalendarDays, Building2, Pencil, Plus } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, CalendarDays, Building2, Pencil, Plus, UserX } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EmployeeFormModal } from '@/components/employees/employee-form-modal'
 import { EmployeeSkillFormModal } from '@/components/employees/employee-skill-form-modal'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Tabs } from '@/components/ui/tabs'
@@ -24,7 +25,7 @@ import { SkillLevel } from '@/components/common/skill-level'
 import { UtilizationBar } from '@/components/common/utilization-progress'
 import { EmployeeStatusBadge } from '@/components/common/status-badge'
 import { EmptyState } from '@/components/common/empty-state'
-import { apiGet } from '@/lib/api'
+import { apiDelete, apiGet, ApiError } from '@/lib/api'
 import { assignmentStatusLabel } from '@/lib/labels'
 import type { EmployeeStatus } from '@/lib/types'
 
@@ -169,6 +170,22 @@ export default function EmployeeDetailPage({
   const [error, setError] = useState<string | null>(null)
   const [openEdit, setOpenEdit] = useState(false)
   const [openAddSkill, setOpenAddSkill] = useState(false)
+  const [openRetireConfirm, setOpenRetireConfirm] = useState(false)
+  const [retiring, setRetiring] = useState(false)
+  const [retireError, setRetireError] = useState<string | null>(null)
+
+  async function handleRetire() {
+    setRetiring(true)
+    setRetireError(null)
+    try {
+      await apiDelete(`/api/v1/employees/${id}`)
+      reload()
+    } catch (err) {
+      setRetireError(err instanceof ApiError ? err.message : '퇴직 처리에 실패했습니다. 잠시 후 다시 시도하세요.')
+    } finally {
+      setRetiring(false)
+    }
+  }
 
   function reload() {
     let cancelled = false
@@ -271,13 +288,23 @@ export default function EmployeeDetailPage({
                 )}
               </div>
             </div>
-            {/* 퇴직 처리 버튼은 실 API(DELETE) 연동은 되어 있으나 편집 폼 UI가 아직 없어
-                후속 작업으로 분리했다(§9-1 참조) — 정보수정만 우선 제공한다. */}
-            <Button variant="secondary" onClick={() => setOpenEdit(true)}>
-              <Pencil className="size-4" />
-              정보수정
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setOpenEdit(true)}>
+                <Pencil className="size-4" />
+                정보수정
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setOpenRetireConfirm(true)}
+                disabled={employee.EMPL_STAT_CD === 'RETIRED'}
+              >
+                <UserX className="size-4" />
+                퇴직처리
+              </Button>
+            </div>
           </div>
+
+          {retireError && <p className="mt-3 text-sm text-destructive">{retireError}</p>}
 
           <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-5 lg:grid-cols-4">
             <InfoItem icon={Mail} label="이메일" value={employee.EMAIL_ADDR ?? '-'} />
@@ -409,6 +436,15 @@ export default function EmployeeDetailPage({
         onSaved={reload}
         emplId={employee.EMPL_ID}
         skillOptions={addableSkills}
+      />
+      <ConfirmDialog
+        open={openRetireConfirm}
+        onClose={() => setOpenRetireConfirm(false)}
+        onConfirm={handleRetire}
+        title="퇴직 처리하시겠습니까?"
+        description={`${employee.EMPL_NM}님을 퇴직 처리합니다. 사원 정보는 삭제되지 않고 재직 상태만 "퇴직"으로 전환되며, 퇴직일은 오늘 날짜로 기록됩니다.`}
+        confirmText={retiring ? '처리 중...' : '퇴직 처리'}
+        destructive
       />
     </div>
   )
