@@ -1,8 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Boxes } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { mainNav, bottomNav, filterNavByPermissions, type PermJson } from '@/lib/nav'
 
@@ -25,14 +25,8 @@ export function Sidebar({ onNavigate, permJson = null }: SidebarProps) {
   return (
     <div className="flex h-full flex-col bg-nav text-nav-foreground">
       {/* 로고 */}
-      <div className="flex h-16 shrink-0 items-center gap-2.5 px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-white text-nav-active-text">
-          <Boxes className="size-5" />
-        </div>
-        <div className="leading-tight">
-          <p className="text-sm font-semibold">HRM 자동화</p>
-          <p className="text-[10px] text-nav-muted">Resource Mgmt</p>
-        </div>
+      <div className="flex h-16 shrink-0 items-center px-5">
+        <Image src="/Blueward-CI_Inverse.png" alt="Blueward" width={150} height={27} priority />
       </div>
 
       {/* 메인 메뉴 */}

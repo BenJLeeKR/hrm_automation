@@ -1,7 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Bell, Search, Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react'
+import { Bell, Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Dropdown, DropdownItem } from '@/components/ui/dropdown'
 import { logout } from '@/lib/auth'
@@ -24,14 +25,12 @@ export function TopNav({ onMenuClick }: TopNavProps) {
         <Menu className="size-5" />
       </button>
 
-      {/* 전역 검색 */}
-      <div className="relative flex-1 max-w-xl">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
-          placeholder="검색어를 입력하세요..."
-          className="h-9 w-full rounded-lg border border-nav-border bg-white pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-nav-accent focus:outline-none focus:ring-2 focus:ring-nav-accent/50"
-        />
+      {/* 로고 */}
+      <div className="flex items-center gap-2.5">
+        <Image src="/Blueward-CI_Inverse.png" alt="Blueward" width={150} height={27} priority />
+        <span className="hidden text-sm font-semibold text-nav-foreground sm:inline">
+          HRM 자동화 시스템(Resource Mgmt)
+        </span>
       </div>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
@@ -61,7 +60,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
         >
           <div className="px-2.5 py-2">
             <p className="text-sm font-semibold text-foreground">관리자</p>
-            <p className="text-xs text-muted-foreground">admin@bwware.co.kr</p>
+            <p className="text-xs text-muted-foreground">admin@blueward.co.kr</p>
           </div>
           <div className="my-1 h-px bg-border" />
           <DropdownItem onClick={() => router.push('/settings/users')}>
