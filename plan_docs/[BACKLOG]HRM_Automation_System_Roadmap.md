@@ -98,7 +98,7 @@
 | Phase 1 | 인프라 및 개발환경 구축 | 2주차 | 완료 | 100% | 정상 |
 | Phase 2 | PostgreSQL 데이터 모델 구축 | 2~3주차 | 완료 | 100% | 정상 |
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
-| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 88% | 정상 |
+| Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 진행 중 | 94% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 75% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 38% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
@@ -300,7 +300,7 @@
 | **목표** | 권한별 메뉴 제어가 적용된 웹 화면 전체 구현 (포트 3030) |
 | **계획 기간** | 3~5주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 88% |
+| **진행률** | 94% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -321,7 +321,7 @@
 | 투입 관리 화면 구현 (`/assignments`) | 완료 (목데이터를 백엔드 실 API로 전량 교체, 등록 모달 신규 추가(기존 백엔드 API 재사용), 실 서버 검증 완료, 2026-07-04) |
 | 가동 가능 인력 조회 화면 구현 (`/availability`) | 완료 (목데이터를 백엔드 실 API로 전량 교체, 일괄 조회 API `GET /api/v1/availability` 신규 추가, 직무 유형 필터 포함, 실 서버 검증 완료, 2026-07-04) |
 | 리포트 화면 구현 (`/reports`) | 완료 (주간/월간 리포트 탭, `GET /api/v1/reports/{weekly,monthly}` 신규 추가, 실 서버 검증 완료, 2026-07-04. "월별 가동률 통계" 매트릭스 탭·리포트 발송·Excel 내보내기는 후속 과제로 분리) |
-| 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`) | 예정 |
+| 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`) | 완료 (사용자 관리·감사 로그 조회를 백엔드 실 API로 전량 교체, `GET/POST /api/v1/users`, `GET /api/v1/users/roles`, `GET /api/v1/audit-logs` 신규 추가, 실 서버 검증 완료, 2026-07-04. 계정 수정/비활성화·감사 로그 Excel 내보내기는 후속 과제로 분리) |
 | Excel Import/Export UI 구현 | 예정 |
 
 **산출물**
@@ -638,6 +638,8 @@
 - **AI Chat 화면 구현 — LLM 연동 1차 범위(사용자 확정: 단순 호출/응답) 신규 구현 (§8 다음 작업 1번)** — 직전 턴에 사용자가 `.env`에 DeepSeek 연동 정보를 이미 설정해뒀음을 확인하고 실제 인증 호출로 연결 가능함을 검증한 데 이어, 이번 턴에 실제 구현을 진행. `backend/app/core/config.py`(`Settings`)에 `LLM_PROVIDER`/`DEEPSEEK_API_KEY`/`DEEPSEEK_BASE_URL`/`DEEPSEEK_MODEL_ID`/`OPENAI_API_KEY` 필드 신규 추가(그동안 `extra="ignore"`라 조용히 무시되고 있었음), `.env.example`도 실제 `.env` 구성(DeepSeek 기준)과 일치하도록 갱신(`.env` 자체는 수정하지 않음). `backend/app/services/ai_chat.py`(신규) — `call_llm(message)`가 `LLM_PROVIDER` 값으로 공급자를 분기하는 간단한 추상화(현재 DeepSeek만 지원, §4 Phase 6 "LLM 연동 인터페이스 추상화" 항목 충족), `httpx`로 DeepSeek `chat/completions`(OpenAI 호환) 호출, 실패 시 `LlmCallError`로 통일해 처리. `backend/app/schemas/ai_chat.py`(`ChatRequest`/`ChatResponse`), `backend/app/api/v1/ai_chat.py`(`POST /api/v1/ai/chat`, 권한 `ai_chat.view` — `PERM_JSON`상 전 역할 허용과 일치, LLM 실패 시 502) 신규 작성, `api/v1/router.py`에 등록. **1차 구현 범위는 사용자가 명시적으로 확정한 대로 LLM 단순 호출/응답만 다룸** — 자연어 조건 파싱·SQL 조회 연동·권한 필터링 기반 컨텍스트 전달·환각 방지 프롬프트는 후속 작업으로 분리(§4 Phase 6 표·§9-1 체크리스트에 반영). 프론트엔드는 기존 프로토타입(`frontend/app/(app)/ai-chat/page.tsx`)의 정적 캔드 응답(키워드 매칭 목데이터, SQL·결과 테이블 표시)을 제거하고 `POST /api/v1/ai/chat` 실 호출로 교체 — 응답 대기 중 로딩 표시, 실패 시 에러 메시지를 대화 버블로 표시. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 재빌드 후 실제 DeepSeek API를 호출해 정상 답변 수신 확인, 무인증 401, 빈 메시지 422, `/ai-chat` 페이지 200 렌더링 확인. `backend/tests/test_ai_chat.py`(신규)에 정상 응답/무인증/빈 메시지/LLM 실패 시 502/VIEWER 접근 가능 5개 케이스 추가 — 반복 실행 가능성과 오프라인 실행을 위해 `call_llm`을 모킹해 실제 네트워크 호출 없이 검증(실제 DeepSeek 연동 자체는 수동 curl로 이미 확인)(pytest 40→45개 전부 통과). §4 Phase 6(AI 질의응답 연동, 지금까지 0%였던 별도 Phase) "주요 작업" 표의 관련 3개 항목(LLM 연동 인터페이스 추상화·`POST /api/v1/ai/chat`·AI Chat 화면) 완료로 갱신, Phase 6 진행률 0%→38%·상태 "예정→진행 중"으로 전환(§3 전체 로드맵 표 동일 갱신), §5·§11 체크리스트 항목 완료 체크, §9-1 체크리스트에 AI Chat 후속 항목 4건 추가, §8 큐에서 완료 항목 제거
 - **리포트 화면 구현 — 주간/월간 리포트 백엔드 API 신규 구현 (§8 다음 작업 1번)** — 백엔드에 리포트 관련 API가 전혀 없어(모델도 없음) 신규 구현. 설계서(SCR-013)가 "주간 리포트와 월간 리포트는 기간 단위만 다를 뿐 동일한 구조"라고 명시한 점에 착안해, `backend/app/repositories/reports.py`(신규)에 `build_report(db, as_of)` 공용 함수를 작성 — 이미 구현되어 있던 대시보드 집계 함수(`get_summary`/`get_dept_utilization`/`get_data_quality`, `app/repositories/dashboard.py`)를 그대로 재사용하고, 리포트 전용 위젯인 "기술별 인력 분포 Top 10"만 `get_skill_distribution_top`으로 신규 추가(`HR_EMPL_SKILL_REL`+`HR_SKILL_MST` 조인, 보유 인원 내림차순 상위 10개). `backend/app/schemas/reports.py`(`ReportOut`, 기존 `DashboardSummaryOut`이 아닌 리포트 전용 스키마로 분리하되 `DeptUtilizationItem`은 재사용), `backend/app/api/v1/reports.py`(신규) — `GET /reports/weekly?week=YYYY-Www`(ISO 주차 파싱, `date.fromisocalendar`), `GET /reports/monthly?month=YYYYMM` 둘 다 동일한 `build_report`를 호출(중복 로직 없음), 잘못된 형식은 422, 권한 `require_permission("reports","view")`(설계서 접근 권한 "A H P E"와 동일하게 TEAM_LEAD/VIEWER 제외 — 기존 Seed `PERM_JSON`과 이미 일치 확인). 과거 특정 주차/월의 스냅샷을 보관하지 않으므로(§9 기존 "대시보드가 HR_AVAIL_SNAP 대신 실시간 계산 사용" 리스크와 동일 제약), 지정 시점 기준으로 현재 데이터를 즉시 재계산하는 방식을 그대로 채택(사유 주석 명시). **범위를 의도적으로 축소한 부분**: 설계서 탭 3 "월별 가동률 통계"(인원별 프로젝트 투입 행+월별 12개 컬럼+3단계 조직 평균+100% 초과 경고 매트릭스)는 구조가 복잡해 이번 범위에서 제외하고 화면에 준비 중 안내만 표시, "리포트 수동 발송"(Teams Webhook)과 "Excel 내보내기"도 별도 인프라 연동이 필요해 제외 — 셋 다 §9 리스크로 기록. 프론트엔드는 기존 프로토타입(`frontend/app/(app)/reports/page.tsx`)의 탭 구성(가동률 매트릭스/인력 추이/기술 분포, 전부 목데이터)을 설계서 기준 탭(주간/월간/월별 통계)으로 재구성해 실 API 연동 — 주차/월 선택기(HTML5 `input[type=week/month]`)로 조회 시점 변경, 요약 6개 스탯 카드(전체인원/즉시가동/부분가동/풀투입/종료예정/직무미등록)+부서별 가동률+기술별 분포 차트 2종을 실 데이터로 렌더링. 기존 `SkillBarChart` 컴포넌트가 목데이터 직접 import 방식이던 것을 다른 차트들과 동일하게 `data` prop 기반으로 리팩터링. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 부서·사원으로 `GET /reports/weekly`가 즉시 가동 인원·직무 미등록 수를 정확히 반영함을 확인, 잘못된 `week`/`month` 형식 422, `/reports` 페이지 200 렌더링 확인. `backend/tests/test_reports.py`(신규)에 기본 조회/신규 사원 반영 확인/잘못된 형식 422(주간·월간)/VIEWER 403 6개 케이스 추가(pytest 45→51개 전부 통과). 검증에 사용한 임시 데이터는 SQL로 삭제. §4 Phase 4 "리포트 화면 구현" 항목 완료로 갱신(진행률 81%→88%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐에서 완료 항목 제거
 - **`HR_SKILL_MST` 표준 Seed 재작성 및 DB 반영 (사용자 요청)** — 기존 MVP 초안(BACKEND/FRONTEND/ARCHITECTURE/CLOUD/BUSINESS/DESIGN 6개 그룹, 55건, DB 미반영 상태)을 사용자 확정 기준의 13개 그룹(LANGUAGE/BACKEND/FRONTEND/MOBILE/DB/DATA/INFRA/SECURITY/ARCHITECTURE/QA/CONSULTING/PMO/BUSINESS(금융)) 110건으로 전면 재작성 — `backend/app/db/seed/hr_skill_mst_seed.py`. 기술명은 사원 목록 Excel Import "주요기술" 컬럼과 매핑될 수 있도록 표준 영문/일반 명칭 우선(예: "Java", "PostgreSQL", "SAP(ERP)"), BUSINESS 그룹은 금융 SI 도메인 지식(여신/수신/카드/보험/증권/외환/전자금융/자금세탁방지/바젤·IFRS/핀테크) 위주로 구성. **동일 (SKILL_GRP_CD, SKILL_NM) 조합 중복 방지**를 위해 Alembic 마이그레이션(`55106956dedf`, 신규)에서 `HR_SKILL_MST`에 `(SKILL_GRP_CD, SKILL_NM)` 복합 UNIQUE 제약(`uq_hr_skill_mst_grp_nm`)을 추가하고, Seed 삽입도 `INSERT ... ON CONFLICT DO NOTHING`으로 처리해 마이그레이션을 재실행하거나 이미 존재하는 조합을 다시 넣어도 중복 행이 생기지 않도록 구현 — 이 제약 추가로 기존 §9 리스크 "`HR_SKILL_MST.SKILL_NM`에 유니크 제약 없음"도 함께 해소(기술 관리 화면 검증 중 발견했던 미충족 상태를 정식으로 수정). 기존 테이블 생성 리비전(`28ce52377e32`)은 되돌리지 않고 새 리비전으로 제약+Seed만 추가하는 기존 패턴(`370c95546556` 등)을 그대로 따름. 검증 중 이전 세션에서 남아있던 테스트 잔여 데이터(`BACKEND/Python`, 비활성) 1건을 발견해 정리. **실 서버 컨테이너에서 `alembic upgrade head` 실제 실행으로 검증**(이전 Phase 2 마이그레이션들과 달리 이번에는 Docker 환경에 `alembic`이 있어 실제 적용 가능) — 적용 후 `HR_SKILL_MST` 110건/13개 그룹 정상 확인, `alembic downgrade -1`로 되돌린 뒤 다시 `upgrade head`로 재적용해 0건→110건 정상 복원 확인(멱등성 검증), 동일 조합 재삽입 SQL을 직접 실행해도 행 수가 늘지 않음을 확인. API 레벨에서도 동일 조합 재등록 시 409, 다른 그룹의 동일 이름은 201로 정상 허용됨을 curl로 확인. `backend/tests/test_skills.py`(신규 — 그동안 기술 관리 API에 전용 테스트가 없었음)에 등록/수정/중복 409(회귀 테스트)/동일 이름 다른 그룹 허용/VIEWER 403(설계서 접근 권한 "A H" 확인) 4개 케이스 추가(pytest 51→55개 전부 통과). §9 리스크 2건 해소("직원 기술 스택 표준화 기준 미정", "`SKILL_NM` 유니크 제약 없음"), §11 데이터베이스 체크리스트 "HR_SKILL_MST Seed 입력" 항목 완료 체크(Phase 2는 이미 100% 완료 상태라 진행률 변경 없음). `.env`/DESIGN 파일은 수정하지 않음
+- **기술/직무유형 화면 그룹 필터 하드코딩 버그 수정 (사용자 질의)** — 사용자가 "각 화면의 검색 필터가 DB에서 조회되는지 하드코딩인지"를 질의해 전 화면을 감사 — `HR_SKILL_MST` 표준 Seed 재작성(바로 위 항목) 직후라 기술 관리(`/skills`) 화면의 "기술 그룹" 필터가 `frontend/lib/options.ts`에 하드코딩된 옛 7개 그룹만 사용해 새 Seed의 13개 그룹 중 다수가 필터로 선택 불가능한 상태임을 발견, 사용자 확인 후 즉시 수정. 하드코딩된 `skillGroupOptions`를 제거하고 화면에서 실제로 불러온 데이터의 `SKILL_GRP_CD` distinct 값으로 필터·등록 모달 그룹 목록을 동적 생성(`useMemo`). 직무 유형(`/job-types`) 화면의 "그룹" 필터도 동일한 문제 가능성이 있어 함께 점검·수정 — 단 등록/수정 모달은 설계서(SCR-006)가 명시한 고정 3종(TECHNICAL/MANAGEMENT/ANALYSIS)을 그대로 유지(신규 등록 시 그룹명 난립 방지 목적, 필터와는 별개 사안이라 분리 유지). 나머지 화면(가동 가능 인력·리소스 추천의 조직/직무유형/기술 필터)은 이미 실 API 기반이라 문제없음을 확인, 상태/유형 계열 필터(프로젝트 상태·투입 유형 등)는 DB CHECK 제약과 동일한 고정 열거값이라 하드코딩이 정상 설계임도 함께 확인. 백엔드 변경 없음(프론트엔드 전용), 재빌드 후 `/skills`·`/job-types` 페이지 200 렌더링 확인, pytest 55개 그대로 통과
+- **설정 화면 구현 — 사용자 관리·감사 로그 조회 백엔드 API 신규 구현 (§8 다음 작업 1번)** — 기존 저장소에 `/settings` 화면(일반설정/사용자관리/감사로그 3개 탭, `UsersTable`/`AuditLogTable` 컴포넌트로 UI는 이미 완성되어 있었으나 전부 `lib/mock-data.ts` 기반)이 있었으나 백엔드 API가 전혀 없어 신규 구현. **사용자 관리(SCR-015)**: `backend/app/schemas/sys_user_mst.py`에 `UserCreate`(비밀번호 정책 검증 — 8자 이상+영문+숫자+특수문자, `field_validator`로 구현) 추가, `repositories/sys_user_mst.py`에 `list_users`/`create_user` 추가, `backend/app/api/v1/users.py`(신규) — `GET /users`(목록), `POST /users`(등록, 비밀번호는 기존 `core/security.hash_password`로 해시 저장 후 평문 필드 제외), `GET /users/roles`(신규 — 등록 모달의 "역할" 드롭다운용, 기존 `SYS_ROLE_MST`에 목록 조회 API가 아예 없어 `repositories/sys_role_mst.py`도 함께 신규 작성), 권한 `settings_users.view/create`(설계서 접근 권한 "A(Admin 전용)"과 기존 Seed `PERM_JSON`이 이미 일치). **감사 로그(SCR-016)**: `repositories/sys_audit_log.py`에 `list_audit_logs`(신규 — `SYS_USER_MST`와 조인해 화면에 필요한 `USER_LGID` 함께 반환, 사용자 로그인ID/행위코드/대상테이블/기간 필터 지원) 추가, `schemas/sys_audit_log.py`에 `AuditLogListItemOut`/`AuditLogListResponse`(기존 `PaginatedResponse` 재사용) 추가, `backend/app/api/v1/audit_logs.py`(신규) — `GET /audit-logs`, 권한 `settings_audit_logs.view`(Admin 전용). 두 라우터 모두 `api/v1/router.py`에 등록. **범위를 의도적으로 축소한 부분**: 계정 수정(`PATCH /users/{id}`)·비활성화(`DELETE /users/{id}`)는 이번 범위에서 제외(등록·조회까지만 구현), 감사 로그 Excel 내보내기(`GET /audit-logs/export`)도 제외 — 둘 다 §9 리스크로 기록. 프론트엔드는 `UsersTable`/`AuditLogTable` 두 컴포넌트를 실 API로 재작성 — 사용자 목록은 역할·활성상태 필터를 실 `SYS_ROLE_MST` 데이터 기준으로 동적 생성(스킬/직무유형 화면과 동일한 원칙 적용), 감사 로그는 서버 측 필터(행위코드·사용자 검색)와 클라이언트 측 보강 검색을 함께 사용. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 사용자 등록(201, 응답에 비밀번호/해시 미노출 확인), 약한 비밀번호 422, 로그인 ID 중복 409, 감사 로그 목록 조회(56건 확인, 기존 세션에서 쌓인 실제 로그)·행위코드 필터 정상 동작 확인, `/settings` 페이지 200 렌더링 확인. 검증에 사용한 임시 사용자 계정은 SQL로 삭제. `backend/tests/test_users.py`·`test_audit_logs.py`(신규) 총 8개 케이스 추가(등록/약한 비밀번호 422/중복 409/VIEWER 403, 감사 로그 기본조회/필터/VIEWER 403 — pytest 55→63개 전부 통과). §4 Phase 4 "설정 화면 구현" 항목 완료로 갱신(진행률 88%→94%), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §9-1 체크리스트에서 "감사 로그 조회 API 없음" 항목 해소 처리, §8 큐에서 완료 항목 제거
 
 ---
 
@@ -646,8 +648,9 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
-- [ ] 2. Excel Import/Export UI 구현
+- [ ] 1. Excel Import/Export UI 구현
+
+> 참고: "설정 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 사용자 관리·감사 로그 조회만 구현했고, 계정 수정/비활성화·감사 로그 Excel 내보내기는 후속 작업으로 분리했다(§9 리스크 참조).
 
 > 참고: "리포트 화면 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다. 주간/월간 탭만 구현했고, "월별 가동률 통계" 매트릭스 탭·리포트 발송·Excel 내보내기는 후속 작업으로 분리했다(§9 리스크 참조).
 
@@ -714,7 +717,7 @@
 | Phase 3 완료 기준 중 Pytest 단위 테스트 미충족 | 중간 | 해소 | §4 Phase 3 "완료 기준" 4개 항목 중 "Pytest 단위 테스트 핵심 API 커버"가 미충족 상태였음 — `backend/tests/`에 16개 단위 테스트 작성으로 해소(2026-07-03). 실 DB에 연결하되 연결 단위 트랜잭션+SAVEPOINT로 격리해 테스트 후 자동 롤백되도록 구성, 실 서버 컨테이너에서 전부 통과 확인. Phase 3을 정식으로 "완료" 처리 | 2026-07-03 |
 | `NEXT_PUBLIC_API_BASE_URL`이 프론트엔드 Docker 빌드에 실제 반영되지 않던 버그 | 높음 | 해소 | 사용자가 admin 계정으로 pgcrypto bcrypt 해시를 직접 생성해 로그인을 시도했으나 실패한다고 보고 — 백엔드 `POST /api/v1/auth/login`을 직접 호출해 정상 동작함을 먼저 확인한 뒤, "프론트엔드 로그인 화면에서 시도했다"는 추가 정보를 받아 원인을 재조사. `NEXT_PUBLIC_API_BASE_URL`은 Next.js 빌드 시점(`next build`)에 클라이언트 번들로 인라인되어야 하는 값인데, `docker-compose.yml`의 `web` 서비스가 `env_file`(컨테이너 런타임 주입)만 사용하고 `build.args`가 없어 이미지 빌드 시점에는 이 값이 비어 있었음을 확인(`frontend/Dockerfile`도 `ARG` 선언이 없었음) — 빌드된 클라이언트 번들에 백엔드 URL이 전혀 포함되어 있지 않아, 로그인 요청이 상대 경로(`/api/v1/auth/login`)로 나가 Next.js 서버(3030) 자신에 부딪혀 실패하는 구조였다. `docker-compose.yml`의 `web.build`에 `args: {NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}}` 추가, `frontend/Dockerfile`의 builder 스테이지에 `ARG`/`ENV` 선언 추가로 해결. 이 버그는 Phase 1에서 `NEXT_PUBLIC_API_BASE_URL`을 "완료"로 표시한 시점부터 존재했으나 그동안 실제 API 호출이 없어(목데이터 기반) 드러나지 않았고, 로그인 JWT 연동 시점(§7 v4.9)에도 컴파일된 번들에서 `USER_LGID` 필드 존재만 확인했을 뿐 baseURL 인라인 여부까지는 검증하지 못해 놓친 것으로 확인됨 — 재빌드 후 번들에 `http://localhost:8000`이 정상 포함되고, `curl`로 브라우저와 동일한 `Origin` 헤더를 포함한 로그인 요청이 CORS·인증 모두 정상 통과함을 확인 | 2026-07-03 |
 | 사원 상세 화면의 정보수정·기술추가·퇴직처리 UI 미구현 | 중간 | 주의 | 사원 상세 화면(SCR-004)을 실 API로 연동하면서 조회(기본정보/보유기술/투입이력) 기능만 구현하고 편집 기능은 제외 — 기존 `EmployeeFormModal`이 mock `Employee` 타입에 강하게 결합되어 있어 실 API(`PATCH /employees/{empl_id}`, `POST/PATCH /employee-skills`, `DELETE /employees/{empl_id}`) 스키마로 재작성하려면 폼 전체 재설계가 필요해 "최소 단위" 원칙에 따라 후속 작업으로 분리. 백엔드 API 자체는 이미 존재하므로 프론트엔드 폼/모달 작업만 남음 | 2026-07-03 |
-| 사원 상세 화면 "변경 이력" 탭 미구현 — 감사 로그 조회 API 부재 | 낮음 | 주의 | 설계서(SCR-004)가 요구하는 `GET /api/v1/audit-logs?target_id={empl_id}` 감사 로그 조회 API가 백엔드에 아직 구현되어 있지 않아 사원 상세 화면에서 "변경 이력" 탭을 제외 — `SYS_AUDIT_LOG`에 데이터 자체는 이미 기록되고 있으므로(§7 참조), 조회 전용 API 1개만 추가하면 됨. 다른 화면(프로젝트 상세 등)에서도 동일 API가 필요할 수 있어 공통 작업으로 별도 백로그 항목화 검토 필요 | 2026-07-03 |
+| 사원 상세 화면 "변경 이력" 탭 미구현 — 감사 로그 조회 API 부재 | 낮음 | 주의 | 설정 화면(SCR-016) 구현 시 `GET /api/v1/audit-logs`(사용자 로그인ID/행위코드/대상테이블/기간 필터)를 신규 추가해 감사 로그 조회 API 자체는 확보됨(2026-07-04) — **부분 해소**. 다만 설계서(SCR-004)가 사원 상세 화면에서 요구하는 `target_id={empl_id}` 단건 대상 필터는 아직 미지원(`TGT_ID` 필터 파라미터 없음)이고, 사원 상세 화면의 "변경 이력" 탭 UI 자체도 아직 연동하지 않음 — `GET /audit-logs`에 `tgt_id` 필터 추가 + 사원 상세 화면에 탭 UI 연동 두 가지가 후속 작업으로 남음 | 2026-07-04 |
 | `HR_DEPT_MST`(부서 마스터) Seed 데이터 없음 | 중간 | 주의 | 사원 상세 화면 검증 중 실 DB에 `HR_DEPT_MST`가 0건(부서 코드 미시딩)임을 확인 — `HR_JIKGUP_MST`(직급, 10건)와 `HR_SKILL_MST`(기술, 1건, 비활성)는 일부 존재하나 부서는 전혀 없어 사원 등록·조회 화면에서 부서 필터/표시가 항상 빈 목록으로 나타남. 운영팀 확정 부서 목록 확보 후 Seed 스크립트(`backend/app/db/seed/`) 추가 필요 | 2026-07-03 |
 | `hrm-worker` 컨테이너가 재시작 루프 상태 | 중간 | 주의 | 사원 상세 화면 작업 중 `docker compose ps` 확인 과정에서 `hrm-worker` 컨테이너가 `Restarting (0)` 상태로 반복 재기동 중임을 발견 — 이번 작업과 무관한 기존 이슈로 원인 미조사(범위 밖). 백그라운드 배치/추천 작업이 필요한 Phase(§4 이후)에서 워커가 실제로 사용되기 전에 원인 확인 및 조치 필요 | 2026-07-03 |
 | `HR_SKILL_MST.SKILL_NM`에 유니크 제약 없음 — 중복 등록 시 오류 미발생 | 낮음 | 해소 | 기술 관리 화면(SCR-005) 실 API 연동 검증 중 동일 `SKILL_NM`으로 두 번 `POST /api/v1/skills`를 호출해도 둘 다 201로 성공함을 확인해 리스크로 기록했던 건 — `HR_SKILL_MST` 표준 Seed 작성 작업(2026-07-04)과 함께 Alembic 마이그레이션(`55106956dedf`)에서 `(SKILL_GRP_CD, SKILL_NM)` 복합 UNIQUE 제약(`uq_hr_skill_mst_grp_nm`)을 추가해 해소 — 동일 조합 재등록 시 API가 409를 정상 반환함을 재검증 완료(`backend/tests/test_skills.py` 회귀 테스트 추가). 기존 데이터에 중복이 없음을 확인한 뒤 제약을 적용해 마이그레이션 실패 없이 반영됨 | 2026-07-04 |
@@ -736,7 +739,7 @@
 - [ ] 사원 상세 화면 — 정보수정 버튼/폼 없음 (`PATCH /api/v1/employees/{empl_id}`는 이미 구현됨)
 - [ ] 사원 상세 화면 — 기술추가 버튼/폼 없음 (`POST/PATCH /api/v1/employee-skills`는 이미 구현됨)
 - [ ] 사원 상세 화면 — 퇴직처리 버튼 없음 (`DELETE /api/v1/employees/{empl_id}`는 이미 구현됨)
-- [ ] 사원 상세 화면 "변경 이력" 탭 — 감사 로그 조회 API 자체가 없어 탭 제외
+- [ ] 사원 상세 화면 "변경 이력" 탭 — `GET /api/v1/audit-logs` API는 확보됨(2026-07-04)이나 `tgt_id` 단건 필터 미지원 + 화면 탭 UI 미연동
 
 **프로젝트 (`/projects`, `/projects/[id]`)**
 - [ ] 프로젝트 상세 화면 — 수정 버튼/폼 없음 (`PATCH /api/v1/projects/{pjt_id}`는 이미 구현됨)
@@ -761,9 +764,15 @@
 - [ ] 리포트 수동 발송 미구현 (`TEAMS_WEBHOOK_URL` 연동 필요)
 - [ ] 가동률 통계 Excel 내보내기 미구현
 
+**설정 (`/settings`)**
+- [ ] 계정 수정 기능 없음 (`PATCH /api/v1/users/{user_id}` 미구현 — 역할 변경 등)
+- [ ] 계정 비활성화 기능 없음 (`DELETE /api/v1/users/{user_id}` 미구현 — `USE_YN=FALSE` 전환)
+- [ ] 감사 로그 Excel 내보내기 미구현 (`GET /api/v1/audit-logs/export`)
+- [ ] 감사 로그 `tgt_id`(대상 ID) 단건 필터 미지원 — 사원 상세 등 다른 화면에서 "이 항목의 변경 이력만" 조회하려면 필요
+- [ ] "일반 설정" 탭(조직 정보/가동률 정책) 여전히 목데이터 — 저장 버튼이 실제로 아무것도 하지 않음(이번 작업 범위는 사용자 관리·감사 로그 2개 탭만 포함)
+
 **인증/감사 로그 (전역)**
 - [ ] 로그아웃 시 서버 측 즉시 토큰 무효화 미구현 (stateless JWT — Redis 블랙리스트 등 후속 검토)
-- [ ] 감사 로그(`SYS_AUDIT_LOG`) 조회 API 없음 — 데이터는 쌓이나 열람 불가, `/settings/audit-logs` 화면도 미구현이라 이중으로 막혀 있음
 
 **기타 백엔드**
 - [ ] 부서(`HR_DEPT_MST`)/직급(`HR_JIKGUP_MST`) 등록·수정 API 없음(조회만 가능) — 전용 관리 화면 자체가 백로그에 없어 필요 시 신규 항목화 검토
@@ -886,7 +895,7 @@
 - [x] 리소스 추천 화면 구현 (`/recommendations`, `PJT_RCMD_RSLT`) — 목데이터를 백엔드 실 API로 전량 교체, `PJT_RSRC_REQ`/`PJT_RCMD_RSLT` API 신규 추가, 실 서버 검증 완료 (2026-07-04)
 - [x] AI Chat 화면 구현 (`/ai-chat`) — 1차 범위(사용자 확정): LLM 단순 호출/응답 + 자유 대화형 UI만 구현, 실 서버에서 DeepSeek API 실제 호출로 검증 완료 (2026-07-04). 자연어 조건 파싱·DB 조회 연동은 후속 작업으로 분리
 - [x] 리포트 화면 구현 (`/reports`) — 주간/월간 리포트 탭을 백엔드 실 API로 신규 구현, `GET /api/v1/reports/{weekly,monthly}` 신규 추가, 실 서버 검증 완료 (2026-07-04). "월별 가동률 통계" 매트릭스 탭·리포트 발송·Excel 내보내기는 후속 과제로 분리
-- [ ] 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`)
+- [x] 설정 화면 구현 (`/settings/users`, `/settings/audit-logs`) — 사용자 관리·감사 로그 조회를 백엔드 실 API로 전량 교체, `GET/POST /api/v1/users`, `GET /api/v1/users/roles`, `GET /api/v1/audit-logs` 신규 추가, 실 서버 검증 완료 (2026-07-04). 계정 수정/비활성화(`PATCH`/`DELETE /users`)·감사 로그 Excel 내보내기는 후속 과제로 분리
 - [ ] Excel Import/Export UI 구현
 
 ---
@@ -1015,4 +1024,5 @@
 | 2026-07-04 | v6.6 | §8 다음 작업 1번(리포트 화면 구현) 완료 처리 — 백엔드에 리포트 API가 전혀 없어 신규 구현: `backend/app/repositories/reports.py`의 `build_report`가 기존 대시보드 집계 함수(`get_summary`/`get_dept_utilization`/`get_data_quality`)를 재사용하고 "기술별 인력 분포 Top 10"만 신규 추가, `GET /api/v1/reports/{weekly,monthly}`(설계서상 두 탭이 기간 단위만 다른 동일 구조라 하나의 함수 공유, ISO 주차/YYYYMM 파싱, 권한 `reports.view`) 신규 추가. "월별 가동률 통계" 매트릭스 탭·리포트 발송·Excel 내보내기는 구조 복잡도가 높아 후속 작업으로 분리(§9 리스크 2건 추가). 프론트엔드는 기존 프로토타입의 탭 구성(가동률 매트릭스/인력 추이/기술 분포, 전부 목데이터)을 설계서 기준(주간/월간/월별 통계)으로 재구성, 요약 6개 스탯+부서별 가동률+기술 분포 차트를 실 데이터로 연동. `SkillBarChart` 컴포넌트를 다른 차트와 동일하게 `data` prop 기반으로 리팩터링. `backend/tests/test_reports.py` 신규 작성(6개 케이스, pytest 45→51개 전부 통과). 실 서버에서 신규 사원 등록 시 리포트에 즉시 반영됨을 확인, 잘못된 주차/월 형식 422, `/reports` 페이지 200 렌더링 확인. Phase 4 진행률 81%→88%로 갱신, §3/§4/§11 항목 완료 체크, §9-1 체크리스트에 리포트 후속 항목 3건 추가, §8 큐에서 완료 항목 제거 | — |
 | 2026-07-04 | v6.7 | 사용자 요청으로 `HR_SKILL_MST` 표준 Seed 재작성 — 기존 MVP 초안(6개 그룹, 55건, DB 미반영)을 사용자 확정 13개 그룹(LANGUAGE/BACKEND/FRONTEND/MOBILE/DB/DATA/INFRA/SECURITY/ARCHITECTURE/QA/CONSULTING/PMO/BUSINESS) 110건으로 전면 교체, Excel Import "주요기술" 컬럼 매핑을 고려한 표준 영문/일반 명칭 사용. Alembic 마이그레이션 `55106956dedf`(신규)로 `(SKILL_GRP_CD,SKILL_NM)` 복합 UNIQUE 제약 추가 + `INSERT ... ON CONFLICT DO NOTHING`으로 멱등 반영, 이 제약 추가로 기존 §9 리스크 "`SKILL_NM` 유니크 제약 없음"도 함께 해소. 실 서버에서 `alembic upgrade head`/`downgrade -1`/재`upgrade` 전부 실행해 110건 정상 반영·복원 확인(멱등성 검증), API 레벨 중복 등록 시 409 재확인. `backend/tests/test_skills.py` 신규 작성(4개 케이스, pytest 51→55개 전부 통과). §9 리스크 2건 해소, §11 데이터베이스 체크리스트 항목 완료 체크 | — |
 | 2026-07-04 | v6.8 | 사용자 질의("검색 필터가 DB에서 조회되는지, 하드코딩인지")로 전 화면 필터 데이터 소스 감사 — `HR_SKILL_MST` 표준 Seed 재작성(v6.7) 직후라 **기술 관리(`/skills`) 화면의 "기술 그룹" 필터가 `lib/options.ts`에 하드코딩된 옛 7개 그룹**을 그대로 사용 중이라 새 Seed의 13개 그룹 중 다수가 필터로 선택 불가능한 버그를 발견 — 즉시 수정: 하드코딩된 `skillGroupOptions`를 제거하고 화면에서 실제로 불러온 데이터의 `SKILL_GRP_CD` distinct 값으로 필터·등록 모달 그룹 목록을 동적 생성. 직무 유형(`/job-types`) 화면의 "그룹" 필터도 동일한 방식으로 실 데이터 기반으로 전환하되, 등록/수정 모달은 설계서(SCR-006)가 명시한 고정 3종(TECHNICAL/MANAGEMENT/ANALYSIS)을 그대로 유지(신규 등록 시 그룹명 난립 방지 목적, 필터와 별개 문제이므로 분리 유지). 감사 결과 나머지 화면(가동 가능 인력·리소스 추천의 조직/직무유형/기술 필터)은 이미 실 API 기반, 상태/유형 계열 필터는 DB CHECK 제약과 동일한 고정 열거값이라 하드코딩이 정상 설계임을 확인. 재빌드 후 `/skills`·`/job-types` 페이지 200 렌더링, pytest 55개 그대로 통과(백엔드 변경 없음) 확인. §9 리스크 1건 추가(해소 처리, 발견·수정 내용 기록) | — |
+| 2026-07-04 | v6.9 | §8 다음 작업 1번(설정 화면 구현) 완료 처리 — 기존 `/settings` 화면(사용자관리/감사로그 탭 UI는 이미 완성, 전부 목데이터)을 백엔드 실 API로 연동. 백엔드 API가 전혀 없어 신규 구현: `GET/POST /api/v1/users`(등록 시 비밀번호 정책 검증 + 해시 저장), `GET /api/v1/users/roles`(역할 드롭다운용, `SYS_ROLE_MST` 목록 API 자체가 없어 신규), `GET /api/v1/audit-logs`(`SYS_USER_MST` 조인, 사용자/행위/테이블/기간 필터). 계정 수정·비활성화, 감사 로그 Excel 내보내기, `tgt_id` 단건 필터는 후속 작업으로 분리(§9 리스크 3건 추가), 기존 리스크 "사원 상세 '변경 이력' 탭 미구현"도 "API는 확보, tgt_id 필터+화면 연동 남음"으로 부분 해소 갱신. `backend/tests/test_users.py`·`test_audit_logs.py` 신규 작성(8개 케이스, pytest 55→63개 전부 통과). 실 서버에서 사용자 등록/약한 비밀번호 422/중복 409, 감사 로그 조회/필터 전부 검증 완료. Phase 4 진행률 88%→94%로 갱신, §3/§4/§11/§9-1 항목 갱신, §8 큐에서 완료 항목 제거(Excel Import/Export UI만 남음) | — |
 

@@ -1,7 +1,30 @@
+import re
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+
+# 비밀번호 정책 (SCR-015 "유효성 검사" — 8자 이상, 영문·숫자·특수문자 포함)
+_PASSWORD_MIN_LENGTH = 8
+_PASSWORD_PATTERN = re.compile(r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$")
+
+
+class UserCreate(BaseModel):
+    """시스템 사용자 등록 요청 스키마 (`POST /api/v1/users`, SCR-015 "계정 등록/수정 모달")"""
+
+    USER_LGID: str
+    EMAIL_ADDR: str
+    password: str
+    ROLE_ID: uuid.UUID
+    EMPL_ID: uuid.UUID | None = None
+    USE_YN: bool = True
+
+    @field_validator("password")
+    @classmethod
+    def _validate_password(cls, value: str) -> str:
+        if len(value) < _PASSWORD_MIN_LENGTH or not _PASSWORD_PATTERN.match(value):
+            raise ValueError("8자 이상, 영문·숫자·특수문자를 포함해야 합니다.")
+        return value
 
 
 class SysUserOut(BaseModel):
