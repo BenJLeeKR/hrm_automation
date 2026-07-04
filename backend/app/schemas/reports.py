@@ -31,3 +31,40 @@ class ReportOut(BaseModel):
     job_missing_count: int
     dept_utilization: list[DeptUtilizationItem]
     skill_distribution: list[SkillDistributionItem]
+
+
+class UtilizationMatrixRow(BaseModel):
+    """월별 가동률 통계 — 사원 1명의 프로젝트 1건에 대한 월별 투입률 행."""
+
+    pjt_nm: str
+    asgn_type_cd: str
+    monthly: list[int]
+    avg: float
+
+
+class UtilizationMatrixEmployee(BaseModel):
+    """월별 가동률 통계 — 사원 1명의 프로젝트 행 목록 + 소계/연평균/100% 초과 월."""
+
+    empl_no: str
+    empl_nm: str
+    dept_nm: str
+    rows: list[UtilizationMatrixRow]
+    subtotal: list[int]
+    annual_avg: float
+    over_100_months: list[str]
+
+
+class UtilizationMatrixOrgAvg(BaseModel):
+    """조직 평균 가동률 3단계 (수행중만 / 수행중+투입준비중 / 전체)."""
+
+    running_only: list[float]
+    running_committed: list[float]
+    all: list[float]
+
+
+class UtilizationMatrixOut(BaseModel):
+    """월별 가동률 통계 매트릭스 응답 (`GET /api/v1/reports/utilization-matrix`, SCR-013 탭 3)."""
+
+    period: list[str]
+    employees: list[UtilizationMatrixEmployee]
+    org_avg: UtilizationMatrixOrgAvg

@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -5,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
 from app.db.session import get_db
-from app.repositories.reports import build_report
-from app.schemas.reports import ReportOut
+from app.repositories.reports import build_report, build_utilization_matrix
+from app.schemas.reports import ReportOut, UtilizationMatrixOut
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -49,6 +50,27 @@ def _parse_iso_week(week: str) -> date:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="week는 'YYYY-Www' 형식이어야 합니다 (예: 2026-W27)."
         ) from None
+
+
+@router.get(
+    "/utilization-matrix",
+    response_model=UtilizationMatrixOut,
+    dependencies=[Depends(require_permission("reports", "view"))],
+)
+def get_utilization_matrix(
+    from_: str = Query(..., alias="from", description="시작월 YYYYMM"),
+    to: str = Query(..., description="종료월 YYYYMM"),
+    dept_id: uuid.UUID | None = Query(None, description="부서 ID로 필터링 (HR_DEPT_MST.DEPT_ID)"),
+    db: Session = Depends(get_db),
+) -> UtilizationMatrixOut:
+    """월별 가동률 통계 매트릭스 (SCR-013 탭 3, `ResourceManagement_v2.xlsx` "가동률_통계"
+    시트 구조) — 인원×프로젝트별 월간 투입률·소계·연평균·조직 평균 3단계를 반환한다.
+    """
+    from_dt = _parse_yyyymm(from_)
+    to_dt = _parse_yyyymm(to)
+    if to_dt < from_dt:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="to는 from보다 앞설 수 없습니다.")
+    return UtilizationMatrixOut(**build_utilization_matrix(db, from_dt=from_dt, to_dt=to_dt, dept_id=dept_id))
 
 
 def _parse_yyyymm(month: str) -> date:

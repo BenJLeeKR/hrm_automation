@@ -9,6 +9,7 @@ import { Tabs } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { SkillBarChart } from '@/components/charts/skill-bar-chart'
 import { DeptUtilizationChart } from '@/components/charts/dept-utilization-chart'
+import { UtilizationMatrix } from '@/components/reports/utilization-matrix'
 import { apiGet, ApiError } from '@/lib/api'
 
 // 백엔드 리포트 API(로드맵 §8 "리포트 화면 구현", SCR-013 탭 1·2) 응답 타입 — 필드명은
@@ -54,7 +55,7 @@ function currentYyyyMm(): string {
 }
 
 export default function ReportsPage() {
-  const [tab, setTab] = useState<'WEEKLY' | 'MONTHLY' | 'MATRIX'>('WEEKLY')
+  const [tab, setTab] = useState<'MATRIX' | 'WEEKLY' | 'MONTHLY'>('MATRIX')
   const [week, setWeek] = useState(isoWeekOf(new Date()))
   const [month, setMonth] = useState(currentYyyyMm())
   const [report, setReport] = useState<ReportOut | null>(null)
@@ -87,17 +88,17 @@ export default function ReportsPage() {
           value={tab}
           onValueChange={(v) => setTab(v as typeof tab)}
           tabs={[
+            { value: 'MATRIX', label: '월별 가동률 통계' },
             { value: 'WEEKLY', label: '주간 리포트' },
             { value: 'MONTHLY', label: '월간 리포트' },
-            { value: 'MATRIX', label: '월별 가동률 통계' },
           ]}
         />
       </div>
 
       {tab === 'MATRIX' ? (
         <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            월별 가동률 통계 매트릭스는 준비 중입니다.
+          <CardContent className="pt-6">
+            <UtilizationMatrix />
           </CardContent>
         </Card>
       ) : (
