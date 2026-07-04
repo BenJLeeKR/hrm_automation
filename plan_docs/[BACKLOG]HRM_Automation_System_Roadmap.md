@@ -100,7 +100,7 @@
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 88% | 정상 |
-| Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 75% | 정상 |
+| Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 88% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
 | Phase 8 | 파일럿 운영 및 정식 전환 | 8주차 | 예정 | 0% | 정상 |
 
@@ -381,7 +381,7 @@
 | **목표** | LLM API 기반 자연어 인력 검색·추천 기능 구현 (SQL 조회 기반, 권한 필터 적용) |
 | **계획 기간** | 7주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 75% |
+| **진행률** | 88% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -392,7 +392,7 @@
 | 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 인식) | 완료 (`backend/app/services/ai_parser.py`(신규) — LLM이 아닌 규칙 기반(마스터 데이터 매칭+정규식)으로 직무 유형/기술명/부서명/가동일·기간/숙련도를 파싱, 결과는 `ParsedResourceQuery` 표준 스키마로 반환. SQL 조회는 이번 범위에서 수행하지 않음(사용자 확정, 아래 참고), 실 서버 pytest 검증 완료, 2026-07-04) |
 | 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 | 완료 (`backend/app/services/ai_resource_search.py`(신규) `search_resources`가 whitelist 기반(`intent="resource_search"`)으로만 기존 `list_availability` repository를 호출 — LLM은 SQL 생성에 관여하지 않음. `POST /api/v1/ai/chat`에 연결해 조건이 인식되면 LLM을 거치지 않고 결정적 요약을 반환하도록 갱신, 실 서버 pytest 검증 완료, 2026-07-04. 기술 조건은 `list_availability`의 단일 `skill_id` 제약상 1개까지만 조회에 반영되고 나머지는 `skipped_skills`로 안내 — 다중 기술 AND 조회는 후속 확장 대상) |
 | 권한 필터링 후 LLM 컨텍스트 전달 구현 | 완료 (`search_resources`가 반환하는 결과는 SCR-010 "가동 가능 인력" 데이터와 동일해, 응답 전 요청자 `PERM_JSON`의 `availability.view` 권한을 추가로 확인 — 없으면 조회를 실행하지 않고 안내 메시지만 반환. `app/api/deps.py`에 `has_permission` 유틸 신규 추가, 실 서버 검증 완료, 2026-07-04. 부서 단위 등 행(row) 단위 세부 범위 제한은 기존 `require_permission`과 동일한 한계로 이번 범위에서 다루지 않음) |
-| 환각 방지 시스템 프롬프트 적용 | 예정 (조건 파싱·SQL 조회 흐름과 함께 후속 작업) |
+| 환각 방지 시스템 프롬프트 적용 | 완료 (`app/services/ai_chat.py`의 `call_llm`이 매 호출 시 시스템 메시지로 환각 방지 프롬프트를 함께 전달 — DB 조회 없이 답하는 이 경로에서 실존을 확인할 수 없는 사원/프로젝트/투입률 등 구체적 HR 데이터를 지어내지 말고 시스템 조회 기능 사용을 안내하도록 지침. `resource_search` 경로는 LLM을 거치지 않아 이미 환각 위험이 없어 대상 아님. 실 서버 pytest 검증 완료, 2026-07-04) |
 | `POST /api/v1/ai/chat` 엔드포인트 구현 | 완료 (1차 범위 — LLM 단순 호출/응답만 구현, 조건 파싱·DB 조회는 제외, 권한 `ai_chat.view`(전 역할), 실 서버 검증 완료, 2026-07-04) |
 | AI Chat 화면 구현 (`/ai-chat`) | 완료 (기존 프로토타입의 SQL·결과 테이블 표시용 목데이터 제거, 자유 대화형 UI를 실 API로 연동, 실 서버 검증 완료, 2026-07-04) |
 | 테스트 질의 10개 이상 검증 (직무 유형 포함) | 예정 (조건 파싱·SQL 조회 흐름 구현 후 함께 진행 — 현재는 LLM 단순 호출만 있어 "직무 유형 인식" 등 검증 대상 자체가 아직 없음) |
@@ -505,7 +505,7 @@
 | 프로젝트 종료 예정자 조회 | 이번 달/30일 이내 종료 예정자 | 예정 | 높음 | `reports.py`, `PJT_ASGN_HIS` | |
 | 팀별 가동률 조회 | 부서별 평균 `TOT_ALLOC_RT` | 예정 | 중간 | `dashboard.py`, `HR_AVAIL_SNAP` | |
 | 리소스 추천 | `PJT_RCMD_RSLT` 점수 기반 후보 추천 | 완료 (`POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 — 2026-07-04) | 중간 | `recommendations.py`, `pjt_rcmd_rslt.py` | 6개 항목 가중 점수(직무15%+기술35%+숙련도25%+가동일15%+유사경험7%+역할적합도3%) — 항목별 세부 산정 공식은 설계서에 없어 MVP 해석 적용, §9 참조 |
-| AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 진행 중 (LLM 단순 호출/응답(`ai_chat.py`) + 규칙 기반 조건 파싱(`ai_parser.py`) + whitelist 기반 SQL 조회·결과 요약(`ai_resource_search.py`) + 권한 필터링(`availability.view` 확인) 완료 — `POST /api/v1/ai/chat`이 조건 인식 시 LLM 없이 결정적 요약으로 응답하되 권한 없으면 안내 메시지로 대체. 환각 방지 프롬프트는 후속 작업, 2026-07-04) | 중간 | `ai_chat.py`, `ai_parser.py`, `ai_resource_search.py`, `POST /api/v1/ai/chat` | Phase 6 |
+| AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 진행 중 (LLM 단순 호출/응답(`ai_chat.py`, 환각 방지 시스템 프롬프트 포함) + 규칙 기반 조건 파싱(`ai_parser.py`) + whitelist 기반 SQL 조회·결과 요약(`ai_resource_search.py`) + 권한 필터링(`availability.view` 확인) 전부 완료 — 남은 항목은 "테스트 질의 10개 이상 검증"뿐, 2026-07-04) | 중간 | `ai_chat.py`, `ai_parser.py`, `ai_resource_search.py`, `POST /api/v1/ai/chat` | Phase 6 |
 | 주간 리포트 | `PJT_WEEKLY_RPT` 자동 발송 | 예정 | 중간 | `report_service.py`, Teams Webhook | 매주 월요일 09:00 |
 | 감사 로그 | `SYS_AUDIT_LOG` 변경 이력 기록 | 완료 (로그인 및 5개 라우터의 등록/수정 행위 기록 구현, 실 서버 검증 완료 — 2026-07-03. Import 등 미구현 기능 관련 로그, 조회 API는 별도) | 높음 | `sys_audit_log.py`, `app/core/audit.py` | 로그인·CRUD·Import 포함 |
 | 사용자 인증/권한 | JWT + RBAC (`SYS_USER_MST`, `SYS_ROLE_MST`) | 완료 (JWT 로그인/토큰갱신/로그아웃 및 RBAC 전 라우터(`employees`/`skills`/`employee-skills`/`projects`/`assignments`/`codes`) 적용 완료 — 2026-07-03) | 높음 | `auth.py`, `security.py`, `deps.py` | 6개 역할 |
@@ -652,6 +652,7 @@
 - **인력·투입 목데이터 조정 (사용자 요청)** — `backend/app/db/mock/load_mock_data.py`의 `EMPLOYEES`/`PROJECTS`/`ASSIGNMENTS` 정의를 조정. **1) 조직 구성**: "영업" 소속이던 5명 중 3명(21·22·23번, PM 역할)을 "세일즈파트너"로 이동해 "영업"에 2명(24·25번)만 남김 — 부서 자체는 삭제하지 않고 소속 인원만 재배치. **2) 잔류 2명 가동률 0%**: 24·25번의 기존 투입 이력(각각 50%/100%)을 전부 제거해 투입 이력이 아예 없는 상태(`list_availability` 기준 `TOT_ALLOC_RT=0`, `AVAIL_STAT_CD=AVAILABLE`)로 조정. **3) 연간 프로젝트 로테이션**: 2·9·18번 사원을 2025-01-01~12-31 A프로젝트(`PJT-2025-001`, 신한은행 코어뱅킹, `ASGN_STAT_CD=DONE`으로 종료 처리) → 2026-01-01~12-31 각기 다른 프로젝트(`ASGN_STAT_CD=ACTIVE`)로 재배치(A프로젝트 `STRT_DT`를 2025-01-01로 함께 조정해 투입 시작일과 정합). **4) 100% 초과 배정**: 11·12·13·14번 사원에 각 3~5개월(11번 3개월/12번 4개월/13번 5개월/14번 3개월) 겹치는 2건의 투입을 추가해 합계 120%가 되도록 조정 — `POST /assignments`는 100% 초과를 거부하므로 이 조합은 스크립트에서 ORM으로 직접 생성(레거시 데이터 정합성 위반 재현 목적, 기존 패턴과 동일). 조정 과정에서 원래 20·29번 사원의 기존 투입 이력을 실수로 함께 삭제했던 것을 재검토 중 발견해 즉시 복원. **실 서버 컨테이너에서 `remove_mock_data`→`load_mock_data` 재실행 후 실제 조회로 검증**: `HR_DEPT_MST` 부서별 인원수(영업 2/세일즈파트너 8/딜리버리 20) 확인, 24·25번 `GET /availability` 응답이 `TOT_ALLOC_RT=0`·`AVAILABLE`임을 확인, `GET /reports/utilization-matrix`로 11·12·13·14번이 지정한 개월 수만큼 정확히 120%·`over_100_months`에 표시됨을 확인, 2·9·18번이 2025년 A프로젝트→2026년 각기 다른 프로젝트로 월별 전환됨을 확인. 백엔드 코드 변경 없이 데이터만 조정한 작업이라 pytest 88개 그대로 통과(회귀 없음)
 - **월별 가동률 통계 표 — 사원 정보 셀 병합 (사용자 요청)** — `components/reports/utilization-matrix.tsx`의 표를 "사원"/"프로젝트" 2개 컬럼으로 분리하고, "사원"(사번·성명·조직) 정보는 사원별 그룹의 첫 행에만 `rowSpan`으로 병합 표시하도록 변경(그동안은 프로젝트 행마다 사번·성명·조직·프로젝트명이 한 셀에 전부 반복 표시되고 있었음). 사용자가 제시한 표 형식(사원 열은 1회만, 이하 프로젝트 행은 빈칸)에 맞춰 반영. 좌측 고정(sticky) 컬럼은 "사원" 1개만 유지 — "프로젝트" 컬럼까지 sticky로 두면 실제 렌더링 너비에 따라 겹침이 발생할 수 있어 제외. 재빌드 후 `/reports` 페이지 200 렌더링 확인, 백엔드 변경 없어 pytest 88개 그대로 통과
 - **권한 필터링 후 LLM 컨텍스트 전달 구현 (§8 다음 작업 1번)** — `search_resources`(직전 작업에서 구현)가 반환하는 데이터가 실질적으로 SCR-010 "가동 가능 인력" 화면 데이터와 동일함에 착안해, `POST /api/v1/ai/chat`이 `intent="resource_search"` 응답을 반환하기 전 요청자의 `SYS_ROLE_MST.PERM_JSON`에 `availability.view` 권한이 있는지 추가로 확인하도록 수정 — 권한이 없으면 `search_resources`를 아예 실행하지 않고 "가동 인력 상세 조회 권한이 없습니다..." 안내 메시지만 반환한다. `app/api/deps.py`에 `has_permission(db, current_user, screen, action) -> bool` 유틸을 신규 추가해 기존 `require_permission`(403 예외 발생형 의존성)과 동일한 `PERM_JSON` 조회 로직을 공유하도록 리팩터링(로직 중복 없음, 기존 `require_permission` 동작은 변경 없음 — `has_permission`을 내부에서 호출하도록만 바꿈). `backend/app/api/v1/ai_chat.py`의 `post_ai_chat`이 `require_permission("ai_chat","view")`을 파라미터 의존성으로 받아 `current_user`를 확보하도록 변경(기존에는 데코레이터 `dependencies=[]`로만 선언되어 반환값을 버리고 있었음 — 중복 호출 방지를 위해 데코레이터 쪽은 제거). **범위를 의도적으로 축소한 부분**: 설계서/사용자 요청이 언급한 "부서 범위"까지의 행(row) 단위 세부 제한(예: "본인 부서 인력만 조회 가능")은 이 프로젝트의 권한 모델(`require_permission`)이 애초에 화면×버튼 단위만 표현하고 행 단위 스코프는 다루지 않는다고 이미 문서화되어 있어(`app/api/deps.py` 기존 주석) 이번 범위에서도 동일하게 제외 — 화면(screen) 단위 권한(요청자가 SCR-010 화면 자체에 접근 가능한지)까지만 확인한다. `backend/tests/test_ai_chat.py`에 VIEWER가 resource_search 질의 시 차단되고(LLM도 호출되지 않음) 안내 메시지를 받는지 검증하는 케이스 1개 추가 — 기존 admin 대상 케이스(`test_chat_resource_search_intent_bypasses_llm`)가 수정 없이 그대로 통과함으로써 권한 있는 역할의 정상 동작도 함께 재확인됨. **실 서버 컨테이너에서 실제 pytest 실행으로 검증**(VIEWER/ADMIN 두 역할 모두 실제 JWT 토큰 발급 후 HTTP 요청): pytest 88개 전부 통과(신규 1건 포함). Phase 6 진행률 63%→75%로 갱신(8개 항목 중 6개 완료), §3/§4/§9/§9-1/§11 항목 갱신(§9 리스크 "AI Chat resource_search 조회 결과에 권한 필터링 미적용" 해소 처리), §8 큐를 "환각 방지 시스템 프롬프트 적용"으로 재구성
+- **환각 방지 시스템 프롬프트 적용 (§8 다음 작업 1번)** — `app/services/ai_chat.py`의 `call_llm`(DB 조회 없이 응답하는 `intent="unknown"` 자유 대화 경로 전용, `resource_search`는 이 함수를 아예 호출하지 않아 대상 아님)이 매 호출마다 시스템 메시지로 환각 방지 프롬프트(`_ANTI_HALLUCINATION_SYSTEM_PROMPT`)를 함께 전달하도록 수정 — 실존 여부를 확인할 수 없는 사원명·사번·프로젝트명·투입률·가동일·조직 배치 등 구체적인 HR 데이터를 지어내지 말고, 특정 인력 검색·추천·가동 현황 질의에는 답을 지어내는 대신 시스템의 조건 기반 조회 기능(직무 유형·기술·가동 가능일 포함)을 이용하도록 안내하라는 지침, 확실하지 않은 내용은 모른다고 밝히도록 명시. OpenAI 호환 `chat/completions` API의 `messages` 배열에 `{"role":"system", ...}`을 `{"role":"user", ...}` 앞에 추가하는 방식으로 구현(DeepSeek 포함 대부분의 LLM 공급자가 지원하는 표준 방식). `backend/tests/test_ai_chat_service.py`(신규) — `httpx.post`를 모킹해 실제 네트워크 호출 없이 요청 페이로드에 시스템 메시지가 포함되고 그 내용에 금지 지침이 담겨 있는지 검증(1개 케이스). **실 서버 컨테이너에서 실제 pytest 실행으로 검증**: pytest 88→90개 전부 통과. Phase 6 진행률 75%→88%로 갱신(8개 항목 중 7개 완료 — 남은 항목은 "테스트 질의 10개 이상 검증" 하나뿐), §3/§4/§9-1/§11 항목 갱신, §8 큐를 "테스트 질의 10개 이상 검증"으로 재구성(완료되면 Phase 6가 100%가 됨)
 
 ---
 
@@ -660,9 +661,11 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 환각 방지 시스템 프롬프트 적용 (Phase 6, `call_llm`이 `intent="unknown"`일 때 호출하는 LLM 자유 응답 경로에 시스템 프롬프트로 허위 인력/프로젝트 정보 생성 방지·불확실성 고지 지침 추가)
+- [ ] 1. 테스트 질의 10개 이상 검증 (Phase 6, 직무 유형 인식 포함 — `parse_query`/`search_resources`/`call_llm` 환각 방지 프롬프트까지 연결된 전체 흐름을 자연어 질의 10개 이상으로 검증. `ai_parser.py`에 이미 12개 파싱 단위 테스트가 있으나, 이번 항목은 설계서가 요구하는 "엔드투엔드 질의 검증"으로 `POST /api/v1/ai/chat` 전체 경로 기준 재확인 필요)
 
-> 참고: "권한 필터링 후 LLM 컨텍스트 전달 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `POST /api/v1/ai/chat`이 `resource_search` 응답 직전 요청자 `PERM_JSON`의 `availability.view` 권한을 확인하도록 수정(`app/api/deps.py`의 `has_permission` 신규 유틸), 없으면 조회를 실행하지 않고 안내 메시지만 반환. VIEWER로 차단 재현·검증 완료. Phase 6 진행률이 63%→75%로 상승했다. 다음 순서는 "환각 방지 시스템 프롬프트 적용"이며, `resource_search` 경로(LLM 미경유, 결정적 요약)는 이미 환각 위험이 없으므로 이 작업은 `intent="unknown"`일 때의 LLM 자유 응답 경로(`call_llm`)에만 해당한다. 부서 단위 등 행(row) 단위 권한 세부 범위 제한은 여전히 미구현 상태로 남아있다(§9 참조, 필요 시 별도 항목화 검토).
+> 참고: "환각 방지 시스템 프롬프트 적용"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `app/services/ai_chat.py`의 `call_llm`이 매 호출 시 시스템 메시지로 환각 방지 지침을 함께 전달하도록 수정(DB 조회 없이 답하는 `intent="unknown"` 경로 대상, `resource_search`는 LLM 미경유라 해당 없음). Phase 6 진행률이 75%→88%로 상승했다(8개 항목 중 7개 완료). 다음 순서는 "테스트 질의 10개 이상 검증"이며, Phase 6의 마지막 남은 항목이다 — 이 항목까지 완료되면 Phase 6가 100%가 된다.
+
+> 참고: "권한 필터링 후 LLM 컨텍스트 전달 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `POST /api/v1/ai/chat`이 `resource_search` 응답 직전 요청자 `PERM_JSON`의 `availability.view` 권한을 확인하도록 수정(`app/api/deps.py`의 `has_permission` 신규 유틸), 없으면 조회를 실행하지 않고 안내 메시지만 반환. VIEWER로 차단 재현·검증 완료. Phase 6 진행률이 63%→75%로 상승했다. 부서 단위 등 행(row) 단위 권한 세부 범위 제한은 여전히 미구현 상태로 남아있다(§9 참조, 필요 시 별도 항목화 검토).
 
 > 참고: "자연어 조건 파싱 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — 사용자가 "AI Chat 1차 구현 범위에서 SQL 조회·권한 필터링·환각 방지까지 한 번에 포함하지 말자는 것이었을 뿐 영구 제외는 아니다"라고 명확히 하며 착수를 승인, `backend/app/services/ai_parser.py`(신규)로 규칙 기반 파싱만 구현하고 SQL 조회는 이번 범위에서 수행하지 않았다. Phase 6 진행률이 38%→50%로 상승했다. 다음 순서는 사용자가 이미 순차 진행을 확정한 "파싱 결과 → SQL 조회 → 결과 요약 흐름 구현"이며, 착수 시에도 LLM이 임의 SQL을 생성하지 않도록 whitelist 기반 intent(`resource_search`)와 기존 repository/query builder만 사용해야 한다(사용자 지침).
 
@@ -777,7 +780,7 @@
 - [x] 자연어 조건 파싱 — `backend/app/services/ai_parser.py` 신규 구현 완료(2026-07-04)
 - [x] 파싱 결과 → SQL 조회 → 결과 요약 흐름 — `backend/app/services/ai_resource_search.py`(신규) `search_resources`가 whitelist 기반으로 기존 `list_availability` repository를 호출, `POST /api/v1/ai/chat`이 조건 인식 시 LLM 없이 결정적 요약을 응답(2026-07-04). 기술 조건은 1개까지만 조회에 반영(단일 `skill_id` 제약, 나머지는 `skipped_skills`로 안내) — 다중 기술 AND 조회는 후속 확장 대상
 - [x] 권한 필터링 후 LLM 컨텍스트 전달 — `availability.view` 권한 확인 후에만 조회 실행하도록 수정 완료(2026-07-04). 화면(screen) 단위 권한만 확인하며, 부서 단위 등 행(row) 단위 세부 범위 제한은 미구현
-- [ ] 환각 방지 시스템 프롬프트 미적용 — 단 resource_search 경로는 LLM을 거치지 않는 결정적 요약이라 이 경로 자체의 환각 위험은 없음
+- [x] 환각 방지 시스템 프롬프트 적용 완료(2026-07-04) — `call_llm`(intent="unknown" 자유 응답 경로)이 매 호출 시 시스템 메시지로 지침 전달. resource_search 경로는 LLM 미경유라 애초에 해당 없음
 
 **리포트 (`/reports`)**
 - [x] "월별 가동률 통계" 매트릭스 탭 — `GET /api/v1/reports/utilization-matrix`(신규) + `components/reports/utilization-matrix.tsx` 실 데이터 연동 완료(2026-07-04). 인원별 다중 프로젝트 행/월별 컬럼/소계/3단계 조직 평균/100% 초과 강조 전부 구현. 리포트 수동 발송·가동률 통계 Excel 내보내기는 여전히 미구현(아래 항목)
@@ -941,7 +944,7 @@
 - [x] 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 키워드 인식 포함) — `backend/app/services/ai_parser.py`(신규) 규칙 기반 파싱, `ParsedResourceQuery` 표준 스키마 반환, 직무 유형·기술명·부서명·가동일/기간·숙련도 인식 + 미해석 조건(`unresolved_terms`) 기록, `backend/tests/test_ai_parser.py` 12개 케이스 검증 완료 (2026-07-04)
 - [x] 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 — `backend/app/services/ai_resource_search.py`(신규) `search_resources`, whitelist(`intent="resource_search"`) 기반으로 기존 `list_availability` repository만 호출(free-form SQL 없음), `backend/tests/test_ai_resource_search.py` 4개 케이스 검증 완료 (2026-07-04)
 - [x] 권한 필터링 후 LLM 컨텍스트 전달 구현 — `POST /api/v1/ai/chat`이 `resource_search` 응답 전 `availability.view` 권한을 확인, `backend/tests/test_ai_chat.py`에 VIEWER 차단 케이스 추가 검증 완료 (2026-07-04). 행(row) 단위(부서 범위 등) 세부 제한은 미구현으로 남음
-- [ ] 환각 방지 시스템 프롬프트 적용
+- [x] 환각 방지 시스템 프롬프트 적용 — `call_llm`이 매 호출 시 환각 방지 시스템 메시지를 함께 전달, `backend/tests/test_ai_chat_service.py` 신규 검증 완료 (2026-07-04). `resource_search`(LLM 미경유) 경로는 대상 아님
 - [x] `POST /api/v1/ai/chat` 엔드포인트 구현 — LLM 단순 호출/응답 + resource_search intent 시 whitelist 조회 기반 결정적 요약 응답, 권한 `ai_chat.view`(전 역할 허용), 실 서버 검증 완료 (2026-07-04)
 - [ ] 테스트 질의 10개 이상 검증 (직무 유형 포함 질의 반드시 포함) — 조건 파싱·SQL 조회 흐름 구현 후 진행
 
@@ -1059,4 +1062,5 @@
 | 2026-07-04 | v7.9 | 사용자 요청으로 인력·투입 목데이터 조정 — `backend/app/db/mock/load_mock_data.py` 데이터 정의 수정: "영업" 조직 인원을 5명→2명으로 축소(3명은 "세일즈파트너"로 이동), 잔류 2명은 투입 이력을 전부 제거해 가동률 0%로 조정, 2·9·18번 사원을 "2025년 A프로젝트 → 2026년 각기 다른 프로젝트" 연간 로테이션으로 재구성, 11·12·13·14번 사원에 3~5개월 겹치는 투입을 추가해 120% 초과 상태로 조정. `remove_mock_data`→`load_mock_data` 재실행으로 실 DB 반영, `GET /availability`·`GET /reports/utilization-matrix` 조회로 조정 결과 실측 검증. 백엔드/프론트엔드 코드 변경 없음(데이터 정의만 수정), pytest 88개 그대로 통과 | — |
 | 2026-07-04 | v8.0 | 사용자 요청으로 월별 가동률 통계 표의 "사원" 정보를 사원 그룹당 1회만 표시하도록 개선 — `components/reports/utilization-matrix.tsx`를 "사원"/"프로젝트" 2컬럼으로 분리하고 사원 정보 셀을 `rowSpan`으로 병합. 백엔드 변경 없음, pytest 88개 그대로 통과 | — |
 | 2026-07-04 | v8.1 | §8 다음 작업 1번(권한 필터링 후 LLM 컨텍스트 전달 구현, Phase 6) 완료 처리 — `POST /api/v1/ai/chat`이 `resource_search` 응답 전 요청자 `PERM_JSON`의 `availability.view` 권한을 확인하도록 수정, 권한 없으면 조회 미실행+안내 메시지 반환. `app/api/deps.py`에 `has_permission` 유틸 신규 추가(`require_permission`과 로직 공유, 기존 동작 변경 없음). 부서 등 행 단위 세부 범위 제한은 기존 권한 모델의 한계로 이번 범위에서도 제외(화면 단위까지만). `backend/tests/test_ai_chat.py`에 VIEWER 차단 케이스 추가, pytest 88개 전부 통과. Phase 6 진행률 63%→75%로 갱신(8개 중 6개 완료), §3/§4/§9/§9-1/§11 항목 갱신(§9 리스크 해소), §8 큐를 "환각 방지 시스템 프롬프트 적용"으로 재구성 | — |
+| 2026-07-04 | v8.2 | §8 다음 작업 1번(환각 방지 시스템 프롬프트 적용, Phase 6) 완료 처리 — `app/services/ai_chat.py`의 `call_llm`이 매 호출 시 시스템 메시지로 환각 방지 프롬프트를 함께 전달(DB 미조회 상태에서 구체적 HR 데이터를 지어내지 말고 시스템 조회 기능 사용을 안내하도록 지침). `backend/tests/test_ai_chat_service.py` 신규 작성(1개 케이스, `httpx.post` 모킹), pytest 88→90개 전부 통과. Phase 6 진행률 75%→88%로 갱신(8개 중 7개 완료), §3/§4/§9-1/§11 항목 갱신, §8 큐를 "테스트 질의 10개 이상 검증"으로 재구성(완료 시 Phase 6 100%) | — |
 
