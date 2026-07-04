@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 
 from pydantic import BaseModel, Field
@@ -31,3 +32,25 @@ class ParsedResourceQuery(BaseModel):
     department: str | None = None
     confidence: float
     unresolved_terms: list[str] = Field(default_factory=list)
+
+
+class ResourceSearchItem(BaseModel):
+    """리소스 검색 결과 1건 — `GET /api/v1/availability`(`list_availability`) 계산 결과에
+    사원 이름/사번을 조인한 요약용 스키마."""
+
+    EMPL_ID: uuid.UUID
+    EMPL_NO: str
+    EMPL_NM: str
+    AVAIL_STAT_CD: str
+    AVAIL_RT: int
+    AVAIL_STRT_DT: date | None
+
+
+class ResourceSearchResult(BaseModel):
+    """`ParsedResourceQuery`(`intent="resource_search"`)를 whitelist 기반으로 실행한
+    검색 결과 — `backend/app/services/ai_resource_search.py`의 `search_resources`가 반환한다."""
+
+    total: int
+    items: list[ResourceSearchItem]
+    summary: str
+    skipped_skills: list[str] = Field(default_factory=list)

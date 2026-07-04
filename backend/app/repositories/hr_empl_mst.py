@@ -48,6 +48,13 @@ def get_employee(db: Session, empl_id: uuid.UUID) -> HrEmplMst | None:
     return db.get(HrEmplMst, empl_id)
 
 
+def list_employees_by_ids(db: Session, empl_ids: list[uuid.UUID]) -> list[HrEmplMst]:
+    """ID 목록으로 사원을 일괄 조회 (AI Chat 리소스 검색 결과 요약용 — `EMPL_NO`/`EMPL_NM` 조인)."""
+    if not empl_ids:
+        return []
+    return list(db.scalars(select(HrEmplMst).where(HrEmplMst.EMPL_ID.in_(empl_ids))))
+
+
 def create_employee(db: Session, data: dict) -> HrEmplMst:
     """사원 등록. `EMPL_NO`/`EMAIL_ADDR` UNIQUE 위반, `DEPT_ID`/`JIKGUP_ID`/`JIKMU_ID` FK 위반은
     호출부(API 라우터)에서 `sqlalchemy.exc.IntegrityError`를 잡아 처리한다."""

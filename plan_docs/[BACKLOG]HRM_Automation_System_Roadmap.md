@@ -100,7 +100,7 @@
 | Phase 3 | FastAPI 백엔드 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 진행 중 | 88% | 정상 |
-| Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 50% | 정상 |
+| Phase 6 | AI 질의응답 연동 | 7주차 | 진행 중 | 63% | 정상 |
 | Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 예정 | 0% | 정상 |
 | Phase 8 | 파일럿 운영 및 정식 전환 | 8주차 | 예정 | 0% | 정상 |
 
@@ -381,7 +381,7 @@
 | **목표** | LLM API 기반 자연어 인력 검색·추천 기능 구현 (SQL 조회 기반, 권한 필터 적용) |
 | **계획 기간** | 7주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 50% |
+| **진행률** | 63% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -390,7 +390,7 @@
 |---|---|
 | LLM 연동 인터페이스 추상화 (멀티 LLM 전환 가능 구조) | 완료 (`backend/app/services/ai_chat.py`의 `call_llm` — `LLM_PROVIDER` 설정값으로 공급자 분기, 현재 DeepSeek만 지원. `backend/app/core/config.py`에 `LLM_PROVIDER`/`DEEPSEEK_*` 필드 신규 추가, 실 서버에서 DeepSeek API 실제 인증 호출 검증 완료, 2026-07-04) |
 | 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 인식) | 완료 (`backend/app/services/ai_parser.py`(신규) — LLM이 아닌 규칙 기반(마스터 데이터 매칭+정규식)으로 직무 유형/기술명/부서명/가동일·기간/숙련도를 파싱, 결과는 `ParsedResourceQuery` 표준 스키마로 반환. SQL 조회는 이번 범위에서 수행하지 않음(사용자 확정, 아래 참고), 실 서버 pytest 검증 완료, 2026-07-04) |
-| 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 | 예정 (사용자 확정: 자연어 조건 파싱 완료 후 순차 진행하는 별도 후속 작업 — whitelist 기반 intent와 기존 repository/query builder로만 구현, free-form SQL 생성·실행 금지) |
+| 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 | 완료 (`backend/app/services/ai_resource_search.py`(신규) `search_resources`가 whitelist 기반(`intent="resource_search"`)으로만 기존 `list_availability` repository를 호출 — LLM은 SQL 생성에 관여하지 않음. `POST /api/v1/ai/chat`에 연결해 조건이 인식되면 LLM을 거치지 않고 결정적 요약을 반환하도록 갱신, 실 서버 pytest 검증 완료, 2026-07-04. 기술 조건은 `list_availability`의 단일 `skill_id` 제약상 1개까지만 조회에 반영되고 나머지는 `skipped_skills`로 안내 — 다중 기술 AND 조회는 후속 확장 대상) |
 | 권한 필터링 후 LLM 컨텍스트 전달 구현 | 예정 (조건 파싱·SQL 조회 흐름과 함께 후속 작업) |
 | 환각 방지 시스템 프롬프트 적용 | 예정 (조건 파싱·SQL 조회 흐름과 함께 후속 작업) |
 | `POST /api/v1/ai/chat` 엔드포인트 구현 | 완료 (1차 범위 — LLM 단순 호출/응답만 구현, 조건 파싱·DB 조회는 제외, 권한 `ai_chat.view`(전 역할), 실 서버 검증 완료, 2026-07-04) |
@@ -505,7 +505,7 @@
 | 프로젝트 종료 예정자 조회 | 이번 달/30일 이내 종료 예정자 | 예정 | 높음 | `reports.py`, `PJT_ASGN_HIS` | |
 | 팀별 가동률 조회 | 부서별 평균 `TOT_ALLOC_RT` | 예정 | 중간 | `dashboard.py`, `HR_AVAIL_SNAP` | |
 | 리소스 추천 | `PJT_RCMD_RSLT` 점수 기반 후보 추천 | 완료 (`POST /api/v1/resource-requests`, `POST /api/v1/recommendations/score`, `GET /api/v1/recommendations/{req_id}` 구현, 실 서버 검증 완료 — 2026-07-04) | 중간 | `recommendations.py`, `pjt_rcmd_rslt.py` | 6개 항목 가중 점수(직무15%+기술35%+숙련도25%+가동일15%+유사경험7%+역할적합도3%) — 항목별 세부 산정 공식은 설계서에 없어 MVP 해석 적용, §9 참조 |
-| AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 진행 중 (LLM 단순 호출/응답(`POST /api/v1/ai/chat`, `app/services/ai_chat.py`) + 규칙 기반 자연어 조건 파싱(`app/services/ai_parser.py`) 완료. 파싱 결과를 실제 SQL 조회에 연결하는 흐름·결과 요약은 후속 작업, 2026-07-04) | 중간 | `ai_chat.py`, `ai_parser.py`, `POST /api/v1/ai/chat` | Phase 6 |
+| AI 질의응답 | 자연어 → 조건 파싱 → SQL 조회 → 요약 | 진행 중 (LLM 단순 호출/응답(`ai_chat.py`) + 규칙 기반 조건 파싱(`ai_parser.py`) + whitelist 기반 SQL 조회·결과 요약(`ai_resource_search.py`) 완료 — `POST /api/v1/ai/chat`이 조건 인식 시 LLM 없이 결정적 요약으로 응답. 권한 필터링·환각 방지 프롬프트는 후속 작업, 2026-07-04) | 중간 | `ai_chat.py`, `ai_parser.py`, `ai_resource_search.py`, `POST /api/v1/ai/chat` | Phase 6 |
 | 주간 리포트 | `PJT_WEEKLY_RPT` 자동 발송 | 예정 | 중간 | `report_service.py`, Teams Webhook | 매주 월요일 09:00 |
 | 감사 로그 | `SYS_AUDIT_LOG` 변경 이력 기록 | 완료 (로그인 및 5개 라우터의 등록/수정 행위 기록 구현, 실 서버 검증 완료 — 2026-07-03. Import 등 미구현 기능 관련 로그, 조회 API는 별도) | 높음 | `sys_audit_log.py`, `app/core/audit.py` | 로그인·CRUD·Import 포함 |
 | 사용자 인증/권한 | JWT + RBAC (`SYS_USER_MST`, `SYS_ROLE_MST`) | 완료 (JWT 로그인/토큰갱신/로그아웃 및 RBAC 전 라우터(`employees`/`skills`/`employee-skills`/`projects`/`assignments`/`codes`) 적용 완료 — 2026-07-03) | 높음 | `auth.py`, `security.py`, `deps.py` | 6개 역할 |
@@ -643,6 +643,7 @@
 - **Excel Import/Export UI 구현 — §8 큐 마지막 항목, 기존 백엔드 API 프론트엔드 연동 (§8 다음 작업 1번)** — 사원 목록 화면(SCR-003)에 Import/Export UI가 전혀 없었으나, 백엔드 `GET/POST /api/v1/employees/{export,import}`는 이전 세션에서 이미 구현·미검증 상태로 존재해 신규 프론트엔드 연동 작업으로 진행. `frontend/lib/api.ts`에 `apiUploadFile`(FormData 업로드)·`apiDownloadFile`(Blob 다운로드+`Content-Disposition` 파일명 파싱+브라우저 저장 트리거) 신규 추가, `ApiError`에 구조화된 검증 오류(`{total_rows, error_count, errors}`)를 담기 위한 선택적 `detail` 필드 추가. `frontend/components/employees/employee-import-dialog.tsx`(신규) — 파일 선택 후 업로드, 성공 시 신규/수정 건수 표시, 422 검증 실패 시 행별 오류(행/컬럼/값/사유) 테이블로 표시. `employees/page.tsx` 헤더에 "Excel 가져오기"/"Excel 내보내기" 버튼 추가(다른 화면들과 동일하게 클라이언트 측 권한 버튼 게이팅은 하지 않음 — 기존 전 화면 공통 패턴, 백엔드 `require_permission("employees","excel")`이 실제 차단 담당). **작업 중 실제 라우팅 버그 발견 및 수정**: `GET /export`가 `GET /{empl_id}`(UUID 경로 파라미터) 라우트보다 뒤에 등록되어 있어, FastAPI가 등록 순서대로 매칭하는 특성상 "export" 문자열이 UUID로 파싱 시도되어 실제로는 항상 422를 반환하고 있었음(한 번도 정상 동작한 적 없는 기존 버그) — `backend/app/api/v1/employees.py`에서 `/export`·`/import` 라우트 정의를 `/{empl_id}` 라우트보다 앞으로 이동해 수정. **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 수정 전 재현(422 확인) → 수정 후 정상 동작 확인(Export가 지정된 헤더 순서의 xlsx 반환, 잘못된 값이 포함된 파일 Import 시 행 번호가 정확한 422 오류 목록 반환), `/employees` 페이지 200 렌더링 확인. `backend/tests/test_employees_excel.py`(신규, 라우팅 버그 회귀 방지 목적 명시) 2개 케이스 추가(pytest 63→65개 전부 통과). **알려진 한계**: 사원 목록 화면 자체는 여전히 목데이터 기반이라(§9-1 기존 항목과 동일 사안) Import 성공 후에도 화면 목록이 실시간으로 갱신되지는 않음 — 새로 만들지 않고 기존 항목을 그대로 참조. §4 Phase 4 "Excel Import/Export UI 구현" 항목 완료로 갱신(진행률 94%→100%, Phase 4 전체 완료), §3 전체 로드맵 표 동일 갱신, §11 항목 완료 체크, §8 큐가 이번 항목 제거로 전부 소진(빈 큐)
 - **직무 유형·기술·숙련도 복합 필터 검색 API 구현 (§8 다음 작업 1번)** — Phase 4 완료로 재구성된 Phase 5 잔여 항목. 기존 `GET /api/v1/availability`(SCR-010 "가동 가능 인력")는 `jikmu_id`/`dept_id` 필터만 지원하고 기술·숙련도 필터가 없어, `backend/app/repositories/hr_avail_snap.py`의 `list_availability`에 `skill_id`/`min_prfcy_levl` 파라미터를 추가 — 대상 사원 필터링 단계에서 `HR_EMPL_SKILL_REL`(`SKILL_ID` 일치 + `PRFCY_LEVL >= min_prfcy_levl`)을 만족하는 사원만 포함하도록 서브쿼리로 구현(기존 N+1 방지용 일괄 계산 구조는 그대로 유지). `backend/app/api/v1/availability.py`에 동일 쿼리 파라미터 추가(`min_prfcy_levl`은 1~5 범위 검증, `skill_id` 없이 단독 지정 시 무시하도록 리포지토리 주석에 명시). 프론트엔드 `/availability` 화면은 기존에 이미 클라이언트 측 검색어로 보유 기술명을 필터링하고 있어 이번 범위에서는 화면 변경 없이 백엔드 API만 구현(최소 단위 원칙). **실 서버 컨테이너에서 실제 HTTP 호출로 검증**: 임시 사원 2명 중 1명에게만 기술을 등록한 뒤 `skill_id`+`min_prfcy_levl=3` 조회 시 해당 사원만 포함되고, `min_prfcy_levl=5`(실제 등록값 4 미만 요구)로 올리면 제외됨을 확인. `backend/tests/test_availability.py`에 케이스 1개 추가(pytest 65→66개 전부 통과). Phase 5 진행률 75%→88%로 갱신(8개 항목 중 7개 완료, 잔여 1개는 Phase 7 배치 선행 필요), §3/§4/§11 항목 갱신, §8 큐를 다음 순서인 Phase 6(AI 질의응답 연동, 38%)의 "자연어 조건 파싱 구현"으로 재구성 — 단 이 항목은 사용자가 이전에 "AI Chat 화면 구현과 분리해 별도 후속 작업으로 진행"하기로 확정한 사안이라 착수 전 범위 재확인 권장
 - **자연어 조건 파싱 구현 (§8 다음 작업 1번, 사용자 승인)** — 사용자가 "AI Chat 1차 구현 범위에서 SQL 조회·권한 필터링·환각 방지까지 한 번에 포함하지 말자는 것이었을 뿐 영구 제외는 아니다"라고 명확히 하며 착수를 승인, 이번 작업 범위를 자연어 조건 파싱으로만 제한하도록 명시적으로 지시받아 그대로 진행. `backend/app/services/ai_parser.py`(신규) — LLM을 사용하지 않고 규칙 기반(마스터 데이터 매칭 + 정규식)으로만 파싱해 "LLM이 임의 SQL을 생성하지 않는다"는 원칙을 준수: `parse_query(db, message)`가 기존 repository(`codes.py`의 `list_job_types`/`list_departments`, `hr_skill_mst.py`의 `list_skills`)로 마스터 데이터를 조회해 직무 유형(`JIKMU_CD`/`JIKMU_NM`, 부기 코드 제거 매칭)·기술명(전체명 우선 매칭 후 토큰 단위 부분 매칭, 예: "Spring"→"Spring Boot")·부서명(`DEPT_NM` 부분 일치)을 매칭하고, 정규식으로 가동일/기간(오늘·즉시/이번 달/다음 달/다음 주/특정 월/특정 날짜 "YYYY-MM-DD"·"MM월DD일")과 최소 숙련도("숙련도 N 이상")를 추출. 표준으로 만들지 못한 조건(가동률 임계값 표현, "시니어" 등 연차/직급 뉘앙스, 매칭 실패한 영문 약어)은 버리지 않고 `unresolved_terms`에 원문 그대로 기록. `backend/app/schemas/ai_chat.py`에 `ParsedResourceQuery`(사용자 지정 JSON 형태와 동일한 필드: `intent`/`job_type`/`skills`/`min_proficiency_level`/`available_from`/`department`/`confidence`/`unresolved_terms`) 신규 추가. **SQL 조회는 이번 범위에서 수행하지 않음** — 마스터 데이터 조회(직무 유형/기술/부서 목록)만 기존 repository를 재사용했을 뿐, 리소스 검색 자체는 다음 작업으로 분리했고, `POST /api/v1/ai/chat`·`/ai-chat` 화면도 아직 이 파서를 호출하지 않는다(§11 AI Chat 체크리스트에 명시). 권한 필터링·환각 방지 프롬프트도 이번 범위에서 적용하지 않되, `ai_parser.py`를 `ai_chat.py`(LLM 호출)와 독립된 모듈로 분리해 다음 작업에서 파싱 결과를 SQL 조회에 넘기는 지점에 권한 필터링 레이어를 끼워 넣을 수 있도록 모듈 경계를 나눠뒀다(파일 상단 주석에 명시). `backend/tests/test_ai_parser.py`(신규) — 사용자가 제시한 10개 예시 질의(다음 달 Java 아키텍트, 8월 Spring 개발자, 개발1팀 Python, 이번 달 종료 예정자, 가동률 50% 이하 PM, K-ICS BA, PostgreSQL 백엔드 개발자, 즉시 투입 시니어 개발자, 다음 주 React 개발자, 보험 프로젝트 아키텍트) 전부와 숙련도 조건·완전 무관 질의(unknown intent) 2건을 추가해 총 12개 케이스 작성, 전부 통과. **실 서버 컨테이너에서 실제 pytest 실행으로 검증**(별도 DB 스키마 변경 없음, 기존 Alembic Seed의 `HR_JIKMU_MST`/`HR_SKILL_MST` 데이터를 그대로 활용): pytest 66→78개 전부 통과. Phase 6 진행률 38%→50%로 갱신(8개 항목 중 4개 완료), §3/§4/§9-1/§11 항목 갱신, §8 큐를 사용자가 이미 순차 진행을 확정한 "파싱 결과 → SQL 조회 → 결과 요약 흐름 구현"으로 재구성(착수 시 whitelist 기반 intent + 기존 repository/query builder만 사용, free-form SQL 생성·실행 금지 — 사용자 지침 유지)
+- **파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 (§8 다음 작업 1번)** — `backend/app/services/ai_resource_search.py`(신규) `search_resources(db, parsed)` — whitelist 원칙(사용자 지침) 그대로 준수: `ParsedResourceQuery.intent == "resource_search"`인 경우에만 §8 이전 작업에서 이미 구현한 `hr_avail_snap.list_availability`(직무 유형·부서·기술·숙련도 복합 필터)를 그대로 재사용해 조회하고, LLM은 이 조회 과정에 전혀 관여하지 않는다(SQL 신규 작성 없음). 직무 유형명/부서명/기술명을 각각 `JIKMU_ID`/`DEPT_ID`/`SKILL_ID`로 변환하는 조회는 기존 `codes.py`/`hr_skill_mst.py` repository를 그대로 사용. `available_from`이 파싱되면 `AVAIL_STAT_CD='AVAILABLE'`이거나 `AVAIL_STRT_DT`가 그 날짜 이전인 사원만 남기는 후처리 필터를 추가. **알려진 제약**: `list_availability`는 `skill_id` 하나만 받으므로 기술이 여러 개 파싱되면 첫 번째만 조회에 반영하고 나머지는 `skipped_skills`로 반환 — 응답 요약 문구에 "이 조건은 반영되지 않았다"고 안내(다중 기술 AND 조회는 후속 확장 대상, §9-1에 기록하지 않고 코드 주석으로만 명시할 만큼 경미한 제약으로 판단). `backend/app/repositories/hr_empl_mst.py`에 `list_employees_by_ids`(신규, ID 목록으로 사원 일괄 조회) 추가해 검색 결과에 사번/성명을 조인. `backend/app/schemas/ai_chat.py`에 `ResourceSearchItem`/`ResourceSearchResult` 스키마 신규 추가. `backend/app/api/v1/ai_chat.py`의 `POST /api/v1/ai/chat`을 갱신 — 메시지를 먼저 `parse_query`로 파싱해 `intent=="resource_search"`면 `search_resources` 결과 요약을 그대로 응답(LLM 미호출, 환각 위험 없음), 그 외(`intent=="unknown"`)는 기존 LLM 단순 호출 경로를 그대로 유지(회귀 없음 — 기존 `test_chat_returns_llm_reply` 등 5개 테스트가 수정 없이 그대로 통과함으로 확인). **권한 필터링·환각 방지 프롬프트는 이번 범위에서 구현하지 않음** — `search_resources`는 요청자 권한과 무관하게 전체 재직 사원을 대상으로 조회해, VIEWER 등 제한된 권한도 AI Chat을 통해 조직 전체 인력 정보를 열람할 수 있는 상태 그대로다(신규 리스크로 §9에 기록, 다음 §8 작업으로 연결). `backend/tests/test_ai_resource_search.py`(신규, 4개 케이스 — 직무 유형 매칭/무매칭 시 빈 요약/가동일 필터/다중 기술 skip)와 `test_ai_chat.py`에 1개 케이스(조건 인식 시 `call_llm` 미호출 검증) 추가. **실 서버 컨테이너에서 실제 pytest 실행으로 검증**(DB 스키마 변경 없음): pytest 78→83개 전부 통과. Phase 6 진행률 50%→63%로 갱신(8개 항목 중 5개 완료), §3/§4/§9/§9-1/§11 항목 갱신, §8 큐를 "권한 필터링 후 LLM 컨텍스트 전달 구현"으로 재구성
 
 ---
 
@@ -651,7 +652,9 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 (Phase 6, `ai_parser.py` 결과를 실제 리소스 검색에 연결 — whitelist 기반 intent + 기존 repository/query builder로만 구현, free-form SQL 생성·실행 금지)
+- [ ] 1. 권한 필터링 후 LLM 컨텍스트 전달 구현 (Phase 6, `search_resources` 조회 결과를 요청자의 `PERM_JSON`/부서·역할 권한 범위로 제한한 뒤 LLM/응답에 전달)
+
+> 참고: "파싱 결과 → SQL 조회 → 결과 요약 흐름 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `backend/app/services/ai_resource_search.py`(신규) `search_resources`가 whitelist(`intent="resource_search"`) 기반으로 기존 `list_availability` repository만 호출(free-form SQL 없음), `POST /api/v1/ai/chat`이 조건 인식 시 LLM 없이 결정적 요약을 응답하도록 연결했다. Phase 6 진행률이 50%→63%로 상승했다. 다음 순서는 "권한 필터링 후 LLM 컨텍스트 전달 구현"이다 — 현재 `search_resources`는 요청자 권한과 무관하게 전체 재직 사원을 대상으로 조회하므로, VIEWER 등 제한된 권한의 사용자가 조회 범위 밖 인력 정보를 열람할 수 있는 상태다(§9 리스크 참조).
 
 > 참고: "자연어 조건 파싱 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — 사용자가 "AI Chat 1차 구현 범위에서 SQL 조회·권한 필터링·환각 방지까지 한 번에 포함하지 말자는 것이었을 뿐 영구 제외는 아니다"라고 명확히 하며 착수를 승인, `backend/app/services/ai_parser.py`(신규)로 규칙 기반 파싱만 구현하고 SQL 조회는 이번 범위에서 수행하지 않았다. Phase 6 진행률이 38%→50%로 상승했다. 다음 순서는 사용자가 이미 순차 진행을 확정한 "파싱 결과 → SQL 조회 → 결과 요약 흐름 구현"이며, 착수 시에도 LLM이 임의 SQL을 생성하지 않도록 whitelist 기반 intent(`resource_search`)와 기존 repository/query builder만 사용해야 한다(사용자 지침).
 
@@ -699,6 +702,7 @@
 
 | 이슈 | 영향도 | 상태 | 대응 방안 | 처리일자 |
 |---|---|---|---|---|
+| AI Chat `resource_search` 조회 결과에 권한 필터링 미적용 | 중간 | 주의 | `POST /api/v1/ai/chat`은 `require_permission("ai_chat", "view")`(전 역할 허용)만 확인하고, `search_resources`가 내부적으로 호출하는 `list_availability`는 요청자의 부서·역할 범위와 무관하게 전체 재직 사원을 대상으로 조회한다 — VIEWER 등 제한된 권한의 사용자도 AI Chat을 통해 조직 전체 인력의 가동률·가동 가능일을 열람할 수 있다. §8 다음 작업 "권한 필터링 후 LLM 컨텍스트 전달 구현"에서 요청자 `PERM_JSON`/부서 범위 기준으로 조회 결과를 제한할 예정 | 2026-07-04 |
 | `GET /api/v1/employees/export`가 `GET /{empl_id}` 라우트에 가로채여 항상 422 반환 | 높음 | 해소 | Excel Import/Export UI 프론트엔드 연동 작업 중 curl 검증으로 발견 — FastAPI는 라우트를 등록 순서대로 매칭하는데 `/{empl_id}`(UUID 경로)가 `/export`보다 먼저 등록되어 "export" 문자열이 UUID 파싱에 실패해 422를 반환하고 있었음(한 번도 정상 동작한 적 없던 기존 버그). `backend/app/api/v1/employees.py`에서 `/export`·`/import` 라우트를 `/{empl_id}` 라우트보다 앞으로 이동해 수정, `backend/tests/test_employees_excel.py` 회귀 방지 테스트 추가 | 2026-07-04 |
 | 직원 기술 스택 표준화 기준 미정 | 높음 | 해소 | 사용자 확정 기준으로 `HR_SKILL_MST` 표준 Seed 110건(LANGUAGE/BACKEND/FRONTEND/MOBILE/DB/DATA/INFRA/SECURITY/ARCHITECTURE/QA/CONSULTING/PMO/BUSINESS(금융) 13개 그룹) 작성 및 Alembic 마이그레이션(`55106956dedf`)으로 실 DB 반영 완료 — `backend/app/db/seed/hr_skill_mst_seed.py` 참조. 기존 MVP 초안(6개 그룹, DB 미반영)을 대체. 기술명은 Excel Import "주요기술" 컬럼과 매핑되는 표준 영문/일반 명칭으로 작성 | 2026-07-04 |
 | 가동 가능일 계산 기준 미정 | 높음 | 주의 | MVP 산정 기준 확정 완료 — 기준일은 `HR_AVAIL_SNAP.SNAP_DT`(배치 실행일), 투입률 합계는 `ASGN_STAT_CD='ACTIVE' AND ASGN_STRT_DT<=기준일 AND (ASGN_END_DT IS NULL OR ASGN_END_DT>=기준일) AND ASGN_TYPE_CD IN ('RUNNING','COMMITTED')` 조건의 `PJT_ASGN_HIS`만 집계(`PROPOSED`는 기본 산정에서 제외, 대시보드/리포트 "전체(+제안중)" 지표로만 별도 표시). 0%=`AVAILABLE`(기준일), 1~99%=`PARTIAL`(기준일), ≥100%=`FULL`(`MAX(ASGN_END_DT)+1일`, 단 종료일 NULL 존재 시 `AVAIL_STRT_DT=NULL`+데이터 품질 경고). 100% 초과는 원칙적으로 저장 차단하되 기존 Excel 이관 데이터는 품질 점검 경고 대상으로 예외 처리. 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` 참조. 운영팀 최종 확정 전까지 MVP 표기 유지 | 2026-07-03 |
@@ -762,10 +766,10 @@
 - [ ] 기술·숙련도 필터 미구현 (`GET /api/v1/availability`는 직무 유형·부서 필터만 지원)
 
 **AI Chat (`/ai-chat`)**
-- [x] 자연어 조건 파싱 — `backend/app/services/ai_parser.py` 신규 구현 완료(2026-07-04). 단 `/ai-chat` 화면·`POST /api/v1/ai/chat`은 아직 이 파서를 호출하지 않고 LLM에 원문을 그대로 전달 — 화면 연동은 "파싱 결과 → SQL 조회 → 결과 요약 흐름 구현"과 함께 진행 예정
-- [ ] 파싱 결과 → SQL 조회 → 결과 요약 흐름 전체 미구현 — 현재는 DB 조회 없이 LLM 응답만 반환
-- [ ] 권한 필터링 후 LLM 컨텍스트 전달 미구현
-- [ ] 환각 방지 시스템 프롬프트 미적용
+- [x] 자연어 조건 파싱 — `backend/app/services/ai_parser.py` 신규 구현 완료(2026-07-04)
+- [x] 파싱 결과 → SQL 조회 → 결과 요약 흐름 — `backend/app/services/ai_resource_search.py`(신규) `search_resources`가 whitelist 기반으로 기존 `list_availability` repository를 호출, `POST /api/v1/ai/chat`이 조건 인식 시 LLM 없이 결정적 요약을 응답(2026-07-04). 기술 조건은 1개까지만 조회에 반영(단일 `skill_id` 제약, 나머지는 `skipped_skills`로 안내) — 다중 기술 AND 조회는 후속 확장 대상
+- [ ] 권한 필터링 후 LLM 컨텍스트 전달 미구현 — 현재 조회 결과는 요청자 권한과 무관하게 전체 재직 사원 대상으로 반환됨
+- [ ] 환각 방지 시스템 프롬프트 미적용 — 단 resource_search 경로는 LLM을 거치지 않는 결정적 요약이라 이 경로 자체의 환각 위험은 없음
 
 **리포트 (`/reports`)**
 - [ ] "월별 가동률 통계" 매트릭스 탭 미구현 — 인원별 다중 프로젝트 행/12개월 컬럼/소계/3단계 조직 평균/100% 초과 강조, 현재는 "준비 중" 안내만 표시
@@ -926,10 +930,10 @@
 
 - [x] LLM 호출 레이어 추상화 (OpenAI/Anthropic/사내 LLM 전환 가능 구조) — `backend/app/services/ai_chat.py`의 `call_llm`, `LLM_PROVIDER` 설정값 기준 분기(현재 DeepSeek만 지원), 실 서버에서 DeepSeek API 실제 인증 호출 검증 완료 (2026-07-04)
 - [x] 자연어 조건 파싱 구현 (`JIKMU_CD`, `SKILL_NM`, 가동일 키워드 인식 포함) — `backend/app/services/ai_parser.py`(신규) 규칙 기반 파싱, `ParsedResourceQuery` 표준 스키마 반환, 직무 유형·기술명·부서명·가동일/기간·숙련도 인식 + 미해석 조건(`unresolved_terms`) 기록, `backend/tests/test_ai_parser.py` 12개 케이스 검증 완료 (2026-07-04)
-- [ ] 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 — 파싱 결과를 실제 `/ai-chat` 대화 흐름·리소스 검색 API에 연결하는 작업, 사용자 확정에 따라 후속 작업으로 분리
+- [x] 파싱 결과 → SQL 조회 → 결과 요약 흐름 구현 — `backend/app/services/ai_resource_search.py`(신규) `search_resources`, whitelist(`intent="resource_search"`) 기반으로 기존 `list_availability` repository만 호출(free-form SQL 없음), `backend/tests/test_ai_resource_search.py` 4개 케이스 검증 완료 (2026-07-04)
 - [ ] 권한 필터링 후 LLM 컨텍스트 전달 구현
 - [ ] 환각 방지 시스템 프롬프트 적용
-- [x] `POST /api/v1/ai/chat` 엔드포인트 구현 — 1차 범위(LLM 단순 호출/응답만, 조건 파싱·DB 조회 제외), 권한 `ai_chat.view`(전 역할 허용), 실 서버 검증 완료 (2026-07-04)
+- [x] `POST /api/v1/ai/chat` 엔드포인트 구현 — LLM 단순 호출/응답 + resource_search intent 시 whitelist 조회 기반 결정적 요약 응답, 권한 `ai_chat.view`(전 역할 허용), 실 서버 검증 완료 (2026-07-04)
 - [ ] 테스트 질의 10개 이상 검증 (직무 유형 포함 질의 반드시 포함) — 조건 파싱·SQL 조회 흐름 구현 후 진행
 
 ---
@@ -1037,4 +1041,5 @@
 | 2026-07-04 | v7.0 | §8 다음 작업 1번(Excel Import/Export UI 구현) 완료 처리 — §8 큐 마지막 항목. 사원 목록 화면(`/employees`)에 "Excel 가져오기/내보내기" 버튼 신규 추가, 기존 백엔드 `GET/POST /api/v1/employees/{export,import}` API에 연동(`frontend/lib/api.ts`에 `apiUploadFile`/`apiDownloadFile` 헬퍼 및 `ApiError.detail` 필드 신규 추가, `components/employees/employee-import-dialog.tsx` 신규). **검증 중 실제 라우팅 버그 발견**: `GET /export`가 `GET /{empl_id}`(UUID 경로) 라우트보다 뒤에 등록되어 있어 "export"가 UUID 파싱 실패로 항상 422를 반환하던, 한 번도 정상 동작한 적 없던 기존 버그 — 라우트 등록 순서를 수정해 해결, `backend/tests/test_employees_excel.py` 신규 작성(회귀 방지 2개 케이스, pytest 63→65개 전부 통과). 사원 목록 화면 자체는 여전히 목데이터 기반이라 Import 성공 후 화면 목록은 갱신되지 않음(기존 §9-1 리스크와 동일 사안, 신규 아님). Phase 4 진행률 94%→100%로 갱신(Phase 4 전체 완료), §3/§4/§9/§11 항목 갱신, §8 큐가 이번 항목 제거로 완전히 소진(빈 큐) — 다음 라운드는 Phase 5(75%) 잔여 항목 또는 §9-1 후속 보완 체크리스트 중에서 우선순위 재확정 필요 | — |
 | 2026-07-04 | v7.1 | §8 다음 작업 1번(직무 유형·기술·숙련도 복합 필터 검색 API 구현) 완료 처리 — `GET /api/v1/availability`에 `skill_id`/`min_prfcy_levl` 쿼리 파라미터 신규 추가, `list_availability` 리포지토리 함수가 `HR_EMPL_SKILL_REL` 조건을 서브쿼리로 결합해 기존 직무 유형·부서 필터와 복합 적용(N+1 방지 구조는 그대로 유지). 프론트엔드 화면은 이미 클라이언트 측 기술명 검색을 지원해 이번 범위에서는 변경하지 않음(최소 단위 원칙). `backend/tests/test_availability.py`에 필터 케이스 1개 추가(pytest 65→66개 전부 통과), 실 서버 HTTP 호출로 기술·숙련도 조건 필터링 정상 동작 확인. Phase 5 진행률 75%→88%로 갱신(8개 중 7개 완료), §3/§4/§11 항목 갱신, §8 큐를 Phase 6 "자연어 조건 파싱 구현"으로 재구성(사용자 이전 확정에 따라 착수 전 범위 재확인 권장) | — |
 | 2026-07-04 | v7.2 | 사용자 승인으로 §8 다음 작업 1번(자연어 조건 파싱 구현, Phase 6) 완료 처리 — 범위를 파싱으로만 제한(사용자 지시). `backend/app/services/ai_parser.py`(신규) — LLM 미사용, 마스터 데이터 매칭(직무 유형/기술/부서, 기존 repository 재사용)+정규식(가동일·기간, 숙련도)만으로 규칙 기반 파싱, `backend/app/schemas/ai_chat.py`에 `ParsedResourceQuery` 표준 스키마 추가. SQL 조회·권한 필터링·환각 방지는 이번 범위에서 구현하지 않되 모듈 경계는 분리해둠. `backend/tests/test_ai_parser.py`(신규, 12개 케이스 — 사용자 제시 10개 예시 전부 포함) 작성, pytest 66→78개 전부 통과. Phase 6 진행률 38%→50%로 갱신, §3/§4/§9-1/§11 항목 갱신, §8 큐를 사용자가 순차 진행을 확정한 "파싱 결과 → SQL 조회 → 결과 요약 흐름 구현"으로 재구성(whitelist 기반 intent + 기존 repository/query builder만 사용, free-form SQL 생성·실행 금지) | — |
+| 2026-07-04 | v7.3 | §8 다음 작업 1번(파싱 결과 → SQL 조회 → 결과 요약 흐름 구현, Phase 6) 완료 처리 — `backend/app/services/ai_resource_search.py`(신규) `search_resources`가 whitelist(`intent="resource_search"`) 기반으로 기존 `list_availability` repository만 재사용해 조회(LLM 미관여, free-form SQL 없음), `backend/app/repositories/hr_empl_mst.py`에 `list_employees_by_ids` 추가. `POST /api/v1/ai/chat`을 갱신해 조건 인식 시 LLM 없이 결정적 요약 응답, 그 외는 기존 LLM 경로 유지(회귀 없음). 다중 기술은 1개까지만 조회 반영(`skipped_skills`로 안내), 권한 필터링·환각 방지는 미구현으로 남겨 §9 리스크 신규 추가(AI Chat 조회 결과 권한 필터링 미적용, 영향도 중간). `backend/tests/test_ai_resource_search.py`(4개), `test_ai_chat.py`(1개 추가) 작성, pytest 78→83개 전부 통과. Phase 6 진행률 50%→63%로 갱신(8개 중 5개 완료), §3/§4/§9/§9-1/§11 항목 갱신, §8 큐를 "권한 필터링 후 LLM 컨텍스트 전달 구현"으로 재구성 | — |
 

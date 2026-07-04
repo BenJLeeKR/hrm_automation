@@ -48,3 +48,18 @@ def test_viewer_can_use_ai_chat(client, viewer_token, monkeypatch):
     resp = client.post("/api/v1/ai/chat", headers=headers, json={"message": "안녕"})
 
     assert resp.status_code == 200
+
+
+def test_chat_resource_search_intent_bypasses_llm(client, admin_token, monkeypatch):
+    """직무 유형 등 조건이 인식되면(resource_search) LLM을 호출하지 않고 결정적 요약을 반환해야 한다."""
+
+    def _fail_if_called(message):
+        raise AssertionError("resource_search intent에서는 call_llm이 호출되면 안 된다")
+
+    monkeypatch.setattr(ai_chat_module, "call_llm", _fail_if_called)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    resp = client.post("/api/v1/ai/chat", headers=headers, json={"message": "즉시 투입 가능한 PM 찾아줘"})
+
+    assert resp.status_code == 200
+    assert "찾" in resp.json()["reply"]
