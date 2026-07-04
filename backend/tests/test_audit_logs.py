@@ -31,3 +31,33 @@ def test_viewer_cannot_view_audit_logs(client, viewer_token):
     resp = client.get("/api/v1/audit-logs", headers=headers)
 
     assert resp.status_code == 403
+
+
+def test_list_audit_logs_filters_by_tgt_id(client, admin_token, dept, jikgup):
+    """사원 상세 화면(SCR-004) "변경 이력" 탭이 특정 사원 1명의 이력만 조회할 수 있어야
+    한다(§9-1) — 사원 등록(CREATE) 자체가 감사 로그를 남기므로 그 사원의 TGT_ID로
+    필터링하면 다른 사원의 로그와 섞이지 않고 해당 건만 반환되는지 확인한다."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=headers,
+        json={
+            "EMPL_NO": "PYTESTAUDIT01",
+            "EMPL_NM": "감사로그테스트",
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    assert create_resp.status_code == 201
+    empl_id = create_resp.json()["EMPL_ID"]
+
+    resp = client.get(
+        "/api/v1/audit-logs",
+        headers=headers,
+        params={"tgt_tbl_nm": "HR_EMPL_MST", "tgt_id": empl_id},
+    )
+
+    assert resp.status_code == 200
+    items = resp.json()["items"]
+    assert len(items) >= 1
+    assert all(item["TGT_ID"] == empl_id for item in items)

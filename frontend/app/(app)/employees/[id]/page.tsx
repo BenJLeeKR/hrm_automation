@@ -109,7 +109,27 @@ const TABS = [
   { value: 'info', label: '기본 정보' },
   { value: 'skills', label: '보유 기술' },
   { value: 'assignments', label: '투입 이력' },
+  { value: 'history', label: '변경 이력' },
 ]
+
+// 감사 로그 API(`GET /api/v1/audit-logs`) 응답 타입 — `backend/app/schemas/sys_audit_log.py`와
+// 동일하게 유지한다. `settings_audit_logs.view`(Admin 전용) 권한이 없으면 403을 반환하므로
+// 탭 클릭 시점에만 조회하고, 실패 시 화면 전체 에러가 아니라 탭 내부에 권한 안내만 표시한다.
+interface AuditLogItem {
+  AUDIT_ID: string
+  USER_LGID: string
+  ACT_CD: string
+  REG_DTTM: string
+}
+interface AuditLogListResponse {
+  items: AuditLogItem[]
+  total: number
+}
+const AUDIT_ACTION_LABEL: Record<string, string> = {
+  CREATE: '생성',
+  UPDATE: '수정',
+  DELETE: '삭제(퇴직처리)',
+}
 
 async function loadEmployeeDetail(id: string): Promise<EmployeeDetailData> {
   const [employee, departments, positions, jobTypes, skills, employeeSkills, projects, assignments] =
@@ -173,6 +193,32 @@ export default function EmployeeDetailPage({
   const [openRetireConfirm, setOpenRetireConfirm] = useState(false)
   const [retiring, setRetiring] = useState(false)
   const [retireError, setRetireError] = useState<string | null>(null)
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[] | null>(null)
+  const [auditError, setAuditError] = useState<string | null>(null)
+  const [auditLoading, setAuditLoading] = useState(false)
+
+  useEffect(() => {
+    setAuditLogs(null)
+    setAuditError(null)
+  }, [id])
+
+  useEffect(() => {
+    if (tab !== 'history' || auditLogs !== null || auditLoading) return
+    setAuditLoading(true)
+    apiGet<AuditLogListResponse>(`/api/v1/audit-logs?tgt_tbl_nm=HR_EMPL_MST&tgt_id=${id}&limit=100`)
+      .then((res) => {
+        setAuditLogs(res.items)
+        setAuditError(null)
+      })
+      .catch((err) => {
+        setAuditError(
+          err instanceof ApiError && err.status === 403
+            ? '변경 이력 조회 권한이 없습니다. (관리자만 조회 가능)'
+            : '변경 이력을 불러오지 못했습니다. 잠시 후 다시 시도하세요.',
+        )
+      })
+      .finally(() => setAuditLoading(false))
+  }, [tab, id, auditLogs, auditLoading])
 
   async function handleRetire() {
     setRetiring(true)
@@ -413,6 +459,41 @@ export default function EmployeeDetailPage({
                     <TableCell>
                       <Badge variant="outline">{assignmentStatusLabel[a.ASGN_STAT_CD]}</Badge>
                     </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Card>
+      )}
+
+      {tab === 'history' && (
+        <Card className="overflow-hidden p-0">
+          {auditError ? (
+            <p className="p-5 text-sm text-muted-foreground">{auditError}</p>
+          ) : auditLoading || auditLogs === null ? (
+            <p className="p-5 text-sm text-muted-foreground">불러오는 중입니다...</p>
+          ) : auditLogs.length === 0 ? (
+            <EmptyState title="변경 이력이 없습니다" />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>시각</TableHead>
+                  <TableHead>작업</TableHead>
+                  <TableHead>수행자</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {auditLogs.map((l) => (
+                  <TableRow key={l.AUDIT_ID}>
+                    <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {l.REG_DTTM}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{AUDIT_ACTION_LABEL[l.ACT_CD] ?? l.ACT_CD}</Badge>
+                    </TableCell>
+                    <TableCell>{l.USER_LGID}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

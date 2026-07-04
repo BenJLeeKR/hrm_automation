@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from sqlalchemy import func, select
@@ -24,10 +25,16 @@ def list_audit_logs(
     user_lgid: str | None = None,
     act_cd: str | None = None,
     tgt_tbl_nm: str | None = None,
+    tgt_id: uuid.UUID | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
 ) -> tuple[list[dict], int]:
-    """감사 로그 목록 조회 (SCR-016 "감사 로그") — 수행 사용자 로그인 ID를 조인해 함께 반환한다."""
+    """감사 로그 목록 조회 (SCR-016 "감사 로그") — 수행 사용자 로그인 ID를 조인해 함께 반환한다.
+
+    `tgt_id`는 사원 상세 화면(SCR-004) "변경 이력" 탭처럼 특정 대상 1건의 변경 이력만
+    조회할 때 사용한다(§9-1 참조) — `tgt_tbl_nm`과 함께 지정해야 다른 테이블의 동일 UUID
+    충돌을 피할 수 있으나, 화면 호출부가 항상 둘 다 넘기므로 이 함수는 강제하지 않는다.
+    """
     stmt = select(SysAuditLog, SysUserMst.USER_LGID).join(SysUserMst, SysUserMst.USER_ID == SysAuditLog.USER_ID)
     count_stmt = select(func.count()).select_from(SysAuditLog).join(SysUserMst, SysUserMst.USER_ID == SysAuditLog.USER_ID)
 
@@ -40,6 +47,9 @@ def list_audit_logs(
     if tgt_tbl_nm is not None:
         stmt = stmt.where(SysAuditLog.TGT_TBL_NM == tgt_tbl_nm)
         count_stmt = count_stmt.where(SysAuditLog.TGT_TBL_NM == tgt_tbl_nm)
+    if tgt_id is not None:
+        stmt = stmt.where(SysAuditLog.TGT_ID == tgt_id)
+        count_stmt = count_stmt.where(SysAuditLog.TGT_ID == tgt_id)
     if date_from is not None:
         stmt = stmt.where(SysAuditLog.REG_DTTM >= date_from)
         count_stmt = count_stmt.where(SysAuditLog.REG_DTTM >= date_from)
