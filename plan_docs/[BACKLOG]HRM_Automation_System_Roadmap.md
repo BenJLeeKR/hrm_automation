@@ -101,7 +101,7 @@
 | Phase 4 | Next.js 웹 클라이언트 구축 | 3~5주차 | 완료 | 100% | 정상 |
 | Phase 5 | 리소스 검색 및 추천 기능 구축 | 5주차 | 완료 | 100% | 정상 |
 | Phase 6 | AI 질의응답 연동 | 7주차 | 완료 | 100% | 정상 |
-| Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 진행 중 | 10% | 정상 |
+| Phase 7 | 운영 자동화 및 배포 안정화 | 6~7주차 | 진행 중 | 20% | 정상 |
 | Phase 8 | 파일럿 운영 및 정식 전환 | 8주차 | 예정 | 0% | 정상 |
 
 ---
@@ -417,7 +417,7 @@
 | **목표** | 배치 스케줄러·알림·로그·백업 자동화 완성 및 운영 환경 안정화 |
 | **계획 기간** | 6~7주차 |
 | **개발 상태** | 진행 중 |
-| **진행률** | 10% |
+| **진행률** | 20% |
 | **일정 상태** | 정상 |
 
 **주요 작업**
@@ -425,7 +425,7 @@
 | 작업 | 상태 |
 |---|---|
 | `HR_AVAIL_SNAP_GEN` 배치 구현 (매일 01:00 가동가능 스냅샷 생성) | 완료 (`backend/app/repositories/hr_avail_snap.py`의 `generate_avail_snap`, `backend/app/services/avail_snap_gen.py`의 `run_avail_snap_gen`(`SYS_BATCH_HIS` 이력 기록 포함), `backend/app/worker.py`(APScheduler `BlockingScheduler`, KST 01:00 cron) 신규 구현. 실 서버 컨테이너(`worker` 서비스)에서 스케줄러 정상 기동 확인 + 배치 함수 수동 실행으로 재직 사원 전체 스냅샷 생성 및 재실행 시 중복 없음(멱등) 확인, 2026-07-04) |
-| `PJT_ASGN_END_ALERT` 배치 구현 (매주 금요일 17:00 종료 예정 알림) | 예정 |
+| `PJT_ASGN_END_ALERT` 배치 구현 (매주 금요일 17:00 종료 예정 알림) | 완료 (`backend/app/repositories/pjt_asgn_his.py`의 `list_ending_soon_assignments`, `backend/app/services/asgn_end_alert.py`의 `run_asgn_end_alert`(`SYS_BATCH_HIS` 이력 기록), `backend/app/services/teams_notify.py`(신규, Teams Incoming Webhook 전송) 구현, `app/worker.py`에 매주 금 17:00(KST) cron 등록. **`TEAMS_WEBHOOK_URL`이 `.env`에 미설정 상태라 실제 Teams 알림 전송은 검증하지 못함** — 웹훅 URL 미설정 시 배치 자체는 정상 실행하고 전송만 건너뛰도록 구현(코드 경로는 실 서버에서 확인), 실제 발송 검증은 후속 조치 필요(§9 참조). 실 서버 컨테이너에서 배치 실행·`SYS_BATCH_HIS` 기록·목데이터 대상 실제 종료 예정 건수 정상 판별 확인, 2026-07-04) |
 | `HR_DATA_QUALITY_CHK` 배치 구현 (매주 금요일 18:00 데이터 품질 점검) | 예정 |
 | `PJT_WEEKLY_RPT` 배치 구현 (매주 월요일 09:00 주간 리포트 발송) | 예정 |
 | `SYS_DB_BACKUP` 배치 구현 (매일 02:00, crontab 등록) | 예정 |
@@ -498,7 +498,7 @@
 | 프로젝트 관리 | `PJT_MST` CRUD, 상태 관리 | 완료 (조회/등록/수정 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `projects.py`, `PJT_MST` | `PJT_STAT_CD` (PLANNED/RUNNING/CLOSED/HOLD) |
 | 프로젝트 투입 관리 | `PJT_ASGN_HIS` 등록·수정·취소 | 완료 (조회/등록/수정 구현, 취소는 `PATCH`로 `ASGN_STAT_CD='CANCELED'` 전환, 실 서버 검증 완료 — 2026-07-03) | 높음 | `assignments.py`, `PJT_ASGN_HIS` | 투입 역할(`PRJT_ROLE_NM`) 포함 |
 | 투입률 관리 | `ALLOC_RT` 합계 검증 및 표시 | 완료 (동일 사원·겹치는 기간 유효(`PLANNED`/`ACTIVE`) 투입 합계 100% 초과 시 409 거부 구현, 실 서버 검증 완료 — 2026-07-03) | 높음 | `assignments.py`, `pjt_asgn_his.py`(repository) | 동일 기간 합계 100% 초과 방지 |
-| 종료 예정일 관리 | `ASGN_END_DT` 조회·알림 | 예정 | 높음 | `PJT_ASGN_HIS`, `PJT_ASGN_END_ALERT` 배치 | 30일 이내 종료 예정 알림 |
+| 종료 예정일 관리 | `ASGN_END_DT` 조회·알림 | 완료 (배치 로직·`SYS_BATCH_HIS` 기록 완료, 2026-07-04 — `TEAMS_WEBHOOK_URL` 미설정으로 실제 Teams 전송 자체는 미검증, §9 참조) | 높음 | `PJT_ASGN_HIS`, `PJT_ASGN_END_ALERT` 배치 | 30일 이내 종료 예정 알림 |
 | 가동 가능일 자동 계산 | `HR_AVAIL_SNAP` 기반 산정 | 완료 (즉시 계산 API `GET /api/v1/availability/{empl_id}` 완료, 2026-07-03 + 매일 01:00 자동 스냅샷 생성 배치 `HR_AVAIL_SNAP_GEN`(`app/services/avail_snap_gen.py`, `app/worker.py`) 완료, 2026-07-04) | 높음 | `availability.py`, `HR_AVAIL_SNAP_GEN` 배치 | 투입률 0%=AVAILABLE(기준일), 1~99%=PARTIAL(기준일), ≥100%=FULL(MAX(종료일)+1, 종료일 NULL 시 품질경고) — `PROPOSED` 제외, 상세는 `backend/docs/AVAILABILITY_CALC_SPEC.md` |
 | 즉시 투입 가능 인력 조회 | `AVAIL_STAT_CD='AVAILABLE'` 필터 | 완료 (`GET /api/v1/availability`, 직무 유형·부서 필터 포함, 실 서버 검증 완료 — 2026-07-04) | 높음 | `availability.py`, `hr_avail_snap.py` | 직무 유형 필터 포함 |
 | 기술 기반 인력 검색 | 기술·숙련도·직무 복합 검색 | 예정 | 높음 | `recommendations.py` | `HR_EMPL_SKILL_REL` + `HR_JIKMU_MST` 조인 — `GET /availability`는 직무 유형만 지원, 기술·숙련도 필터는 별도 구현 필요 |
@@ -655,6 +655,7 @@
 - **환각 방지 시스템 프롬프트 적용 (§8 다음 작업 1번)** — `app/services/ai_chat.py`의 `call_llm`(DB 조회 없이 응답하는 `intent="unknown"` 자유 대화 경로 전용, `resource_search`는 이 함수를 아예 호출하지 않아 대상 아님)이 매 호출마다 시스템 메시지로 환각 방지 프롬프트(`_ANTI_HALLUCINATION_SYSTEM_PROMPT`)를 함께 전달하도록 수정 — 실존 여부를 확인할 수 없는 사원명·사번·프로젝트명·투입률·가동일·조직 배치 등 구체적인 HR 데이터를 지어내지 말고, 특정 인력 검색·추천·가동 현황 질의에는 답을 지어내는 대신 시스템의 조건 기반 조회 기능(직무 유형·기술·가동 가능일 포함)을 이용하도록 안내하라는 지침, 확실하지 않은 내용은 모른다고 밝히도록 명시. OpenAI 호환 `chat/completions` API의 `messages` 배열에 `{"role":"system", ...}`을 `{"role":"user", ...}` 앞에 추가하는 방식으로 구현(DeepSeek 포함 대부분의 LLM 공급자가 지원하는 표준 방식). `backend/tests/test_ai_chat_service.py`(신규) — `httpx.post`를 모킹해 실제 네트워크 호출 없이 요청 페이로드에 시스템 메시지가 포함되고 그 내용에 금지 지침이 담겨 있는지 검증(1개 케이스). **실 서버 컨테이너에서 실제 pytest 실행으로 검증**: pytest 88→90개 전부 통과. Phase 6 진행률 75%→88%로 갱신(8개 항목 중 7개 완료 — 남은 항목은 "테스트 질의 10개 이상 검증" 하나뿐), §3/§4/§9-1/§11 항목 갱신, §8 큐를 "테스트 질의 10개 이상 검증"으로 재구성(완료되면 Phase 6가 100%가 됨)
 - **테스트 질의 10개 이상 검증 (§8 다음 작업 1번) — Phase 6 완료** — `ai_parser.py`의 기존 12개 파싱 단위 테스트와 별개로, 설계서가 요구하는 "엔드투엔드 질의 검증"을 위해 `backend/tests/test_ai_chat_e2e.py`(신규) 작성 — 사용자가 자연어 조건 파싱 작업 당시 직접 제시했던 예시 질의 10개(직무 유형·기술·부서·가동일 조건 각각 포함: "다음 달 투입 가능한 Java 아키텍트", "8월 Spring 개발자", "개발1팀 Python", "이번 달 종료 예정자", "가동률 50% 이하 PM", "K-ICS BA", "PostgreSQL 백엔드 개발자", "즉시 투입 시니어 개발자", "다음 주 React 개발자", "보험 프로젝트 아키텍트")를 `POST /api/v1/ai/chat` 실제 엔드포인트로 호출해 `call_llm`이 전혀 호출되지 않는지(=파싱→권한 확인→조회 전체 경로가 정상적으로 resource_search로 인식했는지) 검증. 일반 대화("안녕하세요 반갑습니다")는 반대로 LLM 경로로 정상 폴백되는지 확인하는 회귀 케이스 1건도 함께 추가(총 11개 케이스). **검증 중 표기 오류 발견 및 수정**: 실제 목데이터로 curl 검증하는 과정에서 `search_resources`의 응답 요약 문구가 "가동률 {AVAIL_RT}%"라고 표시하고 있었으나, `AVAIL_RT`는 실제로 "가동 가능률"(100-투입률)이라 의미가 정반대로 읽히는 문제를 발견 — "가동 가능률"로 표기를 수정(`backend/app/services/ai_resource_search.py`). **실 서버 컨테이너에서 실제 pytest 실행 및 curl로 실제 목데이터 대상 재현·검증**: pytest 90→101개 전부 통과, curl로 "즉시 투입 가능한 시니어 개발자" 질의 시 실제 사원 2명이 올바른 문구로 반환됨을 확인. Phase 6 진행률 88%→100%로 갱신(8개 항목 전부 완료, 개발 상태 "진행 중→완료"로 전환), §3/§4/§5/§11 항목 갱신, §8 큐를 §3/§4 로드맵상 다음 순서인 Phase 7(운영 자동화 및 배포 안정화, 0%)의 첫 항목 "`HR_AVAIL_SNAP_GEN` 배치 구현"으로 재구성 — 이 배치가 완성되면 Phase 5의 마지막 잔여 항목("가동 가능일 자동 계산 로직 구현")도 함께 해소 가능
 - **`HR_AVAIL_SNAP_GEN` 배치 구현 (§8 다음 작업 1번)** — 설계서 §10.1·산출물(`worker.py`)이 요구하는 배치 스케줄러 방식(APScheduler)으로 구현. `backend/app/repositories/hr_avail_snap.py`에 `generate_avail_snap(db, snap_dt)` 신규 추가 — 기존 화면용 `list_availability`(재직 사원 전체 가동률 즉시 계산)를 그대로 재사용하고, 계산 결과를 `HR_AVAIL_SNAP` 테이블에 스냅샷 행으로 저장(같은 날짜로 재실행해도 안전하도록 저장 전 해당 날짜 기존 스냅샷을 먼저 삭제 후 재삽입). `backend/app/services/avail_snap_gen.py`(신규) `run_avail_snap_gen`이 배치 실행을 감싸 성공/실패 여부와 무관하게 `SYS_BATCH_HIS`에 실행 이력(시작/종료 시각, 생성 건수, 실패 시 에러 메시지)을 기록 — 배치가 예외로 죽어도 이력이 남아야 운영팀이 미실행을 감지할 수 있다는 원칙 적용. `backend/app/worker.py`(그동안 `print` 자리표시자였음)를 APScheduler `BlockingScheduler`로 교체해 매일 KST 01:00에 이 배치를 실행하도록 등록(`docker-compose.yml`의 기존 `worker` 서비스, `restart: unless-stopped`가 이미 구성되어 있어 컨테이너 설정 변경 없이 실행 파일만 교체). `requirements.txt`에 `apscheduler==3.10.4` 추가. **실 서버 컨테이너에서 실제 실행으로 검증**: `worker` 컨테이너 재빌드 후 로그로 스케줄러 정상 기동 및 작업 등록 확인, 배치 함수를 수동 실행해 현재 DB 목데이터(재직 사원 30명) 기준 `HR_AVAIL_SNAP`에 스냅샷 30건(AVAILABLE 10/PARTIAL 3/FULL 17) 정상 생성 및 `SYS_BATCH_HIS`에 `SUCCESS` 이력 기록 확인, 동일 날짜로 재실행해도 30건 그대로 유지되어 멱등성 확인. `backend/tests/test_avail_snap_gen.py`(신규, 2개 케이스 — 스냅샷·배치 이력 생성 확인, 동일 날짜 재실행 시 중복 없음) 작성, pytest 101→103개 전부 통과. **범위를 의도적으로 축소한 부분**: 대시보드(`dashboard.py`)·리포트(`reports.py`) API는 여전히 이 스냅샷 테이블을 조회하지 않고 매 요청 실시간 재계산 방식을 그대로 사용한다(§9 기존 리스크 2건과 동일 — 이번 배치 신규 구현이 그 리스크를 자동으로 해소하지는 않음, 스냅샷 기반 조회로 전환하는 것은 별도 후속 작업). Phase 5 마지막 항목("가동 가능일 자동 계산 로직 구현")도 함께 완료 처리되어 Phase 5 진행률 88%→100%(개발 상태 "진행 중→완료"), Phase 7 진행률 0%→10%(개발 상태 "예정→진행 중"), §3/§4/§5/§9-1/§11 항목 갱신, §8 큐를 Phase 7 다음 순서 "`PJT_ASGN_END_ALERT` 배치 구현"으로 재구성
+- **`PJT_ASGN_END_ALERT` 배치 구현 (§8 다음 작업 1번)** — `backend/app/repositories/pjt_asgn_his.py`에 `list_ending_soon_assignments(db, as_of, within_days=30)` 신규 추가 — `ASGN_STAT_CD='ACTIVE'`이고 `ASGN_END_DT`가 기준일로부터 30일 이내(종료일 미정 건은 "종료 예정"이 아니므로 제외)인 투입 건을 사원/프로젝트명과 함께 조회. `backend/app/services/teams_notify.py`(신규) `send_teams_message`가 `TEAMS_WEBHOOK_URL` 설정 여부에 따라 분기 — 미설정 시 예외 없이 `False`를 반환하고 조용히 건너뛴다(AI Chat의 `DEEPSEEK_API_KEY` 미설정 처리와 동일한 선택적 연동 패턴), URL은 있으나 전송 자체가 실패한 경우만 예외. `backend/app/services/asgn_end_alert.py`(신규) `run_asgn_end_alert`가 조회→메시지 구성→Teams 전송 시도→`SYS_BATCH_HIS` 이력 기록까지 담당(`HR_AVAIL_SNAP_GEN`과 동일한 성공/실패 무관 이력 기록 원칙). `backend/app/core/config.py`에 `TEAMS_WEBHOOK_URL` 필드 신규 추가(`.env.example`에는 이미 있던 항목, `.env` 자체는 수정하지 않음). `backend/app/worker.py`에 매주 금요일 17:00(KST) cron 작업으로 등록(`HR_AVAIL_SNAP_GEN`과 함께 두 번째 등록 작업). **실 서버 컨테이너에서 실제 실행으로 검증**: `worker` 재빌드 후 로그로 두 작업 모두 정상 등록 확인, 배치 함수를 수동 실행해 현재 DB 목데이터 기준 종료 예정 1건을 정확히 찾아내고 `SYS_BATCH_HIS`에 `SUCCESS` 이력(및 "TEAMS_WEBHOOK_URL 미설정 — 알림 전송 생략" 문구) 기록 확인. **검증 중 테스트 설계 이슈 발견 및 수정**: 처음에는 절대 건수(`CRT_CNT == N`)로 단정하는 테스트를 작성했으나, 실 DB에는 이미 목데이터 투입 이력이 커밋되어 있어(별도 테스트 트랜잭션 격리 밖의 영구 데이터) 배치가 스캔하는 `PJT_ASGN_HIS` 전체 테이블과 섞여 절대값 비교가 신뢰할 수 없음을 발견 — 다른 리포트 테스트에서 이미 쓰인 "실행 전/후 비교" 패턴으로 전환해 해결. `backend/tests/test_asgn_end_alert.py`(신규, 2개 케이스) 작성, pytest 103→105개 전부 통과. **알려진 한계**: `TEAMS_WEBHOOK_URL`이 `.env`에 미설정 상태라 실제 Teams 채널로의 알림 발송 자체는 검증하지 못함 — 배치 로직과 이력 기록은 정상 동작 확인(§9 리스크로 기록, 운영팀이 웹훅 URL을 `.env`에 설정하면 코드 변경 없이 자동으로 실제 전송 경로를 탄다). Phase 7 진행률 10%→20%로 갱신, §4/§5/§9/§11 항목 갱신, §8 큐를 Phase 7 다음 순서 "`HR_DATA_QUALITY_CHK` 배치 구현"으로 재구성
 
 ---
 
@@ -663,7 +664,9 @@
 > Rolling Backlog / Next Action Queue — 누적 완료 목록이 아니라 "지금부터 수행할 작업"만 유지한다.
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
-- [ ] 1. `PJT_ASGN_END_ALERT` 배치 구현 (Phase 7, 매주 금요일 17:00 투입 종료 예정 알림 — `PJT_ASGN_HIS.ASGN_END_DT` 30일 이내 종료 예정 건 조회, `SYS_BATCH_HIS`에 실행 이력 기록. Teams Webhook 알림 연동은 `.env`에 `TEAMS_WEBHOOK_URL` 등 실제 값이 필요해 별도 확인 필요 — 아래 "필요한 후속 조치" 참조)
+- [ ] 1. `HR_DATA_QUALITY_CHK` 배치 구현 (Phase 7, 매주 금요일 18:00 데이터 품질 점검 — 대시보드/리포트가 이미 사용 중인 데이터 품질 판정 로직(`get_data_quality`, `app/repositories/dashboard.py`)을 배치로 재사용해 주간 점검 이력을 `SYS_BATCH_HIS`에 기록, 필요 시 Teams 알림 포함)
+
+> 참고: "`PJT_ASGN_END_ALERT` 배치 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `backend/app/repositories/pjt_asgn_his.py`의 `list_ending_soon_assignments`, `backend/app/services/asgn_end_alert.py`의 `run_asgn_end_alert`, `backend/app/services/teams_notify.py`(신규, Teams Incoming Webhook 전송, 미설정 시 조용히 건너뜀)를 구현하고 `app/worker.py`에 매주 금 17:00(KST) cron으로 등록했다. `TEAMS_WEBHOOK_URL`이 `.env`에 미설정 상태라 실제 Teams 알림 전송 자체는 검증하지 못했다(§9 리스크 신규 기록) — 배치 로직·이력 기록은 실 서버에서 정상 동작 확인. Phase 7 진행률이 10%→20%로 상승했다.
 
 > 참고: "`HR_AVAIL_SNAP_GEN` 배치 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `backend/app/services/avail_snap_gen.py`(`run_avail_snap_gen`, `SYS_BATCH_HIS` 이력 기록)와 `backend/app/worker.py`(APScheduler `BlockingScheduler`, KST 매일 01:00 cron)를 신규 구현, `worker` 컨테이너 재빌드 후 스케줄러 정상 기동 및 배치 수동 실행으로 재직 사원 전체 스냅샷 생성·재실행 시 멱등성까지 확인했다. 이 항목 완료로 Phase 5의 마지막 잔여 항목("가동 가능일 자동 계산 로직 구현")도 함께 완료 처리되어 Phase 5가 100%가 되었다(Phase 7은 10%). 단, 대시보드(`dashboard.py`)·리포트(`reports.py`) API는 여전히 스냅샷을 조회하지 않고 실시간 재계산 방식을 그대로 사용 중이다(§9 기존 리스크 2건 유지 — 스냅샷 기반 조회로의 전환은 이번 범위 밖). 다음 순서는 §4 Phase 7 "주요 작업" 표에서 이어지는 "`PJT_ASGN_END_ALERT` 배치 구현"이다.
 
@@ -715,6 +718,7 @@
 
 | 이슈 | 영향도 | 상태 | 대응 방안 | 처리일자 |
 |---|---|---|---|---|
+| `PJT_ASGN_END_ALERT` 배치의 Teams 알림 실제 전송 미검증 | 낮음 | 주의 | `.env`에 `TEAMS_WEBHOOK_URL`이 설정되어 있지 않아, `app/services/teams_notify.py`가 알림 전송을 건너뛰는 코드 경로만 실 서버에서 확인했고 실제 Teams 채널로의 발송 자체는 검증하지 못했다. 배치 로직(대상 조회, `SYS_BATCH_HIS` 기록)은 정상 동작 확인 완료 — 운영팀이 Teams 채널의 수신 커넥터(Incoming Webhook) URL을 발급받아 `.env`(직접 수정 금지 원칙에 따라 운영자가 직접 설정)의 `TEAMS_WEBHOOK_URL`에 설정하면, 다음 배치 실행 시 자동으로 실제 전송 경로를 타게 된다 — 별도 코드 변경 불필요 | 2026-07-04 |
 | AI Chat `resource_search` 조회 결과에 권한 필터링 미적용 | 중간 | 해소 | `POST /api/v1/ai/chat`에서 `intent="resource_search"` 응답 직전 요청자 `PERM_JSON`의 `availability.view` 권한을 추가 확인하도록 수정(`app/api/deps.py`의 `has_permission` 신규 유틸 재사용) — 권한 없으면 조회 자체를 실행하지 않고 안내 메시지만 반환. VIEWER로 재현·검증 완료. 단, 부서 단위 등 행(row) 단위 세부 범위 제한(예: "본인 부서 인력만")은 기존 `require_permission`과 동일한 한계로 여전히 미구현 — 필요 시 별도 항목으로 재검토 | 2026-07-04 |
 | `GET /api/v1/employees/export`가 `GET /{empl_id}` 라우트에 가로채여 항상 422 반환 | 높음 | 해소 | Excel Import/Export UI 프론트엔드 연동 작업 중 curl 검증으로 발견 — FastAPI는 라우트를 등록 순서대로 매칭하는데 `/{empl_id}`(UUID 경로)가 `/export`보다 먼저 등록되어 "export" 문자열이 UUID 파싱에 실패해 422를 반환하고 있었음(한 번도 정상 동작한 적 없던 기존 버그). `backend/app/api/v1/employees.py`에서 `/export`·`/import` 라우트를 `/{empl_id}` 라우트보다 앞으로 이동해 수정, `backend/tests/test_employees_excel.py` 회귀 방지 테스트 추가 | 2026-07-04 |
 | 직원 기술 스택 표준화 기준 미정 | 높음 | 해소 | 사용자 확정 기준으로 `HR_SKILL_MST` 표준 Seed 110건(LANGUAGE/BACKEND/FRONTEND/MOBILE/DB/DATA/INFRA/SECURITY/ARCHITECTURE/QA/CONSULTING/PMO/BUSINESS(금융) 13개 그룹) 작성 및 Alembic 마이그레이션(`55106956dedf`)으로 실 DB 반영 완료 — `backend/app/db/seed/hr_skill_mst_seed.py` 참조. 기존 MVP 초안(6개 그룹, DB 미반영)을 대체. 기술명은 Excel Import "주요기술" 컬럼과 매핑되는 표준 영문/일반 명칭으로 작성 | 2026-07-04 |
@@ -955,7 +959,7 @@
 ### 운영 자동화 및 배포 `→ Phase 7`
 
 - [x] `HR_AVAIL_SNAP_GEN` 배치 구현 (매일 01:00 — 가동가능 스냅샷 생성) — `app/services/avail_snap_gen.py`+`app/worker.py`(APScheduler), 실 서버 컨테이너에서 스케줄러 기동·수동 실행·멱등성 확인 완료 (2026-07-04)
-- [ ] `PJT_ASGN_END_ALERT` 배치 구현 (매주 금요일 17:00 — 30일 이내 종료 예정 알림)
+- [x] `PJT_ASGN_END_ALERT` 배치 구현 (매주 금요일 17:00 — 30일 이내 종료 예정 알림) — `app/services/asgn_end_alert.py`+`app/services/teams_notify.py`+`app/worker.py`, 실 서버 컨테이너에서 스케줄러 기동·배치 수동 실행·`SYS_BATCH_HIS` 기록 확인 완료 (2026-07-04). `TEAMS_WEBHOOK_URL` 미설정으로 실제 알림 전송 자체는 미검증(§9 참조)
 - [ ] `HR_DATA_QUALITY_CHK` 배치 구현 (매주 금요일 18:00 — `JIKMU_ID IS NULL` 점검 포함)
 - [ ] `PJT_WEEKLY_RPT` 배치 구현 (매주 월요일 09:00 — 주간 리포트 발송)
 - [ ] `SYS_DB_BACKUP` 배치 구현 및 crontab 등록 (매일 02:00)
@@ -1067,4 +1071,5 @@
 | 2026-07-04 | v8.2 | §8 다음 작업 1번(환각 방지 시스템 프롬프트 적용, Phase 6) 완료 처리 — `app/services/ai_chat.py`의 `call_llm`이 매 호출 시 시스템 메시지로 환각 방지 프롬프트를 함께 전달(DB 미조회 상태에서 구체적 HR 데이터를 지어내지 말고 시스템 조회 기능 사용을 안내하도록 지침). `backend/tests/test_ai_chat_service.py` 신규 작성(1개 케이스, `httpx.post` 모킹), pytest 88→90개 전부 통과. Phase 6 진행률 75%→88%로 갱신(8개 중 7개 완료), §3/§4/§9-1/§11 항목 갱신, §8 큐를 "테스트 질의 10개 이상 검증"으로 재구성(완료 시 Phase 6 100%) | — |
 | 2026-07-04 | v8.3 | §8 다음 작업 1번(테스트 질의 10개 이상 검증, Phase 6) 완료 처리 — `backend/tests/test_ai_chat_e2e.py`(신규)로 사용자 확정 예시 질의 10개를 `POST /api/v1/ai/chat` 전체 경로 기준 검증(전부 LLM 미경유, 결정적 요약 반환 확인), 일반 대화 LLM 폴백 회귀 케이스 1건 추가. 검증 중 응답 문구 "가동률"이 실제로는 "가동 가능률"(`AVAIL_RT`)을 가리켜 의미가 반대인 표기 오류를 발견해 수정. pytest 90→101개 전부 통과. **Phase 6(AI 질의응답 연동) 8개 항목 전부 완료, 진행률 88%→100%, 상태 "진행 중→완료"** — §3/§4/§5/§11 항목 갱신, §8 큐를 Phase 7 "HR_AVAIL_SNAP_GEN 배치 구현"으로 재구성 | — |
 | 2026-07-04 | v8.4 | §8 다음 작업 1번(`HR_AVAIL_SNAP_GEN` 배치 구현, Phase 7) 완료 처리 — `backend/app/repositories/hr_avail_snap.py`에 `generate_avail_snap`(스냅샷 저장+재실행 안전) 신규 추가, `backend/app/services/avail_snap_gen.py`(신규) `run_avail_snap_gen`이 `SYS_BATCH_HIS`에 실행 이력 기록, `backend/app/worker.py`를 APScheduler `BlockingScheduler`(KST 매일 01:00)로 교체(기존 `print` 자리표시자 대체). `requirements.txt`에 `apscheduler==3.10.4` 추가. 실 서버 `worker` 컨테이너에서 스케줄러 기동·배치 수동 실행·멱등성 전부 확인(목데이터 30명 기준 스냅샷 30건 생성). `backend/tests/test_avail_snap_gen.py`(2개) 작성, pytest 101→103개 전부 통과. 대시보드·리포트 API는 여전히 스냅샷 미조회(§9 기존 리스크 유지). Phase 5 마지막 항목도 함께 완료되어 Phase 5 100%, Phase 7 0%→10%로 갱신, §3/§4/§5/§9-1/§11 항목 갱신, §8 큐를 "PJT_ASGN_END_ALERT 배치 구현"으로 재구성 | — |
+| 2026-07-04 | v8.5 | §8 다음 작업 1번(`PJT_ASGN_END_ALERT` 배치 구현, Phase 7) 완료 처리 — `backend/app/repositories/pjt_asgn_his.py`에 `list_ending_soon_assignments` 추가, `backend/app/services/teams_notify.py`(신규, Teams Webhook 미설정 시 조용히 건너뜀)와 `backend/app/services/asgn_end_alert.py`(신규, `run_asgn_end_alert`가 `SYS_BATCH_HIS` 이력 기록) 구현, `app/core/config.py`에 `TEAMS_WEBHOOK_URL` 필드 추가, `app/worker.py`에 매주 금 17:00(KST) cron 등록. 실 서버 `worker` 컨테이너에서 스케줄러 등록·배치 수동 실행·목데이터 대상 종료 예정 건수 정상 판별 확인. `backend/tests/test_asgn_end_alert.py`(2개, 실행 전/후 비교 방식) 작성, pytest 103→105개 전부 통과. `TEAMS_WEBHOOK_URL` 미설정으로 실제 알림 전송은 미검증(§9 리스크 신규). Phase 7 진행률 10%→20%로 갱신, §4/§5/§9/§11 항목 갱신, §8 큐를 "HR_DATA_QUALITY_CHK 배치 구현"으로 재구성 | — |
 

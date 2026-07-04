@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     DEEPSEEK_MODEL_ID: str = "deepseek-chat"
     OPENAI_API_KEY: str = ""
 
+    # 운영 자동화 배치(Phase 7, 로드맵 §8 "PJT_ASGN_END_ALERT 배치 구현") — Teams Incoming
+    # Webhook URL. 미설정 시(로컬/개발 환경) 알림 전송을 건너뛰고 배치 자체는 정상 실행한다
+    # (`app/services/teams_notify.py` 참조) — DEEPSEEK_API_KEY와 동일한 선택적 연동 패턴.
+    TEAMS_WEBHOOK_URL: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]

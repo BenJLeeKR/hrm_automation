@@ -1,10 +1,12 @@
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.models.hr_empl_mst import HrEmplMst
 from app.models.pjt_asgn_his import PjtAsgnHis
+from app.models.pjt_mst import PjtMst
 
 # ALLOC_RT 합계 검증 시 집계 대상 상태 — 취소(CANCELED)/종료(DONE) 건은 더 이상 인력을
 # 점유하지 않으므로 제외한다 (ERD §3.9 / 설계서 §5.5 "동일 사원 동일 기간 ALLOC_RT 합계
@@ -43,6 +45,26 @@ def list_assignments(
 
 def get_assignment(db: Session, asgn_id: uuid.UUID) -> PjtAsgnHis | None:
     return db.get(PjtAsgnHis, asgn_id)
+
+
+def list_ending_soon_assignments(db: Session, *, as_of: date, within_days: int = 30):
+    """`PJT_ASGN_END_ALERT` 배치(로드맵 §8, 매주 금요일 17:00) 대상 조회 — 진행 중(`ACTIVE`)
+    투입 중 `within_days`일 이내에 종료 예정인 건을 사원명·프로젝트명과 함께 반환한다.
+    종료일(`ASGN_END_DT`)이 없는(=기한 미정) 건은 "종료 예정"이 아니므로 제외한다."""
+    threshold = as_of + timedelta(days=within_days)
+    stmt = (
+        select(HrEmplMst.EMPL_NO, HrEmplMst.EMPL_NM, PjtMst.PJT_NM, PjtAsgnHis.ASGN_END_DT)
+        .join(HrEmplMst, HrEmplMst.EMPL_ID == PjtAsgnHis.EMPL_ID)
+        .join(PjtMst, PjtMst.PJT_ID == PjtAsgnHis.PJT_ID)
+        .where(
+            PjtAsgnHis.ASGN_STAT_CD == "ACTIVE",
+            PjtAsgnHis.ASGN_END_DT.is_not(None),
+            PjtAsgnHis.ASGN_END_DT >= as_of,
+            PjtAsgnHis.ASGN_END_DT <= threshold,
+        )
+        .order_by(PjtAsgnHis.ASGN_END_DT)
+    )
+    return db.execute(stmt).all()
 
 
 def sum_overlapping_alloc_rt(
