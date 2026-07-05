@@ -1,3 +1,5 @@
+import secrets
+import string
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -13,6 +15,11 @@ _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
 
+# 임시 비밀번호 자동 생성용 문자 집합 — `app/schemas/sys_user_mst.py`의 비밀번호 정책
+# (8자 이상, 영문·숫자·특수문자 포함)을 항상 만족하도록 3종을 각 1자 이상 보장한다.
+_TEMP_PASSWORD_LENGTH = 12
+_TEMP_PASSWORD_SPECIAL_CHARS = "!@#$%^&*"
+
 
 class TokenError(Exception):
     """토큰이 없거나(만료 포함) 형식이 잘못된 경우 발생 — 호출부(API 라우터)에서 401로 변환한다."""
@@ -20,6 +27,18 @@ class TokenError(Exception):
 
 def hash_password(password: str) -> str:
     return _pwd_context.hash(password)
+
+
+def generate_temp_password() -> str:
+    """사원 계정 자동 생성(설계서 §5.5 "사원 계정 자동 생성") 시 서버가 발급하는 임시
+    비밀번호를 생성한다 — 영문·숫자·특수문자를 각 1자 이상 포함해 `UserCreate`의
+    비밀번호 정책을 항상 만족시킨다."""
+    required = [secrets.choice(string.ascii_letters), secrets.choice(string.digits), secrets.choice(_TEMP_PASSWORD_SPECIAL_CHARS)]
+    pool = string.ascii_letters + string.digits + _TEMP_PASSWORD_SPECIAL_CHARS
+    remaining = [secrets.choice(pool) for _ in range(_TEMP_PASSWORD_LENGTH - len(required))]
+    chars = required + remaining
+    secrets.SystemRandom().shuffle(chars)
+    return "".join(chars)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

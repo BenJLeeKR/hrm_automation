@@ -142,3 +142,81 @@ def test_viewer_can_view_employee_detail(client, viewer_token, admin_token, dept
     resp = client.get(f"/api/v1/employees/{empl_id}", headers=viewer_headers)
 
     assert resp.status_code == 200
+
+
+def test_create_employee_auto_creates_account(client, db_session, admin_token, dept, jikgup):
+    """사원 등록 시 SYS_USER_MST 계정이 EMPLOYEE 역할로 자동 생성되고, 응답에 임시
+    비밀번호가 1회 포함되어야 한다 (설계서 §5.5 "사원 계정 자동 생성", §8 큐 1-2)."""
+    from sqlalchemy import select
+
+    from app.models.sys_role_mst import SysRoleMst
+    from app.models.sys_user_mst import SysUserMst
+
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTACC{uuid.uuid4().hex[:6]}"
+    email = f"{empl_no}@example.com"
+
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=headers,
+        json={
+            "EMPL_NO": empl_no,
+            "EMPL_NM": "계정자동생성테스트",
+            "EMAIL_ADDR": email,
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    assert create_resp.status_code == 201
+    body = create_resp.json()
+    assert body["temp_password"]
+    empl_id = body["EMPL_ID"]
+
+    user = db_session.scalar(select(SysUserMst).where(SysUserMst.USER_LGID == email))
+    assert user is not None
+    assert user.EMAIL_ADDR == email
+    assert str(user.EMPL_ID) == empl_id
+    assert user.PWD_CHG_YN is True
+
+    role = db_session.get(SysRoleMst, user.ROLE_ID)
+    assert role.ROLE_CD == "EMPLOYEE"
+
+    login_resp = client.post("/api/v1/auth/login", json={"USER_LGID": email, "password": body["temp_password"]})
+    assert login_resp.status_code == 200
+
+
+def test_create_employee_email_already_used_by_account_returns_409(client, db_session, admin_token, dept, jikgup, admin_role):
+    """다른 계정이 이미 같은 이메일을 `USER_LGID`/`EMAIL_ADDR`로 쓰고 있으면 사원 등록
+    자체가 409로 거부되어야 한다(계정 생성 실패 = 사원 등록 실패, 트랜잭션 일관성 유지).
+    사원도 함께 롤백되어 남지 않아야 한다."""
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.hr_empl_mst import HrEmplMst
+    from app.models.sys_user_mst import SysUserMst
+
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTDUP{uuid.uuid4().hex[:6]}"
+    email = f"{empl_no}@example.com"
+
+    existing_user = SysUserMst(
+        USER_LGID=email, EMAIL_ADDR=email, ENCR_PWD=hash_password("Str0ng!Pass"), ROLE_ID=admin_role.ROLE_ID
+    )
+    db_session.add(existing_user)
+    db_session.flush()
+
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=headers,
+        json={
+            "EMPL_NO": empl_no,
+            "EMPL_NM": "이메일중복테스트",
+            "EMAIL_ADDR": email,
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    assert create_resp.status_code == 409
+
+    employee = db_session.scalar(select(HrEmplMst).where(HrEmplMst.EMPL_NO == empl_no))
+    assert employee is None

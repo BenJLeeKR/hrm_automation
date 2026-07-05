@@ -57,11 +57,14 @@ def list_employees_by_ids(db: Session, empl_ids: list[uuid.UUID]) -> list[HrEmpl
 
 def create_employee(db: Session, data: dict) -> HrEmplMst:
     """사원 등록. `EMPL_NO`/`EMAIL_ADDR` UNIQUE 위반, `DEPT_ID`/`JIKGUP_ID`/`JIKMU_ID` FK 위반은
-    호출부(API 라우터)에서 `sqlalchemy.exc.IntegrityError`를 잡아 처리한다."""
+    호출부(API 라우터)에서 `sqlalchemy.exc.IntegrityError`를 잡아 처리한다.
+
+    커밋은 호출부에서 수행한다 — 사원 등록과 동시에 `SYS_USER_MST` 계정을 자동 생성하는
+    설계(§5.5 "사원 계정 자동 생성")상 둘을 하나의 트랜잭션으로 묶어야 하기 때문이다
+    (계정 생성 실패 = 사원 등록 실패). `EMPL_ID`가 필요한 후속 처리를 위해 `flush`만 한다."""
     employee = HrEmplMst(**data)
     db.add(employee)
-    db.commit()
-    db.refresh(employee)
+    db.flush()
     return employee
 
 

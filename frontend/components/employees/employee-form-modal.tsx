@@ -63,6 +63,11 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
   const [phone, setPhone] = useState(employee?.MPHONE_NO ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  // 사원 등록 시 SYS_USER_MST 계정이 자동 생성되며 임시 비밀번호가 응답에 1회만 포함된다
+  // (설계서 §5.5 "사원 계정 자동 생성", §8 큐 1-2). 이메일 발송 인프라가 없어 등록자가
+  // 화면에서 직접 확인 후 신규 사원에게 전달해야 하므로, 등록 성공 시 모달을 바로 닫지
+  // 않고 이 값을 보여준 뒤 "확인" 클릭 시에만 닫는다.
+  const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null)
 
   const deptOptions = departments.map((d) => ({ label: d.DEPT_NM, value: d.DEPT_ID }))
   const positionOptions = positions.map((p) => ({ label: p.JIKGUP_NM, value: p.JIKGUP_ID }))
@@ -81,14 +86,21 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
     setEmail(employee?.EMAIL_ADDR ?? '')
     setPhone(employee?.MPHONE_NO ?? '')
     setFormError(null)
+    setCreatedTempPassword(null)
   }
 
   function handleClose() {
+    const hadCreatedAccount = createdTempPassword !== null
     reset()
     onOpenChange(false)
+    if (hadCreatedAccount) onSaved()
   }
 
   async function handleSubmit() {
+    if (createdTempPassword !== null) {
+      handleClose()
+      return
+    }
     setSubmitting(true)
     setFormError(null)
     const payload = {
@@ -103,17 +115,43 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
     try {
       if (isEdit && employee) {
         await apiPatch(`/api/v1/employees/${employee.EMPL_ID}`, payload)
+        onSaved()
+        handleClose()
       } else {
-        await apiPost('/api/v1/employees', { ...payload, EMPL_NO: empNo })
+        const created = await apiPost<{ temp_password: string }>('/api/v1/employees', {
+          ...payload,
+          EMPL_NO: empNo,
+        })
+        setCreatedTempPassword(created.temp_password)
       }
-      onSaved()
-      handleClose()
     } catch (err) {
       const fallback = isEdit ? '수정에 실패했습니다. 잠시 후 다시 시도하세요.' : '등록에 실패했습니다. 잠시 후 다시 시도하세요.'
       setFormError(err instanceof ApiError ? err.message : fallback)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (createdTempPassword !== null) {
+    return (
+      <ModalForm
+        open={open}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+        title="사원 등록 완료"
+        description="로그인 계정이 함께 생성되었습니다. 임시 비밀번호는 다시 확인할 수 없으니 지금 신규 사원에게 전달하세요."
+        submitText="확인"
+      >
+        <div className="flex flex-col gap-2">
+          <FormField label="로그인 ID">
+            <Input value={email} readOnly />
+          </FormField>
+          <FormField label="임시 비밀번호">
+            <Input value={createdTempPassword} readOnly className="font-mono" />
+          </FormField>
+        </div>
+      </ModalForm>
+    )
   }
 
   return (

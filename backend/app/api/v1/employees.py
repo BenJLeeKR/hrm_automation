@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permission
 from app.core.audit import record_audit
 from app.core.pagination import PaginationParams
+from app.core.security import generate_temp_password, hash_password
 from app.db.session import get_db
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.hr_empl_mst import (
@@ -21,8 +22,12 @@ from app.repositories.hr_empl_mst import (
     retire_employee,
     update_employee,
 )
-from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeListResponse, EmployeeOut, EmployeeUpdate
+from app.repositories.sys_role_mst import get_role_by_code
+from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeCreateOut, EmployeeListResponse, EmployeeOut, EmployeeUpdate
+from app.schemas.sys_user_mst import SysUserOut
 from app.services.employee_import import EmployeeImportValidationError, apply_import, parse_and_validate
+
+_EMPLOYEE_ROLE_CD = "EMPLOYEE"
 
 _TGT_TBL_NM = "HR_EMPL_MST"
 
@@ -151,23 +156,50 @@ def get_employee_detail(empl_id: uuid.UUID, db: Session = Depends(get_db)) -> Em
     return employee
 
 
-@router.post("", response_model=EmployeeOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EmployeeCreateOut, status_code=status.HTTP_201_CREATED)
 def post_employee(
     payload: EmployeeCreate,
     request: Request,
     db: Session = Depends(get_db),
     current_user: SysUserMst = Depends(require_permission("employees", "create")),
-) -> EmployeeOut:
-    """사원 등록 (로드맵 §8 다음 작업 8번)"""
+) -> EmployeeCreateOut:
+    """사원 등록 (로드맵 §8 다음 작업 8번) — 등록과 동시에 `SYS_USER_MST` 계정을 자동
+    생성한다(설계서 §5.5 "사원 계정 자동 생성", §8 큐 1-2). `USER_LGID`/`EMAIL_ADDR`는
+    사원의 이메일을 그대로 사용, 기본 역할은 `EMPLOYEE`, 임시 비밀번호는 서버가 생성해
+    해시만 저장하고 응답에 평문으로 1회 노출한다 — 이메일 발송 인프라가 없어(§9 리스크)
+    등록자가 화면에서 확인 후 신규 사원에게 직접 전달해야 한다. 계정 생성이 실패하면
+    사원 등록도 함께 실패해야 하므로(트랜잭션 일관성 유지) 두 INSERT를 하나의 커밋으로
+    묶는다."""
+    employee_role = get_role_by_code(db, _EMPLOYEE_ROLE_CD)
+    if employee_role is None:
+        # SYS_ROLE_MST Seed가 정상 적용됐다면 발생할 수 없는 상태 — 운영 환경 설정 오류.
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="EMPLOYEE 역할이 설정되어 있지 않아 계정을 생성할 수 없습니다.",
+        )
+
+    temp_password = generate_temp_password()
     try:
         employee = create_employee(db, payload.model_dump())
+        user = SysUserMst(
+            EMPL_ID=employee.EMPL_ID,
+            USER_LGID=employee.EMAIL_ADDR,
+            EMAIL_ADDR=employee.EMAIL_ADDR,
+            ENCR_PWD=hash_password(temp_password),
+            ROLE_ID=employee_role.ROLE_ID,
+            PWD_CHG_YN=True,
+        )
+        db.add(user)
+        db.commit()
     except IntegrityError:
-        # EMPL_NO/EMAIL_ADDR UNIQUE 위반 또는 DEPT_ID/JIKGUP_ID/JIKMU_ID FK 위반
+        # EMPL_NO/EMAIL_ADDR UNIQUE 위반(사원 또는 계정) 또는 DEPT_ID/JIKGUP_ID/JIKMU_ID FK 위반
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="사번/이메일 중복이거나 부서·직급·직무 ID가 유효하지 않습니다.",
         ) from None
+    db.refresh(employee)
+    db.refresh(user)
 
     record_audit(
         db,
@@ -178,7 +210,16 @@ def post_employee(
         tgt_id=employee.EMPL_ID,
         aft_val_json=EmployeeOut.model_validate(employee).model_dump(mode="json"),
     )
-    return employee
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="CREATE",
+        tgt_tbl_nm="SYS_USER_MST",
+        tgt_id=user.USER_ID,
+        aft_val_json=SysUserOut.model_validate(user).model_dump(mode="json"),
+    )
+    return EmployeeCreateOut(**EmployeeOut.model_validate(employee).model_dump(), temp_password=temp_password)
 
 
 @router.patch("/{empl_id}", response_model=EmployeeOut)
