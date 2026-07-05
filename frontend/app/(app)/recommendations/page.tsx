@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Sparkles, Search, Trophy, Medal, Award } from 'lucide-react'
+import { Sparkles, Search, Trophy, Medal, Award, X } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -97,7 +97,10 @@ export default function RecommendationsPage() {
 
   const [projectId, setProjectId] = useState('')
   const [jobType, setJobType] = useState('')
-  const [skill, setSkill] = useState('')
+  // 필요 기술은 백엔드 REQ_SKILL_JSON.SKILL_IDS가 배열을 지원하는데도 프론트엔드가
+  // 단일 Select(`skill: string`)로 제한하고 있던 것을 다중 칩 선택으로 교체한다(§9-1).
+  const [skillIds, setSkillIds] = useState<string[]>([])
+  const [skillToAdd, setSkillToAdd] = useState('')
   const [role, setRole] = useState('')
   const [availDate, setAvailDate] = useState('')
   const [minAllocRt, setMinAllocRt] = useState('50')
@@ -125,10 +128,24 @@ export default function RecommendationsPage() {
     () => [{ label: '전체', value: '' }, ...jobTypes.map((j) => ({ label: j.JIKMU_NM, value: j.JIKMU_ID }))],
     [jobTypes],
   )
+  const skillNameById = useMemo(() => new Map(skills.map((s) => [s.SKILL_ID, s.SKILL_NM])), [skills])
+  // 이미 선택된 기술은 추가 선택지에서 제외한다(사원 상세 화면의 "기술 추가" 모달과
+  // 동일하게 중복 선택을 UI에서 방지).
   const skillOptions = useMemo(
-    () => [{ label: '전체', value: '' }, ...skills.map((s) => ({ label: s.SKILL_NM, value: s.SKILL_ID }))],
-    [skills],
+    () =>
+      skills.filter((s) => !skillIds.includes(s.SKILL_ID)).map((s) => ({ label: s.SKILL_NM, value: s.SKILL_ID })),
+    [skills, skillIds],
   )
+
+  function addSkill() {
+    if (!skillToAdd || skillIds.includes(skillToAdd)) return
+    setSkillIds((prev) => [...prev, skillToAdd])
+    setSkillToAdd('')
+  }
+
+  function removeSkill(skillId: string) {
+    setSkillIds((prev) => prev.filter((id) => id !== skillId))
+  }
 
   async function handleSubmit() {
     setSubmitting(true)
@@ -138,7 +155,7 @@ export default function RecommendationsPage() {
         PJT_ID: projectId,
         REQ_JIKMU_ID: jobType || null,
         REQ_ROLE_NM: role,
-        REQ_SKILL_JSON: skill ? { SKILL_IDS: [skill] } : {},
+        REQ_SKILL_JSON: skillIds.length > 0 ? { SKILL_IDS: skillIds } : {},
         MIN_ALLOC_RT: Number(minAllocRt),
         REQ_AVAIL_DT: availDate,
       })
@@ -221,7 +238,35 @@ export default function RecommendationsPage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>필요 기술</Label>
-              <Select value={skill} onValueChange={setSkill} options={skillOptions} />
+              <div className="flex gap-2">
+                <Select
+                  value={skillToAdd}
+                  onValueChange={setSkillToAdd}
+                  options={skillOptions}
+                  placeholder="기술 선택"
+                  className="flex-1"
+                />
+                <Button type="button" variant="secondary" onClick={addSkill} disabled={!skillToAdd}>
+                  추가
+                </Button>
+              </div>
+              {skillIds.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {skillIds.map((id) => (
+                    <Badge key={id} variant="secondary" className="gap-1.5">
+                      {skillNameById.get(id) ?? id}
+                      <button
+                        type="button"
+                        onClick={() => removeSkill(id)}
+                        aria-label="기술 제거"
+                        className="rounded-full hover:text-destructive"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="req-avail-date">투입 시작 희망일</Label>
