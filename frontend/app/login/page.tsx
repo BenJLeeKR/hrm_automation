@@ -35,7 +35,9 @@ export default function LoginPage() {
       setError(result.error ?? '로그인에 실패했습니다.')
       return
     }
-    router.push('/dashboard')
+    // 임시 비밀번호 상태(PWD_CHG_YN=TRUE)면 다른 화면으로 보내지 않고 비밀번호 변경
+    // 화면으로 강제 이동시킨다(설계서 §5.3.9, §8 큐 1-5).
+    router.push(result.pwdChgYn ? '/change-password' : '/dashboard')
   }
 
   return (

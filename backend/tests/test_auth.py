@@ -11,6 +11,9 @@ def test_login_success(client, db_session, admin_role):
     assert "access_token" in body
     assert "refresh_token" in body
     assert body["token_type"] == "bearer"
+    # 신규 생성 계정은 PWD_CHG_YN 기본값이 TRUE(임시 비밀번호 상태) — 프론트엔드가 이
+    # 값으로 최초 로그인 강제 리다이렉트 여부를 판단한다(설계서 §5.3.9, §8 큐 1-5).
+    assert body["pwd_chg_yn"] is True
 
 
 def test_login_wrong_password(client, db_session, admin_role):
@@ -138,6 +141,8 @@ def test_change_password_success_and_relogin(client, db_session, admin_role):
 
     new_login = client.post("/api/v1/auth/login", json={"USER_LGID": login_id, "password": "NewStr0ng!Pass"})
     assert new_login.status_code == 200
+    # 비밀번호 변경 완료 시 PWD_CHG_YN이 FALSE로 전환되어야 강제 리다이렉트가 해제된다.
+    assert new_login.json()["pwd_chg_yn"] is False
 
 
 def test_change_password_wrong_current_password(client, db_session, admin_role):

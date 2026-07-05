@@ -44,7 +44,9 @@ _INVALID_CREDENTIALS_DETAIL = "아이디 또는 비밀번호가 올바르지 않
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenResponse:
-    """로그인 — `SYS_USER_MST.USER_LGID`/비밀번호 검증 후 액세스/리프레시 토큰 발급"""
+    """로그인 — `SYS_USER_MST.USER_LGID`/비밀번호 검증 후 액세스/리프레시 토큰 발급.
+    응답의 `pwd_chg_yn`이 `true`이면(임시 비밀번호 상태) 프론트엔드가 비밀번호 변경
+    화면으로 강제 이동시켜야 한다(설계서 §5.3.9, §8 큐 1-5)."""
     user = get_user_by_login_id(db, payload.USER_LGID)
     # 계정 존재 여부를 노출하지 않도록 미존재/비밀번호 불일치/비활성/비밀번호 미설정을 모두 동일한 401로 처리한다.
     # 실패한 로그인 시도는 SYS_AUDIT_LOG.USER_ID가 NOT NULL FK라 행위자를 특정할 수 없어 기록하지 않는다.
@@ -54,6 +56,7 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     update_last_login(db, user)
     record_audit(db, request, user, act_cd="LOGIN", tgt_tbl_nm="SYS_USER_MST", tgt_id=user.USER_ID)
     return TokenResponse(
+        pwd_chg_yn=user.PWD_CHG_YN,
         access_token=create_access_token(user_id=str(user.USER_ID), role_id=str(user.ROLE_ID)),
         refresh_token=create_refresh_token(user_id=str(user.USER_ID)),
     )
@@ -159,10 +162,12 @@ def change_password(
 ) -> None:
     """비밀번호 변경 (설계서 §6 API 목록에 이미 명시, §9-1 "설정" 메뉴를 "비밀번호 변경"으로
     교체) — 현재 비밀번호 확인 후 본인 비밀번호만 교체한다. 비밀번호 값은 감사 로그에도
-    남기지 않는다(`SysUserOut`이 `ENCR_PWD`를 응답에서 제외하는 것과 동일한 원칙)."""
+    남기지 않는다(`SysUserOut`이 `ENCR_PWD`를 응답에서 제외하는 것과 동일한 원칙). 임시
+    비밀번호 상태(`PWD_CHG_YN=TRUE`)였다면 변경 완료와 함께 `FALSE`로 전환해 강제
+    리다이렉트를 해제한다(설계서 §5.3.9, §8 큐 1-5)."""
     if not current_user.ENCR_PWD or not verify_password(payload.current_password, current_user.ENCR_PWD):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="현재 비밀번호가 올바르지 않습니다.")
 
-    update_user(db, current_user, {"ENCR_PWD": hash_password(payload.new_password)})
+    update_user(db, current_user, {"ENCR_PWD": hash_password(payload.new_password), "PWD_CHG_YN": False})
     record_audit(db, request, current_user, act_cd="UPDATE", tgt_tbl_nm="SYS_USER_MST", tgt_id=current_user.USER_ID)
     return None

@@ -6,7 +6,7 @@ import { X } from 'lucide-react'
 import { Sidebar } from './sidebar'
 import { TopNav } from './top-nav'
 import { cn } from '@/lib/utils'
-import { isAuthenticated, getMe, type CurrentUser } from '@/lib/auth'
+import { isAuthenticated, getMe, requiresPasswordChange, type CurrentUser } from '@/lib/auth'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -22,6 +22,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace('/login')
+      return
+    }
+    // 임시 비밀번호 상태(PWD_CHG_YN=TRUE)면 URL을 직접 입력해 들어와도 다른 화면을 보지
+    // 못하도록 비밀번호 변경 화면으로 강제 이동시킨다(설계서 §5.3.9, §8 큐 1-5). `/login`과
+    // 동일하게 `(app)` 레이아웃 밖에 있는 `/change-password` 자체는 이 가드 대상이 아니다.
+    if (requiresPasswordChange()) {
+      router.replace('/change-password')
       return
     }
     setChecked(true)

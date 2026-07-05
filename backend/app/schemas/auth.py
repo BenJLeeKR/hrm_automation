@@ -13,11 +13,15 @@ class LoginRequest(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    """로그인 성공 응답 — 액세스/리프레시 토큰 한 쌍을 발급한다."""
+    """로그인 성공 응답 — 액세스/리프레시 토큰 한 쌍을 발급한다. `pwd_chg_yn`이 `true`이면
+    임시 비밀번호 상태(`SYS_USER_MST.PWD_CHG_YN`)라는 뜻으로, 프론트엔드는 다른 화면으로
+    이동하지 못하도록 비밀번호 변경 화면으로 강제 리다이렉트해야 한다(설계서 §5.3.9,
+    §8 큐 1-5)."""
 
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    pwd_chg_yn: bool
 
 
 class RefreshRequest(BaseModel):
@@ -65,9 +69,8 @@ class MeUpdate(BaseModel):
 class ChangePasswordRequest(BaseModel):
     """비밀번호 변경 요청 (`POST /api/v1/auth/change-password`, 설계서 §6 API 목록에 이미
     명시되어 있던 엔드포인트, §9-1 "설정" 메뉴를 "비밀번호 변경"으로 교체). 현재 비밀번호
-    확인 후 새 비밀번호로 교체한다 — `SYS_USER_MST.PWD_CHG_YN`(최초 로그인 강제 변경) 연동은
-    해당 컬럼이 아직 없어(로드맵 §8 큐 2번 "사원-계정 연동" 마이그레이션 대기 중) 이번
-    범위에서 다루지 않는다."""
+    확인 후 새 비밀번호로 교체하고, `SYS_USER_MST.PWD_CHG_YN`을 `FALSE`로 전환한다(설계서
+    §5.3.9 "사용자가 직접 지정한 비밀번호로 변경을 완료하면 FALSE로 전환", §8 큐 1-5)."""
 
     current_password: str
     new_password: str

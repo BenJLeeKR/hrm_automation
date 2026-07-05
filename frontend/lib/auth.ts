@@ -7,6 +7,11 @@
 // 다루지 않으며, 로드맵 §6 "인증 방식" 항목에 후속 작업으로 기록되어 있다.
 const ACCESS_TOKEN_KEY = 'hrm_access_token'
 const REFRESH_TOKEN_KEY = 'hrm_refresh_token'
+// 로그인 응답의 SYS_USER_MST.PWD_CHG_YN(임시 비밀번호 상태) — 최초 로그인 강제 비밀번호
+// 변경 리다이렉트 판단에 사용한다(설계서 §5.3.9, §8 큐 1-5). 토큰과 함께 저장하되,
+// 서버 측 상태가 원본이라 이 값은 "다음 화면 이동을 막을지"를 빠르게 판단하는 캐시일
+// 뿐이다 — 실제 비밀번호 변경 완료 여부는 항상 백엔드 검증을 거친다.
+const PWD_CHG_YN_KEY = 'hrm_pwd_chg_yn'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
 
@@ -20,21 +25,36 @@ export function getAccessToken(): string | null {
   return window.localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 
-function setSession(accessToken: string, refreshToken: string): void {
+/** 최초 로그인 강제 비밀번호 변경이 필요한 상태인지 확인한다. */
+export function requiresPasswordChange(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem(PWD_CHG_YN_KEY) === 'true'
+}
+
+/** 비밀번호 변경 완료 후 강제 리다이렉트 플래그를 해제한다. */
+export function clearPasswordChangeRequirement(): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(PWD_CHG_YN_KEY, 'false')
+}
+
+function setSession(accessToken: string, refreshToken: string, pwdChgYn: boolean): void {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
   window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  window.localStorage.setItem(PWD_CHG_YN_KEY, String(pwdChgYn))
 }
 
 function clearSession(): void {
   if (typeof window === 'undefined') return
   window.localStorage.removeItem(ACCESS_TOKEN_KEY)
   window.localStorage.removeItem(REFRESH_TOKEN_KEY)
+  window.localStorage.removeItem(PWD_CHG_YN_KEY)
 }
 
 export interface LoginResult {
   ok: boolean
   error?: string
+  pwdChgYn?: boolean
 }
 
 export async function login(userLoginId: string, password: string): Promise<LoginResult> {
@@ -52,9 +72,9 @@ export async function login(userLoginId: string, password: string): Promise<Logi
       return { ok: false, error: '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도하세요.' }
     }
 
-    const data = (await res.json()) as { access_token: string; refresh_token: string }
-    setSession(data.access_token, data.refresh_token)
-    return { ok: true }
+    const data = (await res.json()) as { access_token: string; refresh_token: string; pwd_chg_yn: boolean }
+    setSession(data.access_token, data.refresh_token, data.pwd_chg_yn)
+    return { ok: true, pwdChgYn: data.pwd_chg_yn }
   } catch {
     return { ok: false, error: '서버에 연결할 수 없습니다. 네트워크 상태를 확인하세요.' }
   }
