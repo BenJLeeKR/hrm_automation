@@ -220,3 +220,59 @@ def test_create_employee_email_already_used_by_account_returns_409(client, db_se
 
     employee = db_session.scalar(select(HrEmplMst).where(HrEmplMst.EMPL_NO == empl_no))
     assert employee is None
+
+
+def test_retire_employee_deactivates_linked_account(client, admin_token, dept, jikgup):
+    """퇴직 처리(`DELETE /employees/{empl_id}`) 시 사원 등록 때 자동 생성된 연동 계정도
+    함께 `USE_YN=FALSE`로 비활성화되어야 한다(설계서 §5.5 "퇴직자 계정 처리", §8 큐 1-3)."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTRETIRE{uuid.uuid4().hex[:6]}"
+    email = f"{empl_no}@example.com"
+
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=headers,
+        json={
+            "EMPL_NO": empl_no,
+            "EMPL_NM": "퇴직계정테스트",
+            "EMAIL_ADDR": email,
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    assert create_resp.status_code == 201
+    empl_id = create_resp.json()["EMPL_ID"]
+
+    users_before = client.get("/api/v1/users", headers=headers).json()
+    linked_before = next(u for u in users_before if u["USER_LGID"] == email)
+    assert linked_before["USE_YN"] is True
+
+    retire_resp = client.delete(f"/api/v1/employees/{empl_id}", headers=headers)
+    assert retire_resp.status_code == 200
+
+    users_after = client.get("/api/v1/users", headers=headers).json()
+    linked_after = next(u for u in users_after if u["USER_LGID"] == email)
+    assert linked_after["USE_YN"] is False
+
+
+def test_retire_employee_without_linked_account_succeeds(client, db_session, admin_token, dept, jikgup):
+    """연동 계정이 없는 사원(예: 이관 데이터)의 퇴직 처리는 계정 관련 예외 없이 정상
+    동작해야 한다."""
+    from app.models.hr_empl_mst import HrEmplMst
+
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTNOACC{uuid.uuid4().hex[:6]}"
+    employee = HrEmplMst(
+        EMPL_NO=empl_no,
+        EMPL_NM="계정없음테스트",
+        EMAIL_ADDR=f"{empl_no}@example.com",
+        DEPT_ID=dept.DEPT_ID,
+        JIKGUP_ID=jikgup.JIKGUP_ID,
+        EMPL_STAT_CD="ACTIVE",
+    )
+    db_session.add(employee)
+    db_session.flush()
+
+    retire_resp = client.delete(f"/api/v1/employees/{employee.EMPL_ID}", headers=headers)
+    assert retire_resp.status_code == 200
+    assert retire_resp.json()["EMPL_STAT_CD"] == "RETIRED"

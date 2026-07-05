@@ -23,6 +23,7 @@ from app.repositories.hr_empl_mst import (
     update_employee,
 )
 from app.repositories.sys_role_mst import get_role_by_code
+from app.repositories.sys_user_mst import deactivate_user, get_user_by_empl_id
 from app.schemas.hr_empl_mst import EmployeeCreate, EmployeeCreateOut, EmployeeListResponse, EmployeeOut, EmployeeUpdate
 from app.schemas.sys_user_mst import SysUserOut
 from app.services.employee_import import EmployeeImportValidationError, apply_import, parse_and_validate
@@ -267,7 +268,9 @@ def delete_employee(
     current_user: SysUserMst = Depends(require_permission("employees", "delete")),
 ) -> EmployeeOut:
     """사원 퇴직 처리 (로드맵 §8 다음 작업 1번) — 로우를 삭제하지 않고
-    `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록만 수행하는 소프트 삭제."""
+    `EMPL_STAT_CD='RETIRED'` 전환 + `RETIR_DT` 기록만 수행하는 소프트 삭제. 연동된
+    `SYS_USER_MST` 계정이 있으면 함께 비활성화한다(설계서 §5.5 "퇴직자 계정 처리",
+    §8 큐 1-3 — 설계서에는 이미 명시돼 있었으나 지금까지 미구현 상태였음)."""
     employee = get_employee(db, empl_id)
     if employee is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사원을 찾을 수 없습니다.")
@@ -276,6 +279,21 @@ def delete_employee(
 
     before_snapshot = EmployeeOut.model_validate(employee).model_dump(mode="json")
     employee = retire_employee(db, employee, retir_dt)
+
+    linked_user = get_user_by_empl_id(db, employee.EMPL_ID)
+    if linked_user is not None and linked_user.USE_YN:
+        user_before_snapshot = SysUserOut.model_validate(linked_user).model_dump(mode="json")
+        linked_user = deactivate_user(db, linked_user)
+        record_audit(
+            db,
+            request,
+            current_user,
+            act_cd="UPDATE",
+            tgt_tbl_nm="SYS_USER_MST",
+            tgt_id=linked_user.USER_ID,
+            bfr_val_json=user_before_snapshot,
+            aft_val_json=SysUserOut.model_validate(linked_user).model_dump(mode="json"),
+        )
 
     record_audit(
         db,

@@ -15,6 +15,12 @@ def get_user(db: Session, user_id: uuid.UUID) -> SysUserMst | None:
     return db.get(SysUserMst, user_id)
 
 
+def get_user_by_empl_id(db: Session, empl_id: uuid.UUID) -> SysUserMst | None:
+    """사원 ID로 연동 계정을 조회한다 — 퇴직 처리 시 연결 계정 비활성화 용도
+    (설계서 §5.5 "퇴직자 계정 처리", §8 큐 1-3)."""
+    return db.scalar(select(SysUserMst).where(SysUserMst.EMPL_ID == empl_id))
+
+
 def update_last_login(db: Session, user: SysUserMst) -> SysUserMst:
     user.LAST_LGN_DTTM = datetime.now(timezone.utc)
     db.commit()
