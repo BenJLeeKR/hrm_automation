@@ -293,14 +293,18 @@ export default function ProjectDetailPage({
             )}
             {/* 사용자 요청으로 진행 중(ACTIVE) 유형별 구성 외에도 계획(PLANNED)·종료(DONE)
                 상태의 인력 수를 함께 표시한다(§9-1과 무관한 직접 요청 건, 2026-07-05). */}
-            <div className="mt-1 flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2">
-              <span className="text-sm text-muted-foreground">계획</span>
-              <Badge variant="outline">{plannedCount}명</Badge>
-            </div>
-            <div className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2">
-              <span className="text-sm text-muted-foreground">종료</span>
-              <Badge variant="outline">{doneCount}명</Badge>
-            </div>
+            {plannedCount > 0 && (
+              <div className="mt-1 flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2">
+                <span className="text-sm text-muted-foreground">계획</span>
+                <Badge variant="outline">{plannedCount}명</Badge>
+              </div>
+            )}
+            {doneCount > 0 && (
+              <div className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2">
+                <span className="text-sm text-muted-foreground">종료</span>
+                <Badge variant="outline">{doneCount}명</Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
