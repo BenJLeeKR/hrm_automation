@@ -71,6 +71,16 @@ def viewer_role(db_session) -> SysRoleMst:
 
 
 @pytest.fixture()
+def hr_mgr_role(db_session) -> SysRoleMst:
+    return _get_role(db_session, "HR_MGR")
+
+
+@pytest.fixture()
+def employee_role(db_session) -> SysRoleMst:
+    return _get_role(db_session, "EMPLOYEE")
+
+
+@pytest.fixture()
 def dept(db_session) -> HrDeptMst:
     dept = HrDeptMst(DEPT_ID=uuid.uuid4(), DEPT_CD=f"PYTEST-{uuid.uuid4().hex[:8]}", DEPT_NM="테스트부서")
     db_session.add(dept)
@@ -115,4 +125,10 @@ def admin_token(db_session, admin_role) -> str:
 @pytest.fixture()
 def viewer_token(db_session, viewer_role) -> str:
     user = _make_token_user(db_session, viewer_role)
+    return create_access_token(user_id=str(user.USER_ID), role_id=str(user.ROLE_ID))
+
+
+@pytest.fixture()
+def hr_mgr_token(db_session, hr_mgr_role) -> str:
+    user = _make_token_user(db_session, hr_mgr_role)
     return create_access_token(user_id=str(user.USER_ID), role_id=str(user.ROLE_ID))

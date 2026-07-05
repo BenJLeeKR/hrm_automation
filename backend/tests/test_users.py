@@ -1,5 +1,12 @@
 import uuid
 
+from sqlalchemy import select
+
+from app.core.security import hash_password
+from app.models.hr_empl_mst import HrEmplMst
+from app.models.sys_role_mst import SysRoleMst
+from app.models.sys_user_mst import SysUserMst
+
 
 def test_create_and_list_users(client, admin_token, admin_role):
     headers = {"Authorization": f"Bearer {admin_token}"}
@@ -222,3 +229,86 @@ def test_viewer_cannot_manage_users(client, viewer_token, admin_role):
         },
     )
     assert create_resp.status_code == 403
+
+
+def _create_empl_linked_user(db_session, *, empl_role: SysRoleMst, dept, jikgup) -> SysUserMst:
+    """`EMPL_ID`가 연결된 계정 — 사원 등록 시 자동 생성되는 계정을 흉내낸다(§8 큐 1-2)."""
+    empl_no = f"PYTESTHRM{uuid.uuid4().hex[:6]}"
+    employee = HrEmplMst(
+        EMPL_NO=empl_no,
+        EMPL_NM="HR_MGR권한테스트",
+        EMAIL_ADDR=f"{empl_no}@example.com",
+        DEPT_ID=dept.DEPT_ID,
+        JIKGUP_ID=jikgup.JIKGUP_ID,
+        EMPL_STAT_CD="ACTIVE",
+    )
+    db_session.add(employee)
+    db_session.flush()
+
+    user = SysUserMst(
+        EMPL_ID=employee.EMPL_ID,
+        USER_LGID=employee.EMAIL_ADDR,
+        EMAIL_ADDR=employee.EMAIL_ADDR,
+        ENCR_PWD=hash_password("Str0ng!Pass"),
+        ROLE_ID=empl_role.ROLE_ID,
+    )
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+def test_hr_mgr_can_change_role_of_linked_account(client, db_session, hr_mgr_token, employee_role, dept, jikgup):
+    """`HR_MGR`은 `EMPL_ID` 연결 계정의 업무 역할(PM/TEAM_LEAD/EXEC/EMPLOYEE/VIEWER)을
+    변경할 수 있어야 한다 (설계서 §5.5 "직원 역할 배정", §8 큐 1-4)."""
+    user = _create_empl_linked_user(db_session, empl_role=employee_role, dept=dept, jikgup=jikgup)
+    pm_role = db_session.scalar(select(SysRoleMst).where(SysRoleMst.ROLE_CD == "PM"))
+
+    headers = {"Authorization": f"Bearer {hr_mgr_token}"}
+    resp = client.patch(f"/api/v1/users/{user.USER_ID}", headers=headers, json={"ROLE_ID": str(pm_role.ROLE_ID)})
+
+    assert resp.status_code == 200
+    assert resp.json()["ROLE_ID"] == str(pm_role.ROLE_ID)
+
+
+def test_hr_mgr_cannot_promote_to_admin(client, db_session, hr_mgr_token, admin_role, employee_role, dept, jikgup):
+    """`HR_MGR`은 `ADMIN` 역할로 승격시킬 수 없어야 한다."""
+    user = _create_empl_linked_user(db_session, empl_role=employee_role, dept=dept, jikgup=jikgup)
+
+    headers = {"Authorization": f"Bearer {hr_mgr_token}"}
+    resp = client.patch(f"/api/v1/users/{user.USER_ID}", headers=headers, json={"ROLE_ID": str(admin_role.ROLE_ID)})
+
+    assert resp.status_code == 403
+
+
+def test_hr_mgr_cannot_modify_account_without_empl_id(client, admin_token, hr_mgr_token, admin_role):
+    """`HR_MGR`은 사원과 연동되지 않은(`EMPL_ID` 없는) 시스템/외부 협력사 계정을 수정할
+    수 없어야 한다."""
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    login_id = f"pytest_{uuid.uuid4().hex[:8]}"
+    create_resp = client.post(
+        "/api/v1/users",
+        headers=admin_headers,
+        json={
+            "USER_LGID": login_id,
+            "EMAIL_ADDR": f"{login_id}@example.com",
+            "password": "Str0ng!Pass",
+            "ROLE_ID": str(admin_role.ROLE_ID),
+        },
+    )
+    user_id = create_resp.json()["USER_ID"]
+
+    hr_mgr_headers = {"Authorization": f"Bearer {hr_mgr_token}"}
+    resp = client.patch(f"/api/v1/users/{user_id}", headers=hr_mgr_headers, json={"ROLE_ID": str(admin_role.ROLE_ID)})
+
+    assert resp.status_code == 403
+
+
+def test_hr_mgr_cannot_change_email_of_linked_account(client, db_session, hr_mgr_token, employee_role, dept, jikgup):
+    """`HR_MGR`은 `EMPL_ID` 연결 계정이라도 업무 역할(`ROLE_ID`) 외 다른 필드는 수정할 수
+    없어야 한다."""
+    user = _create_empl_linked_user(db_session, empl_role=employee_role, dept=dept, jikgup=jikgup)
+
+    headers = {"Authorization": f"Bearer {hr_mgr_token}"}
+    resp = client.patch(f"/api/v1/users/{user.USER_ID}", headers=headers, json={"EMAIL_ADDR": "changed@example.com"})
+
+    assert resp.status_code == 403

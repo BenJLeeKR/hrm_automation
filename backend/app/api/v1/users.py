@@ -8,6 +8,7 @@ from app.api.deps import require_permission
 from app.core.audit import record_audit
 from app.core.security import hash_password
 from app.db.session import get_db
+from app.models.sys_role_mst import SysRoleMst
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.sys_role_mst import list_roles
 from app.repositories.sys_user_mst import create_user, deactivate_user, get_user, list_users, update_user
@@ -17,6 +18,10 @@ from app.schemas.sys_user_mst import SysUserOut, UserCreate, UserUpdate
 router = APIRouter(prefix="/users", tags=["users"])
 
 _TGT_TBL_NM = "SYS_USER_MST"
+
+# HR_MGR이 EMPL_ID 연결 계정에 배정할 수 있는 업무 역할 범위(설계서 §5.5 "직원 역할
+# 배정", `PERMISSION_MATRIX.md` `settings_users` 섹션) — ADMIN/HR_MGR 승격은 제외.
+_HR_MGR_ASSIGNABLE_ROLE_CODES = ("PM", "TEAM_LEAD", "EXEC", "EMPLOYEE", "VIEWER")
 
 
 @router.get(
@@ -78,10 +83,30 @@ def patch_user(
     current_user: SysUserMst = Depends(require_permission("settings_users", "update")),
 ) -> SysUserOut:
     """시스템 사용자 수정 (SCR-015 "계정 등록/수정 모달", §9-1) — 전달된 필드만 갱신.
-    비밀번호 변경은 이번 범위에서 다루지 않음(별도 후속)."""
+    비밀번호 변경은 이번 범위에서 다루지 않음(별도 후속).
+
+    `HR_MGR`은 `settings_users.update` 권한이 있어도 `EMPL_ID` 연결 계정의 업무 역할
+    (`ROLE_ID`)만 변경할 수 있다 — `ADMIN` 승격이나 `EMPL_ID`가 없는 시스템/외부 협력사
+    계정 수정은 여전히 `ADMIN`만 가능하다. 이 값(role)·행(row) 단위 제약은 화면/버튼
+    단위인 `PERM_JSON`으로 표현할 수 없어 여기서 직접 검증한다(§8 큐 1-4,
+    `PERMISSION_MATRIX.md` §5-7 참조)."""
     user = get_user(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+
+    update_fields = payload.model_dump(exclude_unset=True)
+    current_role = db.get(SysRoleMst, current_user.ROLE_ID)
+    if current_role is not None and current_role.ROLE_CD == "HR_MGR":
+        if user.EMPL_ID is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="사원과 연동되지 않은 계정은 수정할 수 없습니다."
+            )
+        if set(update_fields) - {"ROLE_ID"}:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="업무 역할만 변경할 수 있습니다.")
+        if "ROLE_ID" in update_fields:
+            target_role = db.get(SysRoleMst, update_fields["ROLE_ID"])
+            if target_role is None or target_role.ROLE_CD not in _HR_MGR_ASSIGNABLE_ROLE_CODES:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="지정할 수 없는 역할입니다.")
 
     before_snapshot = SysUserOut.model_validate(user).model_dump(mode="json")
     try:

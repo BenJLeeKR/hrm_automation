@@ -93,8 +93,13 @@ SYS_ROLE_MST_SEED = [
             ai_chat=_perm(view=True),
             reports=_perm(view=True, excel=True, admin=True),
             settings=_perm(view=True),
-            # settings_users/settings_audit_logs: 화면 설계서상 Admin 전용 (A) — HR_MGR 접근 불가
-            settings_users=_perm(),
+            # settings_audit_logs: 화면 설계서상 Admin 전용 (A) — HR_MGR 접근 불가.
+            # settings_users: 2026-07-06 설계 확정(§8 큐 1-4)으로 `update`만 확대 —
+            # `EMPL_ID` 연결 계정의 업무 역할(PM/TEAM_LEAD/EXEC/EMPLOYEE/VIEWER)만
+            # 변경 가능. `view`/`create`/`delete`는 이번 범위에서 다루지 않아 그대로
+            # False 유지(`PERMISSION_MATRIX.md` `settings_users` 섹션 "추정" 표시 참조
+            # — 값/행 단위 제약은 이 PERM_JSON으로 표현 불가해 API 레이어에서 검증).
+            settings_users=_perm(update=True),
             settings_audit_logs=_perm(),
             settings_notification=_perm(),
         ),
