@@ -1,167 +1,146 @@
 'use client'
 
 import { useState } from 'react'
-import { ModalForm } from '@/components/common/modal-form'
-import { Label } from '@/components/ui/label'
+import { ModalForm, FormField } from '@/components/common/modal-form'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
-import { employees } from '@/lib/mock-data'
-import type { AssignmentType } from '@/lib/types'
+import { apiPost, ApiError } from '@/lib/api'
+import { assignmentTypeOptions } from '@/lib/options'
 
-interface AssignedMember {
-  empNo: string
-  name: string
-  role: string
-  allocation: number
-  type: AssignmentType
-  startDate: string
-  endDate: string
+// 로드맵 §9-1 "프로젝트 상세 화면 — 인력투입 버튼 없음" 해소를 위해, 그동안 투입 관리
+// 화면(`assignments/page.tsx`)에 인라인 함수로만 있던 실 API 연동 등록 모달을, 이미
+// 저장소에 있었으나 목데이터(`lib/mock-data.ts`) 기반이라 어디에서도 실제로 쓰이지
+// 않던 이 파일을 대체하며 공용 컴포넌트로 추출한다. `fixedPjtId`/`fixedPjtName` 전달
+// 시(프로젝트 상세 화면) 프로젝트 Select 대신 고정 표시하고, 미전달 시(투입 관리
+// 화면) 프로젝트 목록에서 선택하는 기존 동작을 그대로 유지한다.
+const typeSelectOptions = assignmentTypeOptions.filter((o) => o.value !== 'ALL')
+
+interface EmployeeOption {
+  EMPL_ID: string
+  EMPL_NO: string
+  EMPL_NM: string
+}
+interface ProjectOption {
+  PJT_ID: string
+  PJT_NM: string
 }
 
-interface AssignmentFormModalProps {
+interface Props {
   open: boolean
-  onClose: () => void
-  projectName: string
-  onSubmit: (member: AssignedMember) => void
+  onOpenChange: (open: boolean) => void
+  onSaved: () => void
+  employees: EmployeeOption[]
+  projects?: ProjectOption[]
+  fixedPjtId?: string
+  fixedPjtName?: string
 }
-
-const employeeOptions = employees.map((e) => ({
-  value: e.empNo,
-  label: `${e.name} · ${e.roles.join('/')} (${e.allocation}%)`,
-}))
-
-const typeOptions = [
-  { value: 'RUNNING', label: '수행중' },
-  { value: 'COMMITTED', label: '투입준비중' },
-  { value: 'PROPOSED', label: '제안중' },
-]
 
 export function AssignmentFormModal({
   open,
-  onClose,
-  projectName,
-  onSubmit,
-}: AssignmentFormModalProps) {
-  const [empNo, setEmpNo] = useState('')
+  onOpenChange,
+  onSaved,
+  employees,
+  projects,
+  fixedPjtId,
+  fixedPjtName,
+}: Props) {
+  const employeeOptions = employees.map((e) => ({ label: `${e.EMPL_NM} (${e.EMPL_NO})`, value: e.EMPL_ID }))
+  const projectOptions = (projects ?? []).map((p) => ({ label: p.PJT_NM, value: p.PJT_ID }))
+
+  const [empId, setEmpId] = useState('')
+  const [pjtId, setPjtId] = useState('')
+  const [type, setType] = useState(typeSelectOptions[0].value)
   const [role, setRole] = useState('')
-  const [type, setType] = useState<AssignmentType>('RUNNING')
-  const [allocation, setAllocation] = useState('50')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-
-  const selected = employees.find((e) => e.empNo === empNo)
+  const [allocRt, setAllocRt] = useState('100')
+  const [remark, setRemark] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   function reset() {
-    setEmpNo('')
+    setEmpId('')
+    setPjtId('')
+    setType(typeSelectOptions[0].value)
     setRole('')
-    setType('RUNNING')
-    setAllocation('50')
     setStartDate('')
     setEndDate('')
+    setAllocRt('100')
+    setRemark('')
+    setFormError(null)
   }
 
-  function handleSubmit() {
-    if (!selected) return
-    onSubmit({
-      empNo: selected.empNo,
-      name: selected.name,
-      role: role || selected.roles[0] || '팀원',
-      allocation: Number(allocation) || 0,
-      type,
-      startDate: startDate || '2026-07-01',
-      endDate: endDate || '2026-12-31',
-    })
+  function handleClose() {
     reset()
-    onClose()
+    onOpenChange(false)
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setFormError(null)
+    try {
+      await apiPost('/api/v1/assignments', {
+        EMPL_ID: empId,
+        PJT_ID: fixedPjtId ?? pjtId,
+        ASGN_TYPE_CD: type,
+        PRJT_ROLE_NM: role,
+        ALLOC_RT: Number(allocRt),
+        ASGN_STRT_DT: startDate,
+        ASGN_END_DT: endDate || null,
+        RMRK: remark || null,
+      })
+      onSaved()
+      handleClose()
+    } catch (err) {
+      // 동일 사원·겹치는 기간 ALLOC_RT 합계 100% 초과 시 백엔드가 409를 반환한다 —
+      // 서버 검증 메시지를 그대로 보여준다.
+      setFormError(err instanceof ApiError ? err.message : '등록에 실패했습니다. 잠시 후 다시 시도하세요.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <ModalForm
       open={open}
-      onClose={onClose}
-      title="인력 투입"
-      description={`${projectName} 프로젝트에 인력을 배정합니다.`}
-      submitText="투입"
+      onClose={handleClose}
+      title="투입 등록"
+      description={fixedPjtName ? `${fixedPjtName} 프로젝트에 인력을 배정합니다.` : undefined}
+      submitText="등록"
       onSubmit={handleSubmit}
-      submitDisabled={!selected}
+      submitDisabled={submitting || !empId || (!fixedPjtId && !pjtId) || !role.trim() || !startDate || !allocRt}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label>대상 사원</Label>
-          <Select
-            value={empNo}
-            onValueChange={setEmpNo}
-            options={employeeOptions}
-            placeholder="사원 선택"
-          />
-        </div>
-
+        {formError && <p className="text-sm text-destructive">{formError}</p>}
+        <FormField label="사원" required>
+          <Select value={empId} onValueChange={setEmpId} options={employeeOptions} placeholder="사원 선택" />
+        </FormField>
+        {!fixedPjtId && (
+          <FormField label="프로젝트" required>
+            <Select value={pjtId} onValueChange={setPjtId} options={projectOptions} placeholder="프로젝트 선택" />
+          </FormField>
+        )}
+        <FormField label="프로젝트 유형" required>
+          <Select value={type} onValueChange={setType} options={typeSelectOptions} />
+        </FormField>
+        <FormField label="프로젝트 내 역할" required>
+          <Input value={role} onChange={(e) => setRole(e.target.value)} placeholder="예: 리드개발, 분석, 참여" />
+        </FormField>
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="assign-role">역할</Label>
-            <Input
-              id="assign-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              placeholder={selected?.roles[0] ?? '예: 백엔드 개발'}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>투입 유형</Label>
-            <Select
-              value={type}
-              onValueChange={(v) => setType(v as AssignmentType)}
-              options={typeOptions}
-            />
-          </div>
+          <FormField label="투입 시작일" required>
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </FormField>
+          <FormField label="투입 종료 예정일">
+            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </FormField>
         </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="assign-alloc">투입률 (%)</Label>
-          <Input
-            id="assign-alloc"
-            type="number"
-            min={0}
-            max={100}
-            value={allocation}
-            onChange={(e) => setAllocation(e.target.value)}
-          />
-          {selected && (
-            <p className="text-xs text-muted-foreground">
-              현재 가동률 {selected.allocation}% · 투입 후 예상{' '}
-              <span
-                className={
-                  selected.allocation + Number(allocation) > 100
-                    ? 'font-semibold text-destructive'
-                    : 'font-semibold text-foreground'
-                }
-              >
-                {selected.allocation + Number(allocation)}%
-              </span>
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="assign-start">시작일</Label>
-            <Input
-              id="assign-start"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="assign-end">종료일</Label>
-            <Input
-              id="assign-end"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
+        <FormField label="투입률(%)" required>
+          <Input type="number" min={0} max={100} value={allocRt} onChange={(e) => setAllocRt(e.target.value)} />
+        </FormField>
+        <FormField label="비고">
+          <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={2} />
+        </FormField>
       </div>
     </ModalForm>
   )

@@ -11,10 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { UtilizationBar } from '@/components/common/utilization-progress'
 import { AssignmentTypeBadge } from '@/components/common/status-badge'
-import { ModalForm, FormField } from '@/components/common/modal-form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { apiGet, apiPost, ApiError } from '@/lib/api'
+import { AssignmentFormModal } from '@/components/projects/assignment-form-modal'
+import { apiGet } from '@/lib/api'
 import { assignmentTypeOptions, assignmentStatusOptions } from '@/lib/options'
 import { assignmentStatusLabel } from '@/lib/labels'
 import type { AssignmentType, AssignmentStatus } from '@/lib/types'
@@ -56,9 +54,6 @@ interface AssignmentRow extends AssignmentOut {
   empName: string
   projectName: string
 }
-
-const typeSelectOptions = assignmentTypeOptions.filter((o) => o.value !== 'ALL')
-const statusSelectOptions = assignmentStatusOptions.filter((o) => o.value !== 'ALL')
 
 async function loadAssignments(): Promise<{ rows: AssignmentRow[]; employees: EmployeeOut[]; projects: ProjectOut[] }> {
   const [assignmentsRes, employeesRes, projectsRes] = await Promise.all([
@@ -246,121 +241,11 @@ export default function AssignmentsPage() {
 
       <AssignmentFormModal
         open={openCreate}
-        onClose={() => setOpenCreate(false)}
+        onOpenChange={setOpenCreate}
         employees={employees}
         projects={projects}
         onSaved={reload}
       />
     </div>
-  )
-}
-
-function AssignmentFormModal({
-  open,
-  onClose,
-  employees,
-  projects,
-  onSaved,
-}: {
-  open: boolean
-  onClose: () => void
-  employees: EmployeeOut[]
-  projects: ProjectOut[]
-  onSaved: () => void
-}) {
-  const employeeOptions = employees.map((e) => ({ label: `${e.EMPL_NM} (${e.EMPL_NO})`, value: e.EMPL_ID }))
-  const projectOptions = projects.map((p) => ({ label: p.PJT_NM, value: p.PJT_ID }))
-
-  const [empId, setEmpId] = useState('')
-  const [pjtId, setPjtId] = useState('')
-  const [type, setType] = useState(typeSelectOptions[0].value)
-  const [role, setRole] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [allocRt, setAllocRt] = useState('100')
-  const [remark, setRemark] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-
-  function reset() {
-    setEmpId('')
-    setPjtId('')
-    setType(typeSelectOptions[0].value)
-    setRole('')
-    setStartDate('')
-    setEndDate('')
-    setAllocRt('100')
-    setRemark('')
-    setFormError(null)
-  }
-
-  async function handleSubmit() {
-    setSubmitting(true)
-    setFormError(null)
-    try {
-      await apiPost('/api/v1/assignments', {
-        EMPL_ID: empId,
-        PJT_ID: pjtId,
-        ASGN_TYPE_CD: type,
-        PRJT_ROLE_NM: role,
-        ALLOC_RT: Number(allocRt),
-        ASGN_STRT_DT: startDate,
-        ASGN_END_DT: endDate || null,
-        RMRK: remark || null,
-      })
-      onSaved()
-      reset()
-      onClose()
-    } catch (err) {
-      // 동일 사원·겹치는 기간 ALLOC_RT 합계 100% 초과 시 백엔드가 409를 반환한다 —
-      // 서버 검증 메시지를 그대로 보여준다.
-      setFormError(err instanceof ApiError ? err.message : '등록에 실패했습니다. 잠시 후 다시 시도하세요.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <ModalForm
-      open={open}
-      onClose={() => {
-        reset()
-        onClose()
-      }}
-      title="투입 등록"
-      submitText="등록"
-      onSubmit={handleSubmit}
-      submitDisabled={submitting || !empId || !pjtId || !role.trim() || !startDate || !allocRt}
-    >
-      <div className="flex flex-col gap-4">
-        {formError && <p className="text-sm text-destructive">{formError}</p>}
-        <FormField label="사원" required>
-          <Select value={empId} onValueChange={setEmpId} options={employeeOptions} placeholder="사원 선택" />
-        </FormField>
-        <FormField label="프로젝트" required>
-          <Select value={pjtId} onValueChange={setPjtId} options={projectOptions} placeholder="프로젝트 선택" />
-        </FormField>
-        <FormField label="프로젝트 유형" required>
-          <Select value={type} onValueChange={setType} options={typeSelectOptions} />
-        </FormField>
-        <FormField label="프로젝트 내 역할" required>
-          <Input value={role} onChange={(e) => setRole(e.target.value)} placeholder="예: 리드개발, 분석, 참여" />
-        </FormField>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="투입 시작일" required>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </FormField>
-          <FormField label="투입 종료 예정일">
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </FormField>
-        </div>
-        <FormField label="투입률(%)" required>
-          <Input type="number" min={0} max={100} value={allocRt} onChange={(e) => setAllocRt(e.target.value)} />
-        </FormField>
-        <FormField label="비고">
-          <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={2} />
-        </FormField>
-      </div>
-    </ModalForm>
   )
 }

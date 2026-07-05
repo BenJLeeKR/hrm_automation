@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Pencil, CircleOff } from 'lucide-react'
+import { ArrowLeft, Pencil, CircleOff, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { EmptyState } from '@/components/common/empty-state'
 import { UtilizationBar } from '@/components/common/utilization-progress'
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ProjectFormModal } from '@/components/projects/project-form-modal'
+import { AssignmentFormModal } from '@/components/projects/assignment-form-modal'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import {
   Table,
@@ -37,6 +38,7 @@ interface ProjectOut {
 }
 interface EmployeeOut {
   EMPL_ID: string
+  EMPL_NO: string
   EMPL_NM: string
   DEPT_ID: string
   JIKMU_ID: string | null
@@ -68,6 +70,7 @@ interface EmployeeListResponse {
 
 interface ProjectDetailData {
   project: ProjectOut
+  employees: EmployeeOut[]
   assignments: Array<AssignmentOut & { employeeName: string; deptName: string; jobTypeName: string | null }>
 }
 
@@ -86,6 +89,7 @@ async function loadProjectDetail(id: string): Promise<ProjectDetailData> {
 
   return {
     project,
+    employees: employeesRes.items,
     assignments: assignmentsRes.items.map((a) => {
       const employee = employeeById.get(a.EMPL_ID)
       return {
@@ -112,6 +116,7 @@ export default function ProjectDetailPage({
   const [openCloseConfirm, setOpenCloseConfirm] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState<string | null>(null)
+  const [openAddAssignment, setOpenAddAssignment] = useState(false)
 
   async function handleClose() {
     setClosing(true)
@@ -178,7 +183,7 @@ export default function ProjectDetailPage({
     )
   }
 
-  const { project, assignments } = data
+  const { project, employees, assignments } = data
   const activeAssignments = assignments.filter((a) => a.ASGN_STAT_CD === 'ACTIVE')
   const memberCount = new Set(activeAssignments.map((a) => a.EMPL_ID)).size
   const avgAllocation = activeAssignments.length
@@ -199,7 +204,6 @@ export default function ProjectDetailPage({
         title={project.PJT_NM}
         description={`${project.PJT_CD} · ${project.CLNT_NM ?? '고객사 미지정'}`}
       >
-        {/* "인력 투입" 버튼은 이번 범위에서 다루지 않아 후속 작업으로 남긴다(§9-1 참조). */}
         <Button variant="secondary" onClick={() => setOpenEdit(true)}>
           <Pencil className="size-4" />
           수정
@@ -211,6 +215,10 @@ export default function ProjectDetailPage({
         >
           <CircleOff className="size-4" />
           종료처리
+        </Button>
+        <Button onClick={() => setOpenAddAssignment(true)}>
+          <UserPlus className="size-4" />
+          인력투입
         </Button>
       </PageHeader>
 
@@ -334,6 +342,14 @@ export default function ProjectDetailPage({
       </Card>
 
       <ProjectFormModal open={openEdit} onOpenChange={setOpenEdit} onSaved={reload} project={project} />
+      <AssignmentFormModal
+        open={openAddAssignment}
+        onOpenChange={setOpenAddAssignment}
+        onSaved={reload}
+        employees={employees}
+        fixedPjtId={project.PJT_ID}
+        fixedPjtName={project.PJT_NM}
+      />
       <ConfirmDialog
         open={openCloseConfirm}
         onClose={() => setOpenCloseConfirm(false)}
