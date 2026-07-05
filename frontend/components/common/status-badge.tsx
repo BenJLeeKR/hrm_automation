@@ -53,6 +53,7 @@ const roleVariant: Record<RoleCode, 'default' | 'soft' | 'secondary' | 'muted'> 
   PM: 'soft',
   TEAM_LEAD: 'secondary',
   EXEC: 'secondary',
+  EMPLOYEE: 'muted',
   VIEWER: 'muted',
 }
 

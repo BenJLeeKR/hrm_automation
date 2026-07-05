@@ -6,7 +6,10 @@ export type AssignmentType = 'RUNNING' | 'COMMITTED' | 'PROPOSED'
 export type AssignmentStatus = 'PLANNED' | 'ACTIVE' | 'DONE' | 'CANCELED'
 export type ProjectStatus = 'PLANNED' | 'RUNNING' | 'CLOSED' | 'HOLD'
 export type AvailabilityKind = 'IMMEDIATE' | 'PARTIAL' | 'TERM'
-export type RoleCode = 'ADMIN' | 'HR_MGR' | 'PM' | 'TEAM_LEAD' | 'EXEC' | 'VIEWER'
+// EMPLOYEE(일반 사원)는 사원-계정 연동 설계(2026-07-06, §8 큐 1번)로 7번째 역할로
+// 추가되었다 — 이 타입과 roleLabel/roleVariant(components/common/status-badge.tsx)를
+// 함께 갱신해야 화면에 배지가 정상 표시된다.
+export type RoleCode = 'ADMIN' | 'HR_MGR' | 'PM' | 'TEAM_LEAD' | 'EXEC' | 'EMPLOYEE' | 'VIEWER'
 export type UserStatus = 'ACTIVE' | 'INACTIVE'
 
 export type TeamCode = 'DELIVERY' | 'SALES_PARTNER' | 'SALES'

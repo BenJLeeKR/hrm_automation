@@ -55,6 +55,7 @@ export const roleLabel: Record<RoleCode, string> = {
   PM: '프로젝트 관리자',
   TEAM_LEAD: '팀장',
   EXEC: '임원',
+  EMPLOYEE: '일반 사원',
   VIEWER: '조회자',
 }
 
