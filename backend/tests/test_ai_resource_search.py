@@ -10,9 +10,11 @@ from app.services.ai_resource_search import search_resources
 
 
 def _create_employee(client, headers, dept, jikgup, *, jikmu_id=None) -> str:
+    empl_no = f"PYTESTAI{uuid.uuid4().hex[:6]}"
     payload = {
-        "EMPL_NO": f"PYTESTAI{uuid.uuid4().hex[:6]}",
+        "EMPL_NO": empl_no,
         "EMPL_NM": "AI검색테스트",
+        "EMAIL_ADDR": f"{empl_no}@example.com",
         "DEPT_ID": str(dept.DEPT_ID),
         "JIKGUP_ID": str(jikgup.JIKGUP_ID),
     }

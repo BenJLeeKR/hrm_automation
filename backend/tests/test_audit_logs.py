@@ -44,6 +44,7 @@ def test_list_audit_logs_filters_by_tgt_id(client, admin_token, dept, jikgup):
         json={
             "EMPL_NO": "PYTESTAUDIT01",
             "EMPL_NM": "감사로그테스트",
+            "EMAIL_ADDR": "pytestaudit01@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },

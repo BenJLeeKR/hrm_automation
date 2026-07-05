@@ -4,6 +4,10 @@
 #       ROLE_DESC/PERM_JSON 상세는 없어, Phase 2 Alembic Seed 작성이 가능하도록 MVP
 #       기준으로 확정한다.
 #
+# `EMPLOYEE` 역할 추가 (2026-07-06, 사원-계정 연동 설계 확정, §8 큐 1-1): 사원이 본인
+# 계정으로 로그인해 본인 정보를 조회·수정하는 일반 직원 역할이 필요해 7번째 역할로
+# 추가했다 — `PERMISSION_MATRIX.md`의 EMPLOYEE 행과 동일한 값으로 구성.
+#
 # PERM_JSON 구조 (v2): 화면 접근은 화면 설계서(`[DESIGN]HRM_Screen_Design.md`)
 # "화면 목록" 표의 역할 기준을 따르고, 버튼 권한은 6개 카테고리로 표현한다.
 #   {"screens": {"<screen_key>": {
@@ -157,6 +161,33 @@ SYS_ROLE_MST_SEED = [
             recommendations=_perm(view=True),
             ai_chat=_perm(view=True),
             reports=_perm(view=True, excel=True, admin=True),
+            settings=_perm(),
+            settings_users=_perm(),
+            settings_audit_logs=_perm(),
+            settings_notification=_perm(),
+        ),
+    },
+    {
+        # EMPLOYEE (일반 사원, 2026-07-06 설계 확정) — 사원 등록 시 기본 배정되는 역할.
+        # 본인 사원 레코드 조회·이메일/연락처 제한적 수정 권한만 가진다. "본인만" 행(row)
+        # 단위 스코프는 화면/버튼 단위 PERM_JSON으로 표현할 수 없어 API 레이어에서 별도
+        # 구현 필요(TEAM_LEAD의 "본인팀만" 스코프와 동일한 한계, `PERMISSION_MATRIX.md`
+        # `employees` 섹션 참조). 아래 값은 `PERMISSION_MATRIX.md`의 EMPLOYEE 행과 동일.
+        "ROLE_CD": "EMPLOYEE",
+        "ROLE_NM": "일반 사원",
+        "ROLE_DESC": "사원 등록 시 기본 배정되는 역할 — 본인 정보 조회 및 이메일·연락처 제한적 수정만 가능",
+        "PERM_JSON": _screens(
+            dashboard=_perm(view=True),
+            employees=_perm(view=True, update=True),  # "본인만" 스코프는 API 레이어에서 검증
+            skills=_perm(),
+            job_types=_perm(),
+            codes=_perm(view=True),
+            projects=_perm(view=True),
+            assignments=_perm(),
+            availability=_perm(),
+            recommendations=_perm(),
+            ai_chat=_perm(view=True),
+            reports=_perm(),
             settings=_perm(),
             settings_users=_perm(),
             settings_audit_logs=_perm(),

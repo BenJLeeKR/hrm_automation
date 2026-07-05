@@ -18,12 +18,14 @@ def _create_project(db_session) -> PjtMst:
 
 
 def _create_employee(client, headers, dept, jikgup) -> str:
+    empl_no = f"PYTESTASGN{uuid.uuid4().hex[:6]}"
     resp = client.post(
         "/api/v1/employees",
         headers=headers,
         json={
-            "EMPL_NO": f"PYTESTASGN{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "투입테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },

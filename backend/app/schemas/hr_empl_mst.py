@@ -19,7 +19,10 @@ class EmployeeCreate(BaseModel):
     JIKGUP_ID: uuid.UUID
     JIKMU_ID: uuid.UUID | None = None
     EMPL_STAT_CD: EmplStatCd = "ACTIVE"
-    EMAIL_ADDR: str | None = None
+    # NOT NULL (2026-07-06 설계 확정, §8 큐 1-1) — 등록 즉시 이메일로 SYS_USER_MST 계정을
+    # 자동 생성하는 사원-계정 연동 설계 때문에 필수값으로 전환(§8 큐 1-2에서 계정 자동
+    # 생성 로직을 구현한다 — 이 스키마 변경은 그 전제조건인 필수 입력만 다룬다).
+    EMAIL_ADDR: str
     MPHONE_NO: str | None = None
     HIRE_DT: date | None = None
     RETIR_DT: date | None = None
@@ -52,7 +55,7 @@ class EmployeeOut(BaseModel):
     JIKGUP_ID: uuid.UUID
     JIKMU_ID: uuid.UUID | None
     EMPL_STAT_CD: str
-    EMAIL_ADDR: str | None
+    EMAIL_ADDR: str
     MPHONE_NO: str | None
     HIRE_DT: date | None
     RETIR_DT: date | None

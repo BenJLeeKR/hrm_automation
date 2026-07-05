@@ -11,6 +11,7 @@ def test_create_list_patch_retire_employee(client, admin_token, dept, jikgup):
         json={
             "EMPL_NO": empl_no,
             "EMPL_NM": "테스트사원",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },
@@ -36,9 +37,11 @@ def test_create_list_patch_retire_employee(client, admin_token, dept, jikgup):
 
 def test_duplicate_empl_no_returns_409(client, admin_token, dept, jikgup):
     headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTEST{uuid.uuid4().hex[:6]}"
     payload = {
-        "EMPL_NO": f"PYTEST{uuid.uuid4().hex[:6]}",
+        "EMPL_NO": empl_no,
         "EMPL_NM": "중복사원",
+        "EMAIL_ADDR": f"{empl_no}@example.com",
         "DEPT_ID": str(dept.DEPT_ID),
         "JIKGUP_ID": str(jikgup.JIKGUP_ID),
     }
@@ -60,13 +63,15 @@ def test_patch_nonexistent_employee_returns_404(client, admin_token):
 def test_viewer_cannot_create_employee(client, viewer_token, dept, jikgup):
     """VIEWER 역할은 PERM_JSON상 employees.create 권한이 없어 403이어야 한다."""
     headers = {"Authorization": f"Bearer {viewer_token}"}
+    empl_no = f"PYTEST{uuid.uuid4().hex[:6]}"
 
     resp = client.post(
         "/api/v1/employees",
         headers=headers,
         json={
-            "EMPL_NO": f"PYTEST{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "권한테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },
@@ -95,6 +100,7 @@ def test_get_employee_detail(client, admin_token, dept, jikgup):
         json={
             "EMPL_NO": empl_no,
             "EMPL_NM": "상세조회테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },
@@ -118,12 +124,14 @@ def test_get_employee_detail_not_found_returns_404(client, admin_token):
 def test_viewer_can_view_employee_detail(client, viewer_token, admin_token, dept, jikgup):
     """VIEWER 역할도 employees.view 권한으로 사원 상세를 조회할 수 있어야 한다."""
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTEST{uuid.uuid4().hex[:6]}"
     create_resp = client.post(
         "/api/v1/employees",
         headers=admin_headers,
         json={
-            "EMPL_NO": f"PYTEST{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "뷰어조회테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },

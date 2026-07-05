@@ -27,4 +27,9 @@ class SysUserMst(TimestampMixin, Base):
     ENCR_PWD: Mapped[str | None] = mapped_column(String(255), nullable=True)
     ROLE_ID: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("SYS_ROLE_MST.ROLE_ID"), nullable=False)
     USE_YN: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    # 비밀번호 변경 필요 여부 (임시 비밀번호 상태) — 사원 계정 자동 생성 시 서버가 발급한
+    # 임시 비밀번호는 TRUE로 시작하고, 사용자가 직접 비밀번호를 변경하면 FALSE로 전환된다
+    # (설계서 §5.3.9, 2026-07-06 설계 확정, §8 큐 1-1). 최초 로그인 강제 리다이렉트 연동은
+    # §8 큐 1-5에서 별도로 구현한다 — 이 컬럼은 값 저장만 다룬다.
+    PWD_CHG_YN: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     LAST_LGN_DTTM: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -19,12 +19,14 @@ from app.services.data_quality_chk import run_data_quality_chk
 def _create_employee(client, headers, dept, jikgup) -> str:
     """기술·직무 유형을 등록하지 않은 사원 — 품질 점검의 "기술/직무 미등록" 카운트에
     잡혀야 한다."""
+    empl_no = f"PYTESTDQ{uuid.uuid4().hex[:6]}"
     resp = client.post(
         "/api/v1/employees",
         headers=headers,
         json={
-            "EMPL_NO": f"PYTESTDQ{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "품질점검테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },

@@ -17,12 +17,14 @@ from app.services.asgn_end_alert import run_asgn_end_alert
 
 
 def _create_employee(client, headers, dept, jikgup) -> str:
+    empl_no = f"PYTESTALERT{uuid.uuid4().hex[:6]}"
     resp = client.post(
         "/api/v1/employees",
         headers=headers,
         json={
-            "EMPL_NO": f"PYTESTALERT{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "종료알림테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },

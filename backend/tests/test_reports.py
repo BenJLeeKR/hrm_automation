@@ -25,6 +25,7 @@ def test_weekly_report_reflects_new_employee(client, admin_token, dept, jikgup):
         json={
             "EMPL_NO": "PYTESTRPT001",
             "EMPL_NM": "리포트테스트",
+            "EMAIL_ADDR": "pytestrpt001@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },
@@ -119,12 +120,14 @@ def test_viewer_cannot_send_report(client, viewer_token):
 def test_utilization_matrix_reflects_assignment(client, admin_token, db_session, dept, jikgup):
     """월별 가동률 통계 매트릭스가 실제 투입 이력을 반영해야 한다(SCR-013 탭 3)."""
     headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTMTX{uuid.uuid4().hex[:6]}"
     empl_resp = client.post(
         "/api/v1/employees",
         headers=headers,
         json={
-            "EMPL_NO": f"PYTESTMTX{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "매트릭스테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },
@@ -174,12 +177,14 @@ def test_utilization_matrix_reflects_assignment(client, admin_token, db_session,
 
 def test_utilization_matrix_flags_over_100_percent(client, admin_token, db_session, dept, jikgup):
     headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTMTX{uuid.uuid4().hex[:6]}"
     empl_resp = client.post(
         "/api/v1/employees",
         headers=headers,
         json={
-            "EMPL_NO": f"PYTESTMTX{uuid.uuid4().hex[:6]}",
+            "EMPL_NO": empl_no,
             "EMPL_NM": "초과테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
             "DEPT_ID": str(dept.DEPT_ID),
             "JIKGUP_ID": str(jikgup.JIKGUP_ID),
         },

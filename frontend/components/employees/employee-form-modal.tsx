@@ -97,7 +97,7 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
       JIKGUP_ID: jikgupId,
       JIKMU_ID: jikmuId || null,
       EMPL_STAT_CD: status,
-      EMAIL_ADDR: email || null,
+      EMAIL_ADDR: email,
       MPHONE_NO: phone || null,
     }
     try {
@@ -124,7 +124,7 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
       title={isEdit ? '사원 정보 수정' : '신규 사원 등록'}
       description="기본 인적사항을 입력합니다. 역량 정보는 상세 화면에서 관리합니다."
       submitText={isEdit ? '수정 저장' : '등록'}
-      submitDisabled={submitting || !name.trim() || !empNo.trim() || !deptId || !jikgupId}
+      submitDisabled={submitting || !name.trim() || !empNo.trim() || !deptId || !jikgupId || !email.trim()}
     >
       <div className="grid grid-cols-2 gap-x-4">
         {formError && <p className="col-span-2 mb-2 text-sm text-destructive">{formError}</p>}
@@ -148,7 +148,7 @@ export function EmployeeFormModal({ open, onOpenChange, onSaved, departments, po
         <FormField label="직무 유형">
           <Select value={jikmuId} onValueChange={setJikmuId} options={jobTypeOptions} placeholder="직무 유형 선택" />
         </FormField>
-        <FormField label="이메일">
+        <FormField label="이메일" required>
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@blueward.co.kr" />
         </FormField>
         <FormField label="연락처">

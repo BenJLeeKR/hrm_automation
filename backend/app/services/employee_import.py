@@ -94,6 +94,11 @@ def parse_and_validate(db: Session, file_bytes: bytes) -> list[_ParsedRow]:
     jikgup_by_name = {j.JIKGUP_NM: j.JIKGUP_ID for j in db.scalars(select(HrJikgupMst))}
     jikmu_by_code = {j.JIKMU_CD: j.JIKMU_ID for j in db.scalars(select(HrJikmuMst))}
     skill_by_name = {s.SKILL_NM: s.SKILL_ID for s in db.scalars(select(HrSkillMst))}
+    # `HR_EMPL_MST.EMAIL_ADDR`가 NOT NULL로 전환되었으나(2026-07-06 설계 확정, §8 큐 1-1)
+    # 이 Import 양식(`_HEADERS`)에는 이메일 컬럼이 없다 — 기존 사원 수정(EMAIL_ADDR 미변경)은
+    # 그대로 지원하되, 신규 등록은 이메일을 채울 방법이 없어 검증 오류로 막는다. 이메일 컬럼
+    # 추가는 Excel 양식 자체를 바꾸는 더 큰 범위라 별도 후속 작업으로 분리(§9 리스크 참조).
+    existing_empl_nos = {row[0] for row in db.execute(select(HrEmplMst.EMPL_NO)).all()}
 
     parsed_rows: list[_ParsedRow] = []
     seen_empl_no: dict[str, int] = {}
@@ -120,6 +125,16 @@ def parse_and_validate(db: Session, file_bytes: bytes) -> list[_ParsedRow]:
             errors.append(_err(row_no, "사번", empl_no, "필수 항목입니다."))
         elif empl_no in seen_empl_no:
             errors.append(_err(row_no, "사번", empl_no, f"파일 내 {seen_empl_no[empl_no]}행과 사번이 중복됩니다."))
+        elif empl_no not in existing_empl_nos:
+            errors.append(
+                _err(
+                    row_no,
+                    "사번",
+                    empl_no,
+                    "신규 사원은 이메일이 필수(2026-07-06 정책)라 Excel Import로 등록할 수 없습니다 — "
+                    "사원 목록 화면에서 개별 등록하세요.",
+                )
+            )
         else:
             seen_empl_no[empl_no] = row_no
 

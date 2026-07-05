@@ -94,10 +94,12 @@ def test_duplicate_dept_cd_returns_409(client, admin_token, dept):
 
 def test_deactivate_department_with_active_employee_returns_409(client, db_session, admin_token, dept, jikgup):
     headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTEST{uuid.uuid4().hex[:6]}"
     empl = HrEmplMst(
         EMPL_ID=uuid.uuid4(),
-        EMPL_NO=f"PYTEST{uuid.uuid4().hex[:6]}",
+        EMPL_NO=empl_no,
         EMPL_NM="테스트사원",
+        EMAIL_ADDR=f"{empl_no}@example.com",
         DEPT_ID=dept.DEPT_ID,
         JIKGUP_ID=jikgup.JIKGUP_ID,
         EMPL_STAT_CD="ACTIVE",
@@ -156,10 +158,12 @@ def test_create_patch_position(client, admin_token):
 
 def test_deactivate_position_with_active_employee_returns_409(client, db_session, admin_token, dept, jikgup):
     headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTEST{uuid.uuid4().hex[:6]}"
     empl = HrEmplMst(
         EMPL_ID=uuid.uuid4(),
-        EMPL_NO=f"PYTEST{uuid.uuid4().hex[:6]}",
+        EMPL_NO=empl_no,
         EMPL_NM="테스트사원",
+        EMAIL_ADDR=f"{empl_no}@example.com",
         DEPT_ID=dept.DEPT_ID,
         JIKGUP_ID=jikgup.JIKGUP_ID,
         EMPL_STAT_CD="ACTIVE",

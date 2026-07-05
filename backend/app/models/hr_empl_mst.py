@@ -36,7 +36,10 @@ class HrEmplMst(AuditMixin, Base):
         UUID(as_uuid=True), ForeignKey("HR_JIKMU_MST.JIKMU_ID"), nullable=True
     )
     EMPL_STAT_CD: Mapped[str] = mapped_column(String(20), nullable=False)
-    EMAIL_ADDR: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    # NOT NULL (2026-07-06 설계 확정, §8 큐 1-1) — 등록 즉시 이메일로 SYS_USER_MST 계정을
+    # 자동 생성하는 사원-계정 연동 설계 때문에 필수값으로 전환했다. 원래 nullable이었으나
+    # (설계서 §5.3.1) 이후 v0.6에서 UNIQUE NOT NULL로 변경되었다.
+    EMAIL_ADDR: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     MPHONE_NO: Mapped[str | None] = mapped_column(String(50), nullable=True)
     HIRE_DT: Mapped[date | None] = mapped_column(Date, nullable=True)
     RETIR_DT: Mapped[date | None] = mapped_column(Date, nullable=True)
