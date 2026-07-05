@@ -247,3 +247,36 @@ def test_utilization_matrix_invalid_range_returns_422(client, admin_token):
     )
 
     assert resp.status_code == 422
+
+
+def test_export_utilization_matrix_returns_xlsx(client, admin_token):
+    """§9-1 "가동률 통계 Excel 내보내기" — 화면 조회 API와 동일한 데이터를 xlsx로 내려준다."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.get(
+        "/api/v1/reports/utilization-matrix/export", headers=headers, params={"from": "202601", "to": "202601"}
+    )
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert "utilization_matrix_202601_202601.xlsx" in resp.headers["content-disposition"]
+
+
+def test_export_utilization_matrix_invalid_range_returns_422(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.get(
+        "/api/v1/reports/utilization-matrix/export",
+        headers=headers,
+        params={"from": "202612", "to": "202601"},
+    )
+
+    assert resp.status_code == 422
+
+
+def test_viewer_cannot_export_utilization_matrix(client, viewer_token):
+    """설계서상 Excel 내보내기는 A H P E 그룹만 허용 — VIEWER는 차단되어야 한다."""
+    headers = {"Authorization": f"Bearer {viewer_token}"}
+    resp = client.get(
+        "/api/v1/reports/utilization-matrix/export", headers=headers, params={"from": "202601", "to": "202601"}
+    )
+
+    assert resp.status_code == 403

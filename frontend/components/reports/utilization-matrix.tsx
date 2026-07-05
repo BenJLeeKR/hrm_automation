@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { Download } from 'lucide-react'
 import { Select } from '@/components/ui/select'
-import { apiGet, ApiError } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { apiGet, apiDownloadFile, ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { AssignmentType } from '@/lib/types'
 
@@ -86,6 +88,25 @@ export function UtilizationMatrix() {
   const [matrix, setMatrix] = useState<UtilizationMatrixOut | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  async function handleExport() {
+    setExporting(true)
+    setExportError(null)
+    try {
+      const params = new URLSearchParams({ from: fromMonth, to: toMonth })
+      if (dept !== 'ALL') params.set('dept_id', dept)
+      await apiDownloadFile(
+        `/api/v1/reports/utilization-matrix/export?${params.toString()}`,
+        `utilization_matrix_${fromMonth}_${toMonth}.xlsx`,
+      )
+    } catch (err) {
+      setExportError(err instanceof ApiError ? err.message : 'Excel 내보내기에 실패했습니다.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   useEffect(() => {
     apiGet<DepartmentOut[]>('/api/v1/departments')
@@ -172,9 +193,14 @@ export function UtilizationMatrix() {
           className="h-8 rounded-lg border border-border bg-background px-2 text-sm"
         />
         <Select value={dept} onValueChange={setDept} options={deptOptions} className="ml-1 w-40" />
+        <Button variant="secondary" size="sm" onClick={handleExport} disabled={exporting || !matrix} className="ml-auto">
+          <Download className="size-4" />
+          {exporting ? '내보내는 중...' : 'Excel 내보내기'}
+        </Button>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {exportError && <p className="text-sm text-destructive">{exportError}</p>}
 
       {loading ? (
         <p className="py-8 text-center text-sm text-muted-foreground">불러오는 중입니다...</p>

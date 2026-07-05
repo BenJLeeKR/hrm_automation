@@ -1,16 +1,24 @@
+import io
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
+from openpyxl import Workbook
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permission
+from app.core.audit import record_audit
 from app.db.session import get_db
+from app.models.sys_user_mst import SysUserMst
 from app.repositories.reports import build_report, build_utilization_matrix
 from app.schemas.reports import ReportOut, ReportSendRequest, ReportSendResponse, UtilizationMatrixOut
 from app.services.teams_notify import TeamsNotifyError, send_teams_message
 
 router = APIRouter(prefix="/reports", tags=["reports"])
+
+_TGT_TBL_NM = "PJT_ASGN_HIS"
+_ASGN_TYPE_LABELS = {"RUNNING": "수행중", "COMMITTED": "투입준비중", "PROPOSED": "제안중"}
 
 
 @router.get(
@@ -107,6 +115,80 @@ def get_utilization_matrix(
     if to_dt < from_dt:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="to는 from보다 앞설 수 없습니다.")
     return UtilizationMatrixOut(**build_utilization_matrix(db, from_dt=from_dt, to_dt=to_dt, dept_id=dept_id))
+
+
+@router.get("/utilization-matrix/export")
+def export_utilization_matrix(
+    request: Request,
+    from_: str = Query(..., alias="from", description="시작월 YYYYMM"),
+    to: str = Query(..., description="종료월 YYYYMM"),
+    dept_id: uuid.UUID | None = Query(None, description="부서 ID로 필터링 (HR_DEPT_MST.DEPT_ID)"),
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("reports", "excel")),
+) -> StreamingResponse:
+    """월별 가동률 통계 매트릭스 Excel 내보내기 (SCR-013 탭 3, §9-1) — 화면에서 보는
+    것과 동일한 `build_utilization_matrix` 결과를 그대로 xlsx로 저장한다(사원 목록
+    Excel 내보내기와 동일한 `openpyxl` 사용 패턴).
+    """
+    from_dt = _parse_yyyymm(from_)
+    to_dt = _parse_yyyymm(to)
+    if to_dt < from_dt:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="to는 from보다 앞설 수 없습니다.")
+    matrix = build_utilization_matrix(db, from_dt=from_dt, to_dt=to_dt, dept_id=dept_id)
+
+    period = matrix["period"]
+    headers = ["사번", "성명", "부서", "프로젝트", "투입유형", *period, "평균"]
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "가동률_통계"
+    sheet.append(headers)
+
+    row_count = 0
+    for emp in matrix["employees"]:
+        for row in emp["rows"]:
+            sheet.append(
+                [
+                    emp["empl_no"],
+                    emp["empl_nm"],
+                    emp["dept_nm"],
+                    row["pjt_nm"],
+                    _ASGN_TYPE_LABELS.get(row["asgn_type_cd"], row["asgn_type_cd"]),
+                    *row["monthly"],
+                    row["avg"],
+                ]
+            )
+            row_count += 1
+        sheet.append(
+            [emp["empl_no"], emp["empl_nm"], emp["dept_nm"], "소계", "", *emp["subtotal"], emp["annual_avg"]]
+        )
+        row_count += 1
+
+    org_avg = matrix["org_avg"]
+    sheet.append([])
+    sheet.append(["", "", "", "조직 평균(수행중)", "", *org_avg["running_only"], ""])
+    sheet.append(["", "", "", "조직 평균(수행중+투입준비중)", "", *org_avg["running_committed"], ""])
+    sheet.append(["", "", "", "조직 평균(전체)", "", *org_avg["all"], ""])
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="EXPORT",
+        tgt_tbl_nm=_TGT_TBL_NM,
+        aft_val_json={"from": from_, "to": to, "row_count": row_count},
+    )
+
+    filename = f"utilization_matrix_{from_}_{to}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def _parse_yyyymm(month: str) -> date:
