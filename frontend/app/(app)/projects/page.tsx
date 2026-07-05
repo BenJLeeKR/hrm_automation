@@ -10,10 +10,8 @@ import { DataTable, type Column } from '@/components/common/data-table'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ModalForm, FormField } from '@/components/common/modal-form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { apiGet, apiPost, ApiError } from '@/lib/api'
+import { ProjectFormModal } from '@/components/projects/project-form-modal'
+import { apiGet } from '@/lib/api'
 import { projectStatusOptions } from '@/lib/options'
 
 // 백엔드 프로젝트 마스터 API(로드맵 §8 "프로젝트 목록/상세 화면 구현", SCR-007) 응답 타입 —
@@ -42,8 +40,6 @@ const statusVariant: Record<ProjectOut['PJT_STAT_CD'], 'muted' | 'default' | 'wa
   HOLD: 'warning',
   CLOSED: 'secondary',
 }
-const statusSelectOptions = projectStatusOptions.filter((o) => o.value !== 'ALL')
-
 async function loadProjects(): Promise<{ projects: ProjectOut[]; memberCountByPjtId: Map<string, number> }> {
   const [projectList, assignments] = await Promise.all([
     apiGet<ProjectListResponse>('/api/v1/projects?limit=200'),
@@ -163,105 +159,7 @@ export default function ProjectsPage() {
         footer={<span>전체 {projects.length}건 중 {filtered.length}건 표시</span>}
       />
 
-      <ProjectFormModal open={openCreate} onClose={() => setOpenCreate(false)} onSaved={reload} />
+      <ProjectFormModal open={openCreate} onOpenChange={setOpenCreate} onSaved={reload} />
     </div>
-  )
-}
-
-function ProjectFormModal({
-  open,
-  onClose,
-  onSaved,
-}: {
-  open: boolean
-  onClose: () => void
-  onSaved: () => void
-}) {
-  const [code, setCode] = useState('')
-  const [name, setName] = useState('')
-  const [client, setClient] = useState('')
-  const [statusValue, setStatusValue] = useState(statusSelectOptions[0].value)
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [desc, setDesc] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-
-  function reset() {
-    setCode('')
-    setName('')
-    setClient('')
-    setStatusValue(statusSelectOptions[0].value)
-    setStartDate('')
-    setEndDate('')
-    setDesc('')
-    setFormError(null)
-  }
-
-  async function handleSubmit() {
-    setSubmitting(true)
-    setFormError(null)
-    try {
-      await apiPost('/api/v1/projects', {
-        PJT_CD: code.toUpperCase(),
-        PJT_NM: name,
-        CLNT_NM: client || null,
-        PJT_STAT_CD: statusValue,
-        STRT_DT: startDate,
-        END_DT: endDate || null,
-        PJT_DESC: desc || null,
-      })
-      onSaved()
-      reset()
-      onClose()
-    } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : '등록에 실패했습니다. 잠시 후 다시 시도하세요.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <ModalForm
-      open={open}
-      onClose={() => {
-        reset()
-        onClose()
-      }}
-      title="프로젝트 등록"
-      description="신규 프로젝트 기본 정보를 입력합니다."
-      submitText="등록"
-      onSubmit={handleSubmit}
-      submitDisabled={submitting || !code.trim() || !name.trim() || !startDate}
-    >
-      <div className="flex flex-col gap-4">
-        {formError && <p className="text-sm text-destructive">{formError}</p>}
-        <FormField label="프로젝트 코드" required>
-          <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="예: PJT006 (영문 대문자, 고유값)" />
-        </FormField>
-        <FormField label="프로젝트명" required>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 차세대 여신 시스템 구축" />
-        </FormField>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="고객사">
-            <Input value={client} onChange={(e) => setClient(e.target.value)} placeholder="예: K은행" />
-          </FormField>
-          <FormField label="상태" required>
-            <Select value={statusValue} onValueChange={setStatusValue} options={statusSelectOptions} />
-          </FormField>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="시작일" required>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </FormField>
-          <FormField label="종료일">
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </FormField>
-        </div>
-        <FormField label="개요">
-          <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} placeholder="프로젝트 범위와 목표를 입력하세요." />
-        </FormField>
-      </div>
-    </ModalForm>
   )
 }

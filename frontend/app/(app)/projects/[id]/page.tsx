@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { EmptyState } from '@/components/common/empty-state'
 import { UtilizationBar } from '@/components/common/utilization-progress'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { ProjectFormModal } from '@/components/projects/project-form-modal'
 import {
   Table,
   TableBody,
@@ -106,8 +107,9 @@ export default function ProjectDetailPage({
   const [data, setData] = useState<ProjectDetailData | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [openEdit, setOpenEdit] = useState(false)
 
-  useEffect(() => {
+  function reload() {
     let cancelled = false
     loadProjectDetail(id)
       .then((result) => {
@@ -124,7 +126,9 @@ export default function ProjectDetailPage({
     return () => {
       cancelled = true
     }
-  }, [id])
+  }
+
+  useEffect(reload, [id])
 
   if (notFound) {
     return (
@@ -177,9 +181,14 @@ export default function ProjectDetailPage({
       <PageHeader
         title={project.PJT_NM}
         description={`${project.PJT_CD} · ${project.CLNT_NM ?? '고객사 미지정'}`}
-      />
-      {/* "인력 투입"/"수정"/"종료처리" 버튼은 편집 폼 UI를 이번 화면 구현 범위에서 다루지
-          않아 후속 작업으로 분리했다(사원 상세 화면과 동일한 원칙) — 조회 전용으로 제공한다. */}
+      >
+        {/* "인력 투입"/"종료처리" 버튼은 이번 범위에서 다루지 않아 후속 작업으로 남긴다
+            (§9-1 참조) — "수정"만 사원 상세 화면과 동일한 패턴으로 우선 제공한다. */}
+        <Button variant="secondary" onClick={() => setOpenEdit(true)}>
+          <Pencil className="size-4" />
+          수정
+        </Button>
+      </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -297,6 +306,8 @@ export default function ProjectDetailPage({
           )}
         </CardContent>
       </Card>
+
+      <ProjectFormModal open={openEdit} onOpenChange={setOpenEdit} onSaved={reload} project={project} />
     </div>
   )
 }
