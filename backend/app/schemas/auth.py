@@ -26,6 +26,15 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class LogoutRequest(BaseModel):
+    """로그아웃 요청 스키마 (`POST /api/v1/auth/logout`, §9-1 "로그아웃 시 서버 측 즉시 토큰
+    무효화 미구현" 해소). `refresh_token`은 선택 — 함께 전달하면 액세스 토큰과 함께
+    블랙리스트에 등록해 리프레시로 새 액세스 토큰을 재발급받는 것도 막는다. 생략 시
+    액세스 토큰만 무효화되며 기존 리프레시 토큰은 자연 만료까지 유효하다."""
+
+    refresh_token: str | None = None
+
+
 class AccessTokenResponse(BaseModel):
     """토큰 갱신 응답 — 리프레시 토큰은 재발급하지 않고 액세스 토큰만 갱신한다."""
 

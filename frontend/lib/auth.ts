@@ -89,16 +89,19 @@ export async function getMe(): Promise<CurrentUser | null> {
 
 export async function logout(): Promise<void> {
   const accessToken = getAccessToken()
+  const refreshToken = typeof window === 'undefined' ? null : window.localStorage.getItem(REFRESH_TOKEN_KEY)
   clearSession()
   if (!accessToken) return
 
   // 로그아웃 API 호출은 최선 노력(best-effort)으로 처리한다 — 실패해도 클라이언트 세션은
-  // 이미 삭제되었으므로 사용자 경험에는 영향이 없다. 백엔드는 stateless JWT라 로그아웃이
-  // 서버 측 즉시 무효화를 수행하지 않는다(backend/app/api/v1/auth.py 주석 참조).
+  // 이미 삭제되었으므로 사용자 경험에는 영향이 없다. 액세스/리프레시 토큰을 함께 전달하면
+  // 백엔드가 Redis 블랙리스트에 즉시 등록해 서버 측 무효화까지 수행한다
+  // (backend/app/core/token_blacklist.py, §9-1 "로그아웃 시 서버 측 즉시 토큰 무효화 미구현" 해소).
   try {
     await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
     })
   } catch {
     // 네트워크 오류는 무시 — 클라이언트 세션 삭제만으로 로그아웃 처리를 완료한다

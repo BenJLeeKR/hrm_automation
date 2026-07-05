@@ -174,3 +174,50 @@ def test_change_password_requires_auth(client):
         json={"current_password": TEST_PASSWORD, "new_password": "NewStr0ng!Pass"},
     )
     assert resp.status_code == 401
+
+
+def test_logout_blacklists_access_token(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    access_token = client.post(
+        "/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    assert client.get("/api/v1/auth/me", headers=headers).status_code == 200
+
+    logout_resp = client.post("/api/v1/auth/logout", headers=headers)
+    assert logout_resp.status_code == 204
+
+    assert client.get("/api/v1/auth/me", headers=headers).status_code == 401
+
+
+def test_logout_with_refresh_token_blacklists_it_too(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    login_body = client.post("/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}).json()
+    access_token, refresh_token = login_body["access_token"], login_body["refresh_token"]
+
+    logout_resp = client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"refresh_token": refresh_token},
+    )
+    assert logout_resp.status_code == 204
+
+    refresh_resp = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert refresh_resp.status_code == 401
+
+
+def test_logout_without_refresh_token_keeps_refresh_token_valid(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    login_body = client.post("/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}).json()
+    access_token, refresh_token = login_body["access_token"], login_body["refresh_token"]
+
+    client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {access_token}"})
+
+    refresh_resp = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert refresh_resp.status_code == 200
+
+
+def test_logout_without_credentials_still_succeeds(client):
+    resp = client.post("/api/v1/auth/logout")
+    assert resp.status_code == 204

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -5,6 +6,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
+from app.core.token_blacklist import is_blacklisted
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -26,7 +28,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def _create_token(*, subject: str, token_type: str, expires_delta: timedelta, extra_claims: dict[str, Any]) -> str:
     now = datetime.now(timezone.utc)
-    payload: dict[str, Any] = {"sub": subject, "type": token_type, "iat": now, "exp": now + expires_delta}
+    # jti(JWT ID) — 로그아웃 시 이 토큰만 개별적으로 블랙리스트 등록하기 위한 고유 식별자
+    # (§9-1 "로그아웃 시 서버 측 즉시 토큰 무효화 미구현" 해소, `app/core/token_blacklist.py`).
+    payload: dict[str, Any] = {
+        "sub": subject,
+        "type": token_type,
+        "iat": now,
+        "exp": now + expires_delta,
+        "jti": str(uuid.uuid4()),
+    }
     payload.update(extra_claims)
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
@@ -50,7 +60,10 @@ def create_refresh_token(*, user_id: str) -> str:
 
 
 def decode_token(token: str, *, expected_type: str) -> dict[str, Any]:
-    """토큰을 검증·디코드한다. 서명/만료/타입이 올바르지 않으면 `TokenError`를 발생시킨다."""
+    """토큰을 검증·디코드한다. 서명/만료/타입이 올바르지 않거나 로그아웃 등으로 블랙리스트에
+    등록된 토큰이면 `TokenError`를 발생시킨다 — `get_current_user`(액세스 토큰)와
+    `POST /auth/refresh`(리프레시 토큰) 양쪽이 이 함수 하나만 거치므로, 블랙리스트 검사를
+    여기 한 곳에 두면 두 경로 모두 자동으로 적용된다."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     except JWTError as exc:
@@ -58,4 +71,6 @@ def decode_token(token: str, *, expected_type: str) -> dict[str, Any]:
 
     if payload.get("type") != expected_type:
         raise TokenError("토큰 종류가 올바르지 않습니다.")
+    if is_blacklisted(payload.get("jti", "")):
+        raise TokenError("로그아웃 처리된 토큰입니다.")
     return payload

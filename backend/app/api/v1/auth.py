@@ -1,12 +1,15 @@
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.audit import record_audit
 from app.core.security import (
+    ACCESS_TOKEN_TYPE,
     REFRESH_TOKEN_TYPE,
     TokenError,
     create_access_token,
@@ -15,6 +18,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.core.token_blacklist import blacklist_token
 from app.db.session import get_db
 from app.models.sys_role_mst import SysRoleMst
 from app.models.sys_user_mst import SysUserMst
@@ -23,12 +27,15 @@ from app.schemas.auth import (
     AccessTokenResponse,
     ChangePasswordRequest,
     LoginRequest,
+    LogoutRequest,
     MeOut,
     MeUpdate,
     RefreshRequest,
     TokenResponse,
 )
 from app.schemas.sys_user_mst import SysUserOut
+
+_bearer_scheme = HTTPBearer(auto_error=False)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -68,12 +75,29 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> AccessTok
     return AccessTokenResponse(access_token=create_access_token(user_id=str(user.USER_ID), role_id=str(user.ROLE_ID)))
 
 
+def _blacklist_if_valid(token: str, *, expected_type: str) -> None:
+    """만료·서명 오류 등으로 이미 무효한 토큰은 블랙리스트에 추가할 필요가 없어 조용히
+    건너뛴다 — 로그아웃 자체는 항상 성공해야 하므로 여기서 예외를 밖으로 던지지 않는다."""
+    try:
+        payload = decode_token(token, expected_type=expected_type)
+    except TokenError:
+        return
+    blacklist_token(payload["jti"], datetime.fromtimestamp(payload["exp"], tz=timezone.utc))
+
+
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout() -> None:
-    """로그아웃 — 현재 JWT는 서버 상태를 갖지 않는 stateless 토큰이라 서버 측에서 즉시
-    무효화할 저장소(예: Redis 블랙리스트)가 아직 없다. RBAC 권한 미들웨어(로드맵 §8 다음 작업)
-    구현 시 토큰 검증 경로가 추가되면 함께 도입 예정 — 그 전까지는 클라이언트가 저장된
-    토큰을 폐기하는 것으로 로그아웃을 처리한다."""
+def logout(
+    payload: LogoutRequest | None = None,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> None:
+    """로그아웃 (§9-1 "로그아웃 시 서버 측 즉시 토큰 무효화 미구현" 해소) — 요청에 담긴
+    액세스 토큰을 즉시 Redis 블랙리스트에 등록해 만료 전이라도 재사용을 막는다
+    (`app/core/token_blacklist.py`). `refresh_token`을 함께 전달하면 그것도 함께
+    무효화해, 액세스 토큰 재발급(`POST /auth/refresh`)까지 막을 수 있다."""
+    if credentials:
+        _blacklist_if_valid(credentials.credentials, expected_type=ACCESS_TOKEN_TYPE)
+    if payload and payload.refresh_token:
+        _blacklist_if_valid(payload.refresh_token, expected_type=REFRESH_TOKEN_TYPE)
     return None
 
 
