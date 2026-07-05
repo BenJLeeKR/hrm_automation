@@ -10,9 +10,9 @@ from app.core.security import hash_password
 from app.db.session import get_db
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.sys_role_mst import list_roles
-from app.repositories.sys_user_mst import create_user, list_users
+from app.repositories.sys_user_mst import create_user, get_user, list_users, update_user
 from app.schemas.sys_role_mst import RoleOut
-from app.schemas.sys_user_mst import SysUserOut, UserCreate
+from app.schemas.sys_user_mst import SysUserOut, UserCreate, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -64,6 +64,40 @@ def post_user(
         act_cd="CREATE",
         tgt_tbl_nm=_TGT_TBL_NM,
         tgt_id=user.USER_ID,
+        aft_val_json=SysUserOut.model_validate(user).model_dump(mode="json"),
+    )
+    return user
+
+
+@router.patch("/{user_id}", response_model=SysUserOut)
+def patch_user(
+    user_id: uuid.UUID,
+    payload: UserUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("settings_users", "update")),
+) -> SysUserOut:
+    """시스템 사용자 수정 (SCR-015 "계정 등록/수정 모달", §9-1) — 전달된 필드만 갱신.
+    비밀번호 변경은 이번 범위에서 다루지 않음(별도 후속)."""
+    user = get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+
+    before_snapshot = SysUserOut.model_validate(user).model_dump(mode="json")
+    try:
+        user = update_user(db, user, payload.model_dump(exclude_unset=True))
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 사용 중인 이메일입니다.") from None
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="UPDATE",
+        tgt_tbl_nm=_TGT_TBL_NM,
+        tgt_id=user.USER_ID,
+        bfr_val_json=before_snapshot,
         aft_val_json=SysUserOut.model_validate(user).model_dump(mode="json"),
     )
     return user

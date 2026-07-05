@@ -1,16 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { UserPlus } from 'lucide-react'
+import { Pencil, UserPlus } from 'lucide-react'
 import { SearchInput } from '@/components/common/search-input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RoleBadge } from '@/components/common/status-badge'
 import { ModalForm, FormField } from '@/components/common/modal-form'
-import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { apiGet, apiPost, ApiError } from '@/lib/api'
+import { apiGet, apiPatch, apiPost, ApiError } from '@/lib/api'
 import type { RoleCode } from '@/lib/types'
 
 // 백엔드 사용자 관리 API(로드맵 §8 "설정 화면 구현", SCR-015) 응답 타입 — 필드명은
@@ -39,6 +38,7 @@ export function UsersTable() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [openCreate, setOpenCreate] = useState(false)
+  const [editTarget, setEditTarget] = useState<SysUserOut | null>(null)
 
   function reload() {
     setLoading(true)
@@ -99,7 +99,7 @@ export function UsersTable() {
         <table className="w-full text-sm">
           <thead className="bg-muted/60">
             <tr>
-              {['로그인 ID', '이메일', '권한', '최근 접속', '상태'].map((h) => (
+              {['로그인 ID', '이메일', '권한', '최근 접속', '상태', ''].map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground">
                   {h}
                 </th>
@@ -109,7 +109,7 @@ export function UsersTable() {
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-sm text-muted-foreground">
+                <td colSpan={6} className="px-3 py-6 text-center text-sm text-muted-foreground">
                   {loading ? '불러오는 중입니다...' : '조건에 맞는 사용자가 없습니다.'}
                 </td>
               </tr>
@@ -129,6 +129,16 @@ export function UsersTable() {
                   <td className="px-3 py-2.5">
                     <Badge variant={u.USE_YN ? 'success' : 'muted'}>{u.USE_YN ? '활성' : '비활성'}</Badge>
                   </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setEditTarget(u)}
+                      className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      aria-label="계정 수정"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                  </td>
                 </tr>
               )
             })}
@@ -137,6 +147,15 @@ export function UsersTable() {
       </div>
 
       <UserFormModal open={openCreate} onClose={() => setOpenCreate(false)} roles={roles} onSaved={reload} />
+      {editTarget && (
+        <UserFormModal
+          open
+          onClose={() => setEditTarget(null)}
+          roles={roles}
+          onSaved={reload}
+          user={editTarget}
+        />
+      )}
     </div>
   )
 }
@@ -146,26 +165,30 @@ function UserFormModal({
   onClose,
   roles,
   onSaved,
+  user,
 }: {
   open: boolean
   onClose: () => void
   roles: RoleOut[]
   onSaved: () => void
+  /** 전달 시 수정 모드로 동작한다 — 로그인 ID·비밀번호는 이번 범위에서 수정 불가. */
+  user?: SysUserOut
 }) {
-  const [loginId, setLoginId] = useState('')
-  const [email, setEmail] = useState('')
+  const isEdit = Boolean(user)
+  const [loginId, setLoginId] = useState(user?.USER_LGID ?? '')
+  const [email, setEmail] = useState(user?.EMAIL_ADDR ?? '')
   const [password, setPassword] = useState('')
-  const [roleId, setRoleId] = useState('')
+  const [roleId, setRoleId] = useState(user?.ROLE_ID ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   const roleOptions = roles.map((r) => ({ label: r.ROLE_NM, value: r.ROLE_ID }))
 
   function reset() {
-    setLoginId('')
-    setEmail('')
+    setLoginId(user?.USER_LGID ?? '')
+    setEmail(user?.EMAIL_ADDR ?? '')
     setPassword('')
-    setRoleId('')
+    setRoleId(user?.ROLE_ID ?? '')
     setFormError(null)
   }
 
@@ -173,17 +196,22 @@ function UserFormModal({
     setSubmitting(true)
     setFormError(null)
     try {
-      await apiPost('/api/v1/users', {
-        USER_LGID: loginId,
-        EMAIL_ADDR: email,
-        password,
-        ROLE_ID: roleId,
-      })
+      if (isEdit && user) {
+        await apiPatch(`/api/v1/users/${user.USER_ID}`, { EMAIL_ADDR: email, ROLE_ID: roleId })
+      } else {
+        await apiPost('/api/v1/users', {
+          USER_LGID: loginId,
+          EMAIL_ADDR: email,
+          password,
+          ROLE_ID: roleId,
+        })
+      }
       onSaved()
       reset()
       onClose()
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : '등록에 실패했습니다. 잠시 후 다시 시도하세요.')
+      const fallback = isEdit ? '수정에 실패했습니다. 잠시 후 다시 시도하세요.' : '등록에 실패했습니다. 잠시 후 다시 시도하세요.'
+      setFormError(err instanceof ApiError ? err.message : fallback)
     } finally {
       setSubmitting(false)
     }
@@ -196,16 +224,23 @@ function UserFormModal({
         reset()
         onClose()
       }}
-      title="사용자 추가"
-      description="신규 시스템 사용자 계정을 생성합니다."
-      submitText="생성"
+      title={isEdit ? '계정 수정' : '사용자 추가'}
+      description={isEdit ? '이메일과 권한을 수정합니다.' : '신규 시스템 사용자 계정을 생성합니다.'}
+      submitText={isEdit ? '수정 저장' : '생성'}
       onSubmit={handleSubmit}
-      submitDisabled={submitting || !loginId.trim() || !email.trim() || !password || !roleId}
+      submitDisabled={
+        submitting || !loginId.trim() || !email.trim() || (!isEdit && !password) || !roleId
+      }
     >
       <div className="flex flex-col gap-4">
         {formError && <p className="text-sm text-destructive">{formError}</p>}
         <FormField label="로그인 ID" required>
-          <Input value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="예: hong_gd" />
+          <Input
+            value={loginId}
+            onChange={(e) => setLoginId(e.target.value)}
+            placeholder="예: hong_gd"
+            disabled={isEdit}
+          />
         </FormField>
         <FormField label="이메일" required>
           <Input
@@ -215,14 +250,16 @@ function UserFormModal({
             placeholder="user@blueward.co.kr"
           />
         </FormField>
-        <FormField label="초기 비밀번호" required>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="8자 이상, 영문+숫자+특수문자"
-          />
-        </FormField>
+        {!isEdit && (
+          <FormField label="초기 비밀번호" required>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="8자 이상, 영문+숫자+특수문자"
+            />
+          </FormField>
+        )}
         <FormField label="권한" required>
           <Select value={roleId} onValueChange={setRoleId} options={roleOptions} placeholder="권한 선택" />
         </FormField>

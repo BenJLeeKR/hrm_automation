@@ -42,3 +42,12 @@ def create_user(db: Session, data: dict) -> SysUserMst:
     db.commit()
     db.refresh(user)
     return user
+
+
+def update_user(db: Session, user: SysUserMst, data: dict) -> SysUserMst:
+    """시스템 사용자 수정 — 전달된 필드만 갱신 (부분 업데이트, §9-1 "계정 수정 기능")."""
+    for field, value in data.items():
+        setattr(user, field, value)
+    db.commit()
+    db.refresh(user)
+    return user
