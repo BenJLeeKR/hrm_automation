@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* 메인 영역 */}
       <div className={cn('flex min-w-0 flex-1 flex-col lg:pl-64')}>
-        <TopNav onMenuClick={() => setMobileOpen(true)} />
+        <TopNav onMenuClick={() => setMobileOpen(true)} currentUser={currentUser} />
         <main className="flex-1 px-4 py-6 lg:px-8">
           <div className="mx-auto w-full max-w-[1400px]">{children}</div>
         </main>

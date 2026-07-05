@@ -41,3 +41,11 @@ class MeOut(BaseModel):
     ROLE_CD: str
     ROLE_NM: str
     PERM_JSON: dict | None
+
+
+class MeUpdate(BaseModel):
+    """본인 정보 수정 요청 (`PATCH /api/v1/auth/me`, §9-1 "내 프로필" 화면). 로그인 사용자가
+    직접 수정할 수 있는 필드만 노출한다 — 로그인 ID(`USER_LGID`)·역할(`ROLE_ID`)은 관리자용
+    사용자 관리(SCR-015, `PATCH /users/{user_id}`)에서만 변경 가능하며 본인 수정 대상이 아니다."""
+
+    EMAIL_ADDR: str | None = None

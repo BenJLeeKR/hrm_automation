@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -16,8 +17,9 @@ from app.core.security import (
 from app.db.session import get_db
 from app.models.sys_role_mst import SysRoleMst
 from app.models.sys_user_mst import SysUserMst
-from app.repositories.sys_user_mst import get_user, get_user_by_login_id, update_last_login
-from app.schemas.auth import AccessTokenResponse, LoginRequest, MeOut, RefreshRequest, TokenResponse
+from app.repositories.sys_user_mst import get_user, get_user_by_login_id, update_last_login, update_user
+from app.schemas.auth import AccessTokenResponse, LoginRequest, MeOut, MeUpdate, RefreshRequest, TokenResponse
+from app.schemas.sys_user_mst import SysUserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -66,16 +68,50 @@ def logout() -> None:
     return None
 
 
-@router.get("/me", response_model=MeOut)
-def get_me(current_user: SysUserMst = Depends(get_current_user), db: Session = Depends(get_db)) -> MeOut:
-    """현재 로그인 사용자 정보 및 역할 권한(`PERM_JSON`) 조회 — 프론트엔드가 화면별
-    접근 권한에 따라 사이드바 메뉴를 필터링하는 데 사용한다."""
-    role = db.get(SysRoleMst, current_user.ROLE_ID)
+def _build_me_out(db: Session, user: SysUserMst) -> MeOut:
+    role = db.get(SysRoleMst, user.ROLE_ID)
     return MeOut(
-        USER_ID=current_user.USER_ID,
-        USER_LGID=current_user.USER_LGID,
-        EMAIL_ADDR=current_user.EMAIL_ADDR,
+        USER_ID=user.USER_ID,
+        USER_LGID=user.USER_LGID,
+        EMAIL_ADDR=user.EMAIL_ADDR,
         ROLE_CD=role.ROLE_CD if role else "",
         ROLE_NM=role.ROLE_NM if role else "",
         PERM_JSON=role.PERM_JSON if role else None,
     )
+
+
+@router.get("/me", response_model=MeOut)
+def get_me(current_user: SysUserMst = Depends(get_current_user), db: Session = Depends(get_db)) -> MeOut:
+    """현재 로그인 사용자 정보 및 역할 권한(`PERM_JSON`) 조회 — 프론트엔드가 화면별
+    접근 권한에 따라 사이드바 메뉴를 필터링하는 데 사용한다."""
+    return _build_me_out(db, current_user)
+
+
+@router.patch("/me", response_model=MeOut)
+def update_me(
+    payload: MeUpdate,
+    request: Request,
+    current_user: SysUserMst = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MeOut:
+    """본인 정보 수정 (§9-1 "내 프로필" 화면) — 관리자용 `PATCH /users/{user_id}`와 달리
+    별도 권한 검사 없이 로그인 사용자 본인만 대상으로 한다(URL에 대상 ID가 없어 다른
+    계정을 수정할 방법이 없다)."""
+    before_snapshot = SysUserOut.model_validate(current_user).model_dump(mode="json")
+    try:
+        current_user = update_user(db, current_user, payload.model_dump(exclude_unset=True))
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 사용 중인 이메일입니다.") from None
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="UPDATE",
+        tgt_tbl_nm="SYS_USER_MST",
+        tgt_id=current_user.USER_ID,
+        bfr_val_json=before_snapshot,
+        aft_val_json=SysUserOut.model_validate(current_user).model_dump(mode="json"),
+    )
+    return _build_me_out(db, current_user)
