@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, UserPlus } from 'lucide-react'
+import { Pencil, UserPlus, UserX } from 'lucide-react'
 import { SearchInput } from '@/components/common/search-input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RoleBadge } from '@/components/common/status-badge'
 import { ModalForm, FormField } from '@/components/common/modal-form'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { Input } from '@/components/ui/input'
-import { apiGet, apiPatch, apiPost, ApiError } from '@/lib/api'
+import { apiGet, apiDelete, apiPatch, apiPost, ApiError } from '@/lib/api'
 import type { RoleCode } from '@/lib/types'
 
 // 백엔드 사용자 관리 API(로드맵 §8 "설정 화면 구현", SCR-015) 응답 타입 — 필드명은
@@ -39,6 +40,23 @@ export function UsersTable() {
   const [loading, setLoading] = useState(true)
   const [openCreate, setOpenCreate] = useState(false)
   const [editTarget, setEditTarget] = useState<SysUserOut | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<SysUserOut | null>(null)
+  const [deactivating, setDeactivating] = useState(false)
+  const [deactivateError, setDeactivateError] = useState<string | null>(null)
+
+  async function handleDeactivate() {
+    if (!deactivateTarget) return
+    setDeactivating(true)
+    setDeactivateError(null)
+    try {
+      await apiDelete(`/api/v1/users/${deactivateTarget.USER_ID}`)
+      reload()
+    } catch (err) {
+      setDeactivateError(err instanceof ApiError ? err.message : '계정 비활성화에 실패했습니다. 잠시 후 다시 시도하세요.')
+    } finally {
+      setDeactivating(false)
+    }
+  }
 
   function reload() {
     setLoading(true)
@@ -79,6 +97,7 @@ export function UsersTable() {
   return (
     <div className="flex flex-col gap-4">
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {deactivateError && <p className="text-sm text-destructive">{deactivateError}</p>}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput
@@ -130,14 +149,25 @@ export function UsersTable() {
                     <Badge variant={u.USE_YN ? 'success' : 'muted'}>{u.USE_YN ? '활성' : '비활성'}</Badge>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setEditTarget(u)}
-                      className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                      aria-label="계정 수정"
-                    >
-                      <Pencil className="size-4" />
-                    </button>
+                    <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget(u)}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        aria-label="계정 수정"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeactivateTarget(u)}
+                        disabled={!u.USE_YN}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="계정 비활성화"
+                      >
+                        <UserX className="size-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )
@@ -156,6 +186,17 @@ export function UsersTable() {
           user={editTarget}
         />
       )}
+      <ConfirmDialog
+        open={deactivateTarget !== null}
+        onClose={() => setDeactivateTarget(null)}
+        onConfirm={handleDeactivate}
+        title="계정을 비활성화하시겠습니까?"
+        description={
+          deactivateTarget ? `"${deactivateTarget.USER_LGID}" 계정을 비활성화합니다. 계정 정보는 삭제되지 않으며, 비활성화 후에는 로그인할 수 없습니다.` : undefined
+        }
+        confirmText={deactivating ? '처리 중...' : '비활성화'}
+        destructive
+      />
     </div>
   )
 }

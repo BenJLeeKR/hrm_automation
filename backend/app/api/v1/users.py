@@ -10,7 +10,7 @@ from app.core.security import hash_password
 from app.db.session import get_db
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.sys_role_mst import list_roles
-from app.repositories.sys_user_mst import create_user, get_user, list_users, update_user
+from app.repositories.sys_user_mst import create_user, deactivate_user, get_user, list_users, update_user
 from app.schemas.sys_role_mst import RoleOut
 from app.schemas.sys_user_mst import SysUserOut, UserCreate, UserUpdate
 
@@ -95,6 +95,37 @@ def patch_user(
         request,
         current_user,
         act_cd="UPDATE",
+        tgt_tbl_nm=_TGT_TBL_NM,
+        tgt_id=user.USER_ID,
+        bfr_val_json=before_snapshot,
+        aft_val_json=SysUserOut.model_validate(user).model_dump(mode="json"),
+    )
+    return user
+
+
+@router.delete("/{user_id}", response_model=SysUserOut)
+def delete_user(
+    user_id: uuid.UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: SysUserMst = Depends(require_permission("settings_users", "delete")),
+) -> SysUserOut:
+    """계정 비활성화 (SCR-015 "계정 비활성화" 버튼, §9-1) — 로우를 삭제하지 않고
+    `USE_YN=False`로 전환하는 소프트 삭제(사원 퇴직 처리와 동일한 원칙)."""
+    user = get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+    if not user.USE_YN:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 비활성화된 계정입니다.")
+
+    before_snapshot = SysUserOut.model_validate(user).model_dump(mode="json")
+    user = deactivate_user(db, user)
+
+    record_audit(
+        db,
+        request,
+        current_user,
+        act_cd="DELETE",
         tgt_tbl_nm=_TGT_TBL_NM,
         tgt_id=user.USER_ID,
         bfr_val_json=before_snapshot,

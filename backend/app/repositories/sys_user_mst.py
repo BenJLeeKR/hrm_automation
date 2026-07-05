@@ -51,3 +51,12 @@ def update_user(db: Session, user: SysUserMst, data: dict) -> SysUserMst:
     db.commit()
     db.refresh(user)
     return user
+
+
+def deactivate_user(db: Session, user: SysUserMst) -> SysUserMst:
+    """계정 비활성화 — 로우 삭제가 아니라 `USE_YN=False`로 전환하는 소프트 삭제
+    (사원 퇴직 처리(`retire_employee`)와 동일한 원칙, §9-1 "계정 비활성화 기능")."""
+    user.USE_YN = False
+    db.commit()
+    db.refresh(user)
+    return user

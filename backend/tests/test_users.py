@@ -152,6 +152,58 @@ def test_viewer_cannot_patch_user(client, viewer_token, admin_token, admin_role)
     assert resp.status_code == 403
 
 
+def test_delete_user_deactivates_and_rejects_second_call(client, admin_token, admin_role):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    login_id = f"pytest_{uuid.uuid4().hex[:8]}"
+    create_resp = client.post(
+        "/api/v1/users",
+        headers=headers,
+        json={
+            "USER_LGID": login_id,
+            "EMAIL_ADDR": f"{login_id}@example.com",
+            "password": "Str0ng!Pass",
+            "ROLE_ID": str(admin_role.ROLE_ID),
+        },
+    )
+    user_id = create_resp.json()["USER_ID"]
+
+    first = client.delete(f"/api/v1/users/{user_id}", headers=headers)
+    assert first.status_code == 200
+    assert first.json()["USE_YN"] is False
+
+    second = client.delete(f"/api/v1/users/{user_id}", headers=headers)
+    assert second.status_code == 409
+
+
+def test_delete_user_not_found_returns_404(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.delete(f"/api/v1/users/{uuid.uuid4()}", headers=headers)
+
+    assert resp.status_code == 404
+
+
+def test_viewer_cannot_delete_user(client, viewer_token, admin_token, admin_role):
+    """설계서(SCR-015) 접근 권한이 "A(Admin 전용)"이므로 VIEWER는 비활성화도 403이어야 한다."""
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    login_id = f"pytest_{uuid.uuid4().hex[:8]}"
+    create_resp = client.post(
+        "/api/v1/users",
+        headers=admin_headers,
+        json={
+            "USER_LGID": login_id,
+            "EMAIL_ADDR": f"{login_id}@example.com",
+            "password": "Str0ng!Pass",
+            "ROLE_ID": str(admin_role.ROLE_ID),
+        },
+    )
+    user_id = create_resp.json()["USER_ID"]
+
+    viewer_headers = {"Authorization": f"Bearer {viewer_token}"}
+    resp = client.delete(f"/api/v1/users/{user_id}", headers=viewer_headers)
+
+    assert resp.status_code == 403
+
+
 def test_viewer_cannot_manage_users(client, viewer_token, admin_role):
     """설계서(SCR-015) 접근 권한이 "A(Admin 전용)"이므로 VIEWER는 조회·등록 모두 403이어야 한다."""
     headers = {"Authorization": f"Bearer {viewer_token}"}
