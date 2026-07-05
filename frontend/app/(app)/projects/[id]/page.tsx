@@ -185,6 +185,8 @@ export default function ProjectDetailPage({
 
   const { project, employees, assignments } = data
   const activeAssignments = assignments.filter((a) => a.ASGN_STAT_CD === 'ACTIVE')
+  const plannedCount = assignments.filter((a) => a.ASGN_STAT_CD === 'PLANNED').length
+  const doneCount = assignments.filter((a) => a.ASGN_STAT_CD === 'DONE').length
   const memberCount = new Set(activeAssignments.map((a) => a.EMPL_ID)).size
   const avgAllocation = activeAssignments.length
     ? Math.round(activeAssignments.reduce((s, a) => s + a.ALLOC_RT, 0) / activeAssignments.length)
@@ -286,6 +288,16 @@ export default function ProjectDetailPage({
             {activeAssignments.length === 0 && (
               <p className="text-sm text-muted-foreground">진행 중인 투입이 없습니다.</p>
             )}
+            {/* 사용자 요청으로 진행 중(ACTIVE) 유형별 구성 외에도 계획(PLANNED)·종료(DONE)
+                상태의 인력 수를 함께 표시한다(§9-1과 무관한 직접 요청 건, 2026-07-05). */}
+            <div className="mt-1 flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2">
+              <span className="text-sm text-muted-foreground">계획된 인력</span>
+              <Badge variant="outline">{plannedCount}명</Badge>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2">
+              <span className="text-sm text-muted-foreground">종료된 인력</span>
+              <Badge variant="outline">{doneCount}명</Badge>
+            </div>
           </CardContent>
         </Card>
       </div>
