@@ -54,12 +54,14 @@ interface JobTypeOut {
 interface AssignmentOut {
   ASGN_ID: string
   EMPL_ID: string
+  PJT_ID: string
   ASGN_TYPE_CD: 'RUNNING' | 'COMMITTED' | 'PROPOSED'
   PRJT_ROLE_NM: string
   ALLOC_RT: number
   ASGN_STRT_DT: string
   ASGN_END_DT: string | null
   ASGN_STAT_CD: 'PLANNED' | 'ACTIVE' | 'DONE' | 'CANCELED'
+  RMRK: string | null
 }
 interface AssignmentListResponse {
   items: AssignmentOut[]
@@ -117,6 +119,7 @@ export default function ProjectDetailPage({
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState<string | null>(null)
   const [openAddAssignment, setOpenAddAssignment] = useState(false)
+  const [editTarget, setEditTarget] = useState<ProjectDetailData['assignments'][number] | null>(null)
 
   async function handleClose() {
     setClosing(true)
@@ -324,6 +327,7 @@ export default function ProjectDetailPage({
                   <TableHead className="w-44">투입률</TableHead>
                   <TableHead>기간</TableHead>
                   <TableHead>상태</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -345,6 +349,16 @@ export default function ProjectDetailPage({
                     <TableCell>
                       <Badge variant="outline">{assignmentStatusLabel[a.ASGN_STAT_CD]}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget(a)}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        aria-label="투입 정보 수정"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -362,6 +376,19 @@ export default function ProjectDetailPage({
         fixedPjtId={project.PJT_ID}
         fixedPjtName={project.PJT_NM}
       />
+      {editTarget && (
+        <AssignmentFormModal
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditTarget(null)
+          }}
+          onSaved={reload}
+          employees={employees}
+          fixedPjtId={project.PJT_ID}
+          fixedPjtName={project.PJT_NM}
+          assignment={editTarget}
+        />
+      )}
       <ConfirmDialog
         open={openCloseConfirm}
         onClose={() => setOpenCloseConfirm(false)}

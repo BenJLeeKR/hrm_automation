@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Plus } from 'lucide-react'
+import { AlertTriangle, Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { FilterBar, FilterField } from '@/components/common/filter-bar'
 import { SearchInput } from '@/components/common/search-input'
@@ -29,6 +29,7 @@ interface AssignmentOut {
   ASGN_STRT_DT: string
   ASGN_END_DT: string | null
   ASGN_STAT_CD: AssignmentStatus
+  RMRK: string | null
 }
 interface AssignmentListResponse {
   items: AssignmentOut[]
@@ -88,6 +89,7 @@ export default function AssignmentsPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [openCreate, setOpenCreate] = useState(false)
+  const [editTarget, setEditTarget] = useState<AssignmentRow | null>(null)
 
   function reload() {
     setLoading(true)
@@ -179,6 +181,24 @@ export default function AssignmentsPage() {
         </Badge>
       ),
     },
+    {
+      key: 'actions',
+      header: '',
+      className: 'w-12',
+      render: (a) => (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setEditTarget(a)
+          }}
+          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          aria-label="투입 정보 수정"
+        >
+          <Pencil className="size-4" />
+        </button>
+      ),
+    },
   ]
 
   return (
@@ -246,6 +266,18 @@ export default function AssignmentsPage() {
         projects={projects}
         onSaved={reload}
       />
+      {editTarget && (
+        <AssignmentFormModal
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditTarget(null)
+          }}
+          employees={employees}
+          projects={projects}
+          assignment={editTarget}
+          onSaved={reload}
+        />
+      )}
     </div>
   )
 }
