@@ -67,6 +67,18 @@ def list_ending_soon_assignments(db: Session, *, as_of: date, within_days: int =
     return db.execute(stmt).all()
 
 
+def count_missing_end_date(db: Session) -> int:
+    """진행 중(`ACTIVE`) 투입 건 중 종료 예정일(`ASGN_END_DT`)이 없는 건수 — `HR_DATA_QUALITY_CHK`
+    배치(로드맵 §8, 설계서 §12.2 "PJT_ASGN_HIS.ASGN_END_DT — ACTIVE 건은 종료 예정일 입력
+    권장") 점검 항목 중 하나."""
+    stmt = (
+        select(func.count())
+        .select_from(PjtAsgnHis)
+        .where(PjtAsgnHis.ASGN_STAT_CD == "ACTIVE", PjtAsgnHis.ASGN_END_DT.is_(None))
+    )
+    return db.scalar(stmt) or 0
+
+
 def sum_overlapping_alloc_rt(
     db: Session,
     *,
