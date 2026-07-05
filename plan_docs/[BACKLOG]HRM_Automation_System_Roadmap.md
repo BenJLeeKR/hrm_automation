@@ -785,6 +785,9 @@
 - [x] 프로젝트 상세 화면 — 종료처리 버튼 구현 완료 (2026-07-05). 사원 상세 화면의 "퇴직처리"와 동일한 패턴으로 공용 `ConfirmDialog`를 재사용해 "종료처리" 버튼 클릭 시 확인 후 `PATCH /api/v1/projects/{pjt_id}`(`PJT_STAT_CD: 'CLOSED'`)만 호출. 이미 종료된 프로젝트는 버튼 비활성화(`PJT_STAT_CD==='CLOSED'`)
 - [x] 프로젝트 상세 화면 — 인력투입 버튼 구현 완료 (2026-07-05). 그동안 투입 관리 화면(`assignments/page.tsx`)에 인라인 함수로만 있던 실 API 연동 등록 모달을, 이미 저장소에 있었으나 목데이터 기반이라 미사용 상태이던 `components/projects/assignment-form-modal.tsx`를 실 API 연동 공용 컴포넌트로 교체하며 그 자리에 추출 — `fixedPjtId`/`fixedPjtName` prop 전달 시(프로젝트 상세 화면) 프로젝트 선택 없이 고정값으로 등록, 미전달 시(투입 관리 화면) 기존과 동일하게 프로젝트를 선택해 등록
 
+**투입 관리 (`/assignments`)**
+- [ ] 투입 이력 개별(인력별) 수정 버튼/폼 없음 (`PATCH /api/v1/assignments/{asgn_id}`는 이미 구현됨 — `ASGN_TYPE_CD`/`PRJT_ROLE_NM`/`ALLOC_RT`/기간/`ASGN_STAT_CD`/`RMRK` 변경 가능, 변경 시 100% 초과 재검증 로직 포함) — 투입 관리 화면(`assignments/page.tsx`)·프로젝트 상세 화면(`projects/[id]/page.tsx`) 모두 등록(`POST`)만 연동되어 있고 개별 행 수정 진입점이 없어 사용자 지적으로 신규 등록(2026-07-05)
+
 **리소스 추천 (`/recommendations`)**
 - [x] 필요 기술 다중 칩 선택 UI 구현 완료 (2026-07-05). `recommendations/page.tsx`의 "필요 기술" 필드를 단일 Select(`skill: string`)에서 다중 선택(`skillIds: string[]`)으로 교체 — Select+"추가" 버튼으로 기술을 추가하고 각 선택 항목을 제거 가능한 칩(Badge+X 버튼)으로 표시, 이미 선택된 기술은 추가 Select 선택지에서 제외해 중복 방지(사원 상세의 "기술 추가" 모달과 동일 원칙). `REQ_SKILL_JSON: { SKILL_IDS: skillIds }`로 전달 — 백엔드는 이미 배열을 지원하고 있어 변경 없음
 - [ ] "이 후보로 투입 요청" 버튼 없음 — 추천 결과 → 실제 투입(`PJT_ASGN_HIS`) 등록 연결 흐름 전체 미구현
@@ -1093,4 +1096,5 @@
 | 2026-07-05 | v0.8.14 | §9-1 다음 미완료 항목 "프로젝트 상세 화면 종료처리 버튼 없음" 처리 — 사원 상세 화면의 "퇴직처리"와 동일한 패턴으로 공용 `ConfirmDialog`를 재사용해 "종료처리" 버튼 클릭 시 확인 후 `PATCH /api/v1/projects/{pjt_id}`(`PJT_STAT_CD: 'CLOSED'`)만 호출. 이미 종료된 프로젝트는 버튼 비활성화. 백엔드 변경 없음(기존 `PATCH` API 재사용), pytest 107개 그대로 통과, 실 서버 curl로 `PJT_STAT_CD` 정상 전환 확인(검증용 임시 프로젝트는 삭제). §9-1 "프로젝트 상세 화면 종료처리 버튼" 항목 `[x]` 처리(인력투입 버튼은 미완료 유지) | — |
 | 2026-07-05 | v0.8.15 | §9-1 다음 미완료 항목 "프로젝트 상세 화면 인력투입 버튼 없음" 처리 — 그동안 목데이터 기반으로 미사용 상태이던 `components/projects/assignment-form-modal.tsx`를 실 API 연동 공용 컴포넌트로 교체, `assignments/page.tsx`의 인라인 등록 모달을 이 컴포넌트로 대체. `fixedPjtId`/`fixedPjtName` prop 신규 추가로 프로젝트 상세 화면에서는 프로젝트 선택 없이 고정 등록, 투입 관리 화면에서는 기존과 동일하게 프로젝트 선택 후 등록. `projects/[id]/page.tsx`가 이미 조회해둔 `employees` 배열을 반환값에 노출(신규 API 호출 없이 재사용). 백엔드 변경 없음, pytest 107개 그대로 통과, 실 서버 curl로 `POST /api/v1/assignments` 정상 등록(201) 확인(검증용 임시 프로젝트·사원은 삭제). §9-1 "프로젝트 상세 화면 인력투입 버튼" 항목 `[x]` 처리 — 프로젝트 섹션 §9-1 항목 전부 완료 | — |
 | 2026-07-05 | v0.8.16 | §9-1 다음 미완료 항목 "리소스 추천 필요 기술 다중 선택 미구현" 처리 — `recommendations/page.tsx`의 "필요 기술" 필드를 단일 Select에서 다중 칩 선택(`skillIds: string[]`)으로 교체, `REQ_SKILL_JSON: { SKILL_IDS: skillIds }`로 전달. 백엔드 `pjt_rcmd_rslt.py`는 이미 배열 전체를 순회해 점수를 계산하고 있어 변경 없음, pytest 107개 그대로 통과. 실 서버 curl로 기술 2건을 담아 요청 시 둘 다 점수에 반영됨을 확인. §9-1 "리소스 추천 필요 기술 다중 선택" 항목 `[x]` 처리("이 후보로 투입 요청" 버튼은 미완료 유지) | — |
+| 2026-07-05 | v0.8.17 | 사용자 질의("투입관리의 인력별 수정 화면이 §9-1에 안 보이는데 빠진 건지") 확인 후 §9-1에 신규 "투입 관리 (`/assignments`)" 섹션·항목 추가(문서 정리만, 코드 변경 없음) — 확인 결과 백엔드 `PATCH /api/v1/assignments/{asgn_id}`(투입 유형/역할/투입률/기간/상태/비고 변경 + 100% 초과 재검증)는 이미 구현되어 있으나, 투입 관리 화면·프로젝트 상세 화면 모두 등록(`POST`)만 연동되어 있고 개별 투입 건 수정 UI 자체가 어디에도 없어 그동안 §9-1에서 누락되어 있던 것으로 확인 | — |
 
