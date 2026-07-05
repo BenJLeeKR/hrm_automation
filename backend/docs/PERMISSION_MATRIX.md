@@ -2,8 +2,8 @@
 
 > 출처: `plan_docs/[DESIGN]HRM_Screen_Design.md` "화면 목록" 표 및 화면별 상세 접근 권한 문구 (설계서는 수정하지 않음, 본 문서는 실행용 정리본)
 > 대상: `SYS_ROLE_MST.PERM_JSON` Seed 반영 (`backend/app/db/seed/sys_role_mst_seed.py`)
-> 작성일: 2026-07-02
-> 역할 6종: `ADMIN`, `HR_MGR`, `PM`, `TEAM_LEAD`, `EXEC`, `VIEWER`
+> 작성일: 2026-07-02 (2026-07-06 v3 — `EMPLOYEE` 역할 추가, `settings_users` 접근 권한 A→A H로 변경. `[DESIGN]HRM_Automation_System_Design_v0_6.md` §5.5 "사원 계정 자동 생성"/"직원 역할 배정" 반영)
+> 역할 7종: `ADMIN`, `HR_MGR`, `PM`, `TEAM_LEAD`, `EXEC`, `EMPLOYEE`, `VIEWER`
 
 ---
 
@@ -22,23 +22,23 @@
 
 | 화면 ID | 화면명 | screen_key | 접근 권한 |
 |---|---|---|---|
-| SCR-002 | 대시보드 | `dashboard` | A H P T E V |
-| SCR-003 | 사원 목록 | `employees` | A H P T E V (조회 범위는 역할에 따라 제한) |
-| SCR-004 | 사원 상세 | `employees` (동일 키) | A H P T E V (수정은 A H T(본인팀) 가능) |
+| SCR-002 | 대시보드 | `dashboard` | A H P T E S V |
+| SCR-003 | 사원 목록 | `employees` | A H P T E S V (조회 범위는 역할에 따라 제한, S는 본인 레코드만) |
+| SCR-004 | 사원 상세 | `employees` (동일 키) | A H P T E S V (수정은 A H T(본인팀) S(본인만) 가능) |
 | SCR-005 | 기술 관리 | `skills` | A H (조회는 전체, 등록/수정은 A H만 — 화면 라우팅 자체는 A H로 제한) |
 | SCR-006 | 직무 유형 관리 | `job_types` | A H |
-| SCR-007 | 프로젝트 목록 | `projects` | A H P T E V |
-| SCR-008 | 프로젝트 상세 | `projects` (동일 키) | A H P T E V (수정은 A H P) |
+| SCR-007 | 프로젝트 목록 | `projects` | A H P T E S V |
+| SCR-008 | 프로젝트 상세 | `projects` (동일 키) | A H P T E S V (수정은 A H P) |
 | SCR-009 | 투입 관리 | `assignments` | A H P T (조회) — 수정은 A H P |
-| SCR-010 | 가동 가능 인력 | `availability` | A H P T E (VIEWER 제외) |
-| SCR-011 | 리소스 추천 | `recommendations` | A H P T E (VIEWER 제외) |
-| SCR-012 | AI 질의응답 | `ai_chat` | A H P T E V |
-| SCR-013 | 리포트 | `reports` | A H P E (TEAM_LEAD, VIEWER 제외) |
+| SCR-010 | 가동 가능 인력 | `availability` | A H P T E (S, VIEWER 제외) |
+| SCR-011 | 리소스 추천 | `recommendations` | A H P T E (S, VIEWER 제외) |
+| SCR-012 | AI 질의응답 | `ai_chat` | A H P T E S V |
+| SCR-013 | 리포트 | `reports` | A H P E (TEAM_LEAD, S, VIEWER 제외) |
 | SCR-014 | 설정 (허브) | `settings` | A H |
-| SCR-015 | 사용자 관리 | `settings_users` | A (Admin 전용) |
+| SCR-015 | 사용자 관리 | `settings_users` | A H (2026-07-06 변경 — HR_MGR은 사원 연동 계정의 업무 역할 배정만 가능) |
 | SCR-016 | 감사 로그 | `settings_audit_logs` | A (Admin 전용) |
 
-(A=ADMIN, H=HR_MGR, P=PM, T=TEAM_LEAD, E=EXEC, V=VIEWER — 화면 설계서 범례 그대로 사용)
+(A=ADMIN, H=HR_MGR, P=PM, T=TEAM_LEAD, E=EXEC, S=EMPLOYEE(일반 사원, 2026-07-06 신규), V=VIEWER — 화면 설계서 범례 그대로 사용)
 
 > **`codes` (공통 코드/기준정보, 2026-07-03 운영팀 확인 완료):** 부서(`GET /api/v1/departments`)/직급(`GET /api/v1/positions`)은 화면 설계서에 별도 SCR 항목이 없어(§9 리스크 "departments/positions/job-types 화면 권한 키 미정" 참조), 독립 화면으로 보지 않고 "공통 코드/기준정보"로 취급하기로 확정했다. 별도 SCR/화면을 갖지 않으므로 위 §2 화면 목록 표에는 포함하지 않고, `PERM_JSON`에 `codes`라는 논리적 권한 키만 둔다. `GET /api/v1/job-types`도 직무 유형 관리 화면(SCR-006, `job_types`)의 등록/수정/삭제 권한과 별개로, 다른 화면의 필터·조회 옵션 용도로 전 역할이 조회할 수 있어야 하므로 `codes` 정책을 함께 적용한다.
 
@@ -57,6 +57,7 @@
 | PM | ● | - | - | - | - | - |
 | TEAM_LEAD | ● | - | - | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | ● | - | - | - | - | - |
 | VIEWER | ● | - | - | - | - | - |
 
 순수 조회 화면. 등록/수정/삭제/Excel/관리자 기능 없음.
@@ -70,12 +71,14 @@
 | PM | ● | - | - | - | - | - |
 | TEAM_LEAD | ● | - | ●(본인팀만) | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | ●(본인만) | - | ●(본인만, 이메일·연락처) | - | - | - |
 | VIEWER | ● | - | - | - | - | - |
 
 - `C`(등록): 화면 설계서 명시 — "신규 등록 버튼 | 권한: A H"
 - `U`(수정): 화면 설계서 명시 — "수정 버튼 | 권한: A H T(본인팀)" — TEAM_LEAD는 본인 팀 소속 사원만 (API 레이어 스코프 처리 필요)
 - `D`(삭제=퇴직 처리): 화면 설계서 명시 — "퇴직 처리 버튼 | 권한: A H"
 - `X`(Excel): Import는 화면 설계서 명시 "권한: A H". Export는 역할 제한이 명시되어 있지 않으나, 사원 개인정보 포함 데이터라 **보수적으로 Import와 동일하게 A H로 제한** (추정 — 운영팀 확정 시 조정 가능)
+- `EMPLOYEE`(2026-07-06 신규): 본인 사원 레코드(`SYS_USER_MST.EMPL_ID`와 대상 `EMPL_ID` 일치)만 조회 가능, 수정은 이메일·연락처로 한정(부서/직급/직무 변경은 A H만). TEAM_LEAD의 "본인팀" 스코프와 동일하게 row-level 제약이라 `PERM_JSON`으로 표현되지 않으며 API 레이어에서 별도 구현 필요.
 
 ### `skills` — 기술 관리 (SCR-005)
 
@@ -86,6 +89,7 @@
 | PM | - | - | - | - | - | - |
 | TEAM_LEAD | - | - | - | - | - | - |
 | EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
 - 화면 설계서에는 "조회는 전체, 등록/수정은 A H만"이라는 문구가 있으나, 같은 문서의 "화면 목록" 표는 이 화면(`/skills`) 자체의 접근 권한을 "A H"로 명시함. **"조회는 전체"는 기술 마스터 데이터가 사원 상세 등 다른 화면에서 다른 역할도 볼 수 있다는 의미로 해석**하고, `/skills` 관리 화면 자체의 메뉴 노출은 화면 목록 표 기준(A H)을 따름 — 설계서 내 표기 불일치이므로 운영팀 확인 권장.
@@ -100,6 +104,7 @@
 | PM | - | - | - | - | - | - |
 | TEAM_LEAD | - | - | - | - | - | - |
 | EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
 전체 A H만 접근 (화면 설계서에 "조회는 전체" 문구 없음 — skills와 달리 완전히 A H 전용).
@@ -113,6 +118,7 @@
 | PM | ● | - | - | - | - | - |
 | TEAM_LEAD | ● | - | - | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | ● | - | - | - | - | - |
 | VIEWER | ● | - | - | - | - | - |
 
 - 부서(`departments`)/직급(`positions`)은 독립 화면이 아닌 공통 코드/기준정보로 취급 — 운영팀 확인 완료(2026-07-03). `view`는 전 역할 허용, `create`/`update`/`delete`는 ADMIN/HR_MGR만 허용(등록/수정 화면은 별도 백로그 항목으로 아직 미구현).
@@ -127,6 +133,7 @@
 | PM | ● | ●(추정) | ● | - | - | - |
 | TEAM_LEAD | ● | - | - | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | ● | - | - | - | - | - |
 | VIEWER | ● | - | - | - | - | - |
 
 - `U`(수정/종료처리): 화면 설계서 명시 — "수정은 A H P", "[+ 인력 투입] (권한: A H P)"
@@ -143,9 +150,10 @@
 | PM | ● | ● | ● | - | ●(추정) | - |
 | TEAM_LEAD | ● | - | - | - | -(추정) | - |
 | EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
-- 접근 자체가 A H P T로 제한 (E, V는 화면 접근 불가)
+- 접근 자체가 A H P T로 제한 (E, S, V는 화면 접근 불가)
 - `C`/`U`(등록/수정): 화면 설계서 명시 — "수정은 A H P" (TEAM_LEAD는 조회만)
 - `D`(삭제=투입 취소): 별도 삭제 기능 없음 — `ASGN_STAT_CD='CANCELED'`로 상태 변경 처리(=`U`에 포함), 전 역할 불허로 표시
 - `X`(Excel Export): "Excel Export 컬럼 매핑" 섹션은 있으나 역할 제한 명시 없음 — 조회 가능 그룹(A H P) 기준으로 추정, TEAM_LEAD는 조회는 가능하나 Export는 보수적으로 제외(추정)
@@ -159,9 +167,10 @@
 | PM | ● | - | - | - | - | - |
 | TEAM_LEAD | ● | - | - | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
-순수 조회/검색 화면 (등록/수정/삭제/Excel 없음). VIEWER는 화면 목록 표 기준 접근 불가.
+순수 조회/검색 화면 (등록/수정/삭제/Excel 없음). EMPLOYEE/VIEWER는 화면 목록 표 기준 접근 불가.
 
 ### `recommendations` — 리소스 추천 (SCR-011)
 
@@ -172,6 +181,7 @@
 | PM | ● | ● | - | - | - | - |
 | TEAM_LEAD | ● | - | - | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
 - `V`(조회=추천 실행/결과 열람): 화면 접근 그룹(A H P T E) 전체
@@ -186,6 +196,7 @@
 | PM | ● | - | - | - | - | - |
 | TEAM_LEAD | ● | - | - | - | - | - |
 | EXEC | ● | - | - | - | - | - |
+| EMPLOYEE | ● | - | - | - | - | - |
 | VIEWER | ● | - | - | - | - | - |
 
 전 역할 조회(질의) 가능. 단, 화면 설계서 명시대로 "AI는 권한 범위 내 데이터만 응답" — 응답 데이터 자체는 역할별로 SQL 조회 단계에서 필터링(본 매트릭스가 다루는 화면/버튼 노출 범위 밖, API 레이어 구현 필요).
@@ -199,9 +210,10 @@
 | PM | ● | - | - | - | ●(추정) | ●(추정) |
 | TEAM_LEAD | - | - | - | - | - | - |
 | EXEC | ● | - | - | - | ●(추정) | ●(추정) |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
-- 접근 자체가 A H P E로 제한 (TEAM_LEAD, VIEWER 화면 접근 불가)
+- 접근 자체가 A H P E로 제한 (TEAM_LEAD, EMPLOYEE, VIEWER 화면 접근 불가)
 - `X`(Excel 내보내기, 월별 가동률 통계 탭), `A`(리포트 수동 발송): 화면 설계서에 버튼은 있으나 역할 제한 명시 없음 — 화면 접근 그룹(A H P E)과 동일하게 추정. 운영 중 "관리자 기능"이므로 A/H로 좁힐지 재검토 권장.
 
 ### `settings` — 설정 허브 (SCR-014)
@@ -213,6 +225,7 @@
 | PM | - | - | - | - | - | - |
 | TEAM_LEAD | - | - | - | - | - | - |
 | EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
 허브(네비게이션) 화면 — 하위 카드(사용자 관리/감사 로그)의 실제 권한은 각 화면(`settings_users`, `settings_audit_logs`)에서 별도 적용. "알림 채널/배치 관리/백업 관리" 카드는 화면 설계서에 상세 정의 없어 이번 매트릭스에서 제외(TBD).
@@ -222,13 +235,14 @@
 | 역할 | V | C | U | D | X | A |
 |---|---|---|---|---|---|---|
 | ADMIN | ● | ● | ● | ● | - | ● |
-| HR_MGR | - | - | - | - | - | - |
+| HR_MGR | ●(추정, EMPL_ID 연결 계정만) | ●(추정, 사원 연동 계정만) | ●(EMPL_ID 연결 계정의 업무 역할만) | -(제외 — Admin 승격/시스템 계정 불가) | - | - |
 | PM | - | - | - | - | - | - |
 | TEAM_LEAD | - | - | - | - | - | - |
 | EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
-화면 설계서 명시: "접근 권한 A (Admin 전용)" — 계정 등록/수정/비활성(삭제) 전부 Admin 전용. 역할 배정(Role 변경) 자체가 관리자 기능이므로 `A`(관리자 기능)도 함께 표시.
+**(2026-07-06 설계 변경)** `[DESIGN]HRM_Automation_System_Design_v0_6.md` §5.5 "직원 역할(업무 권한) 배정" 반영 — 사원 직접 로그인·자기서비스 지원을 위해 `HR_MGR`에게도 이 화면 접근·계정 관리 권한을 확대했다(기존 "A (Admin 전용)"에서 변경). 단 `HR_MGR`은 `EMPL_ID`가 연결된(사원과 연동된) 계정에 대해서만 `PM`/`TEAM_LEAD`/`EXEC`/`EMPLOYEE`/`VIEWER` 역할 범위 내에서 변경할 수 있고, `ADMIN` 역할로의 승격이나 `EMPL_ID`가 없는 시스템/외부 협력사 계정의 수정·비활성화는 여전히 `ADMIN`만 가능하다. 이 제약은 `PERM_JSON`(화면/버튼 단위)으로 표현할 수 없는 값(role)·행(row) 단위 제약이라 API 레이어에서 별도 검증 필요(운영팀 확정 전 MVP 추정).
 
 ### `settings_audit_logs` — 감사 로그 (SCR-016, Admin 전용)
 
@@ -239,9 +253,10 @@
 | PM | - | - | - | - | - | - |
 | TEAM_LEAD | - | - | - | - | - | - |
 | EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
-화면 설계서 명시: "접근 권한 A (Admin 전용)". Excel 내보내기 버튼 있음, 역할 제한은 화면 전체 게이트(A)와 동일.
+화면 설계서 명시: "접근 권한 A (Admin 전용)". Excel 내보내기 버튼 있음, 역할 제한은 화면 전체 게이트(A)와 동일. (2026-07-06) `settings_users`와 달리 감사 로그는 `HR_MGR`에게 확대하지 않고 Admin 전용을 유지한다.
 
 ---
 
@@ -276,3 +291,5 @@
 4. `reports`의 Excel 내보내기·리포트 수동 발송(`admin`) — 화면 설계서 미명시, 현재 화면 접근 그룹(A H P E)과 동일. 운영상 "관리자 기능"으로 더 좁힐지 검토 필요.
 5. `skills` 화면의 "조회는 전체" 문구와 "화면 목록" 표의 "A H" 접근 권한 간 불일치 — 화면 설계서 원본 확인 필요 (본 문서는 화면 목록 표 기준 채택).
 6. `settings` 허브의 "알림 채널/배치 관리/백업 관리" 카드는 화면 상세 설계 부재로 이번 Seed에서 제외 — Phase 7 운영 자동화 화면 설계 시 추가 확정 필요.
+7. `settings_users`의 `HR_MGR` 권한 확대(2026-07-06) — "`EMPL_ID` 연결 계정만"·"업무 역할만"이라는 값(role)·행(row) 단위 제약은 `PERM_JSON`으로 표현할 수 없어 API 레이어 구현이 반드시 필요. 구현 전까지는 `HR_MGR`에게 `settings_users.update=true`를 그대로 부여하면 시스템 계정까지 수정 가능해지는 위험이 있으므로, API 레이어 검증이 완성되기 전에는 Seed에 반영하지 않도록 주의.
+8. `EMPLOYEE` 역할의 화면별 접근 범위(2026-07-06 신규) — 이번 문서에서는 MVP로 "본인 사원 레코드만 조회/이메일·연락처 수정" 외 전 화면 비허용으로 보수적으로 설정했다. 향후 "내 프로필" 전용 화면(SCR 미부여) 설계가 확정되면 함께 재검토 필요.

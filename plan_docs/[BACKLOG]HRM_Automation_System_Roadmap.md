@@ -684,6 +684,12 @@
 > 완료된 작업은 이 섹션에 남기지 않고 §7 개발 완료 내역과 §11 MVP 구현 체크리스트에만 기록한다.
 
 - [ ] 1. `HR_DATA_QUALITY_CHK` 배치 구현 (Phase 7, 매주 금요일 18:00 데이터 품질 점검 — 대시보드/리포트가 이미 사용 중인 데이터 품질 판정 로직(`get_data_quality`, `app/repositories/dashboard.py`)을 배치로 재사용해 주간 점검 이력을 `SYS_BATCH_HIS`에 기록, 필요 시 Teams 알림 포함)
+- [ ] 2. **사원-계정 연동 설계 반영 — 구현 (2026-07-06 설계 확정, 사용자 요청)**: 아래 5개 항목을 순서대로 구현. 설계 확정 내용은 `[DESIGN]HRM_Automation_System_Design_v0_6.md` §5.3.1/§5.3.9/§5.3.10/§5.5, `[DESIGN]HRM_Screen_Design.md` SCR-003/SCR-015, `backend/docs/ERD.md`/`PERMISSION_MATRIX.md`에 이미 반영 완료(§7 참조) — 코드 구현만 남음.
+  - 2-1. Alembic 마이그레이션: `SYS_USER_MST.PWD_CHG_YN`(BOOLEAN DEFAULT TRUE) 컬럼 추가, `HR_EMPL_MST.EMAIL_ADDR`를 NOT NULL로 변경(기존 NULL 레코드 보정 전략 필요 시 함께 처리), `SYS_ROLE_MST` Seed에 `EMPLOYEE` 역할 추가
+  - 2-2. `POST /api/v1/employees`(사원 등록) 성공 시 `SYS_USER_MST` 계정 자동 생성 — `USER_LGID`=`EMAIL_ADDR`, `ROLE_ID`=`EMPLOYEE`, 임시 비밀번호 서버 생성(해시 저장, `PWD_CHG_YN=TRUE`), 응답에 평문 임시 비밀번호 1회 포함. 이메일 중복 시 사원 등록 자체 409
+  - 2-3. `DELETE /api/v1/employees/{empl_id}`(퇴직 처리)에 연결 계정 비활성화 로직 추가 — `SYS_USER_MST.EMPL_ID=empl_id`인 계정을 찾아 `USE_YN=FALSE`로 전환(설계서 §5.5에 이미 명시되어 있던 규칙, 지금까지 미구현 상태였음)
+  - 2-4. `PATCH /api/v1/users/{user_id}`의 `settings_users.update` 권한을 `HR_MGR`에게 확대하되, API 레이어에서 "`EMPL_ID` 연결 계정만, `ADMIN` 역할 부여 금지" 값/행 단위 제약을 추가 검증(권한 매트릭스만으로는 표현 불가 — `PERMISSION_MATRIX.md` §5-7 참조)
+  - 2-5. `POST /api/v1/auth/login` 응답에 `PWD_CHG_YN` 포함, 프론트엔드에 최초 로그인 강제 비밀번호 변경 리다이렉트 구현 — top-nav "설정 → 비밀번호 변경" 미구현 항목(§9-1)과 동일 작업으로 합류 가능
 
 > 참고: "`PJT_ASGN_END_ALERT` 배치 구현"은 2026-07-04에 완료되어(§7, §11 참조) 이 큐에서 제외했다 — `backend/app/repositories/pjt_asgn_his.py`의 `list_ending_soon_assignments`, `backend/app/services/asgn_end_alert.py`의 `run_asgn_end_alert`, `backend/app/services/teams_notify.py`(신규, Teams Incoming Webhook 전송, 미설정 시 조용히 건너뜀)를 구현하고 `app/worker.py`에 매주 금 17:00(KST) cron으로 등록했다. `TEAMS_WEBHOOK_URL`이 `.env`에 미설정 상태라 실제 Teams 알림 전송 자체는 검증하지 못했다(§9 리스크 신규 기록) — 배치 로직·이력 기록은 실 서버에서 정상 동작 확인. Phase 7 진행률이 10%→20%로 상승했다.
 

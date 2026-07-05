@@ -174,7 +174,7 @@ FK: `PRNT_DEPT_ID → HR_DEPT_MST.DEPT_ID` (자기참조, 트리 구조)
 | JIKGUP_ID | UUID | FK | 직급 ID (`HR_JIKGUP_MST`) |
 | JIKMU_ID | UUID | FK NULL | 주 직무 ID (`HR_JIKMU_MST`) |
 | EMPL_STAT_CD | VARCHAR(20) | NOT NULL | 재직 상태 코드 (ACTIVE/LEAVE/RETIRED) |
-| EMAIL_ADDR | VARCHAR(255) | UNIQUE | 이메일 |
+| EMAIL_ADDR | VARCHAR(255) | UNIQUE NOT NULL | 이메일 |
 | MPHONE_NO | VARCHAR(50) | NULL | 휴대전화 |
 | HIRE_DT | DATE | NULL | 입사일 |
 | RETIR_DT | DATE | NULL | 퇴사일 |
@@ -185,6 +185,8 @@ FK: `PRNT_DEPT_ID → HR_DEPT_MST.DEPT_ID` (자기참조, 트리 구조)
 
 FK: `DEPT_ID → HR_DEPT_MST.DEPT_ID`, `JIKGUP_ID → HR_JIKGUP_MST.JIKGUP_ID`, `JIKMU_ID → HR_JIKMU_MST.JIKMU_ID` (nullable)
 Enum: `EMPL_STAT_CD ∈ {ACTIVE, LEAVE, RETIRED}`
+
+> **`EMAIL_ADDR` NOT NULL로 변경 (2026-07-06, 설계 확정 — `[DESIGN]HRM_Automation_System_Design_v0_6.md` §5.3.1/§5.5 반영):** 사원 등록 시 이 이메일로 `SYS_USER_MST` 계정을 자동 생성하는 전제 조건. 사원 등록(`POST /api/v1/employees`) 성공 시 계정도 함께 생성해야 하며, 이메일이 이미 다른 계정에 쓰이고 있으면 사원 등록 자체를 409로 거부한다(§5.5 업무 규칙 "사원 계정 자동 생성"). 기존에 이메일이 없는 레코드는 마이그레이션 시 보정 필요.
 
 ---
 
@@ -359,6 +361,7 @@ FK: `REQ_ID → PJT_RSRC_REQ.REQ_ID`, `EMPL_ID → HR_EMPL_MST.EMPL_ID`
 | ENCR_PWD | VARCHAR(255) | NULL | 암호화된 비밀번호 (SSO인 경우 NULL) |
 | ROLE_ID | UUID | FK NOT NULL | 역할 ID (`SYS_ROLE_MST`) |
 | USE_YN | BOOLEAN | DEFAULT TRUE | 계정 활성 여부 |
+| PWD_CHG_YN | BOOLEAN | DEFAULT TRUE | 비밀번호 변경 필요 여부 (임시 비밀번호 상태) |
 | LAST_LGN_DTTM | TIMESTAMPTZ | NULL | 최근 로그인 일시 |
 | REG_DTTM | TIMESTAMPTZ | NOT NULL | 등록일시 |
 | UPD_DTTM | TIMESTAMPTZ | NOT NULL | 수정일시 |
@@ -366,6 +369,10 @@ FK: `REQ_ID → PJT_RSRC_REQ.REQ_ID`, `EMPL_ID → HR_EMPL_MST.EMPL_ID`
 FK: `EMPL_ID → HR_EMPL_MST.EMPL_ID` (nullable, 1:0..1), `ROLE_ID → SYS_ROLE_MST.ROLE_ID`
 
 > 보안: `ENCR_PWD`는 bcrypt/argon2 해시 필수, 평문 저장 금지 (설계서 §11).
+>
+> **`PWD_CHG_YN` 신규 컬럼 (2026-07-06, 설계 확정):** 계정 생성 시 서버가 임시 비밀번호를 발급하면 `TRUE`, 사용자가 `POST /api/v1/auth/change-password`로 직접 비밀번호를 변경하면 `FALSE`로 전환. 로그인 응답에 이 값을 포함해 프론트엔드가 `TRUE`인 동안 비밀번호 변경 화면으로 강제 리다이렉트한다.
+>
+> **퇴직 처리 연동 (기존 설계서 §5.5에 이미 명시, 미구현 상태였음):** `HR_EMPL_MST.EMPL_STAT_CD='RETIRED'` 전환 시 연결된 `SYS_USER_MST.USE_YN=FALSE`로 자동 전환한다. 역방향(계정 비활성화 → 사원 퇴직)은 수행하지 않는 단방향 연동이다.
 
 ---
 
@@ -389,11 +396,14 @@ FK: `EMPL_ID → HR_EMPL_MST.EMPL_ID` (nullable, 1:0..1), `ROLE_ID → SYS_ROLE_
 | PM | 프로젝트 매니저 | 담당 프로젝트·투입·추천 관리 |
 | TEAM_LEAD | 팀장 | 소속 팀 투입 현황 관리 |
 | EXEC | 임원 | 조직 전체 조회 전용 |
+| EMPLOYEE | 일반 사원 (2026-07-06 신규) | 사원 등록 시 기본 배정. 본인 사원 레코드만 조회·제한적 수정(이메일·연락처) |
 | VIEWER | 조회자 | 제한된 화면 조회 전용 (외부 협력사 등) |
 
 `PERM_JSON`은 화면 설계서(`[DESIGN]HRM_Screen_Design.md`) "화면 목록" 표의 역할 기준을 따르는 화면 접근 권한과, 화면별 버튼 권한 6개 카테고리(`view`/`create`/`update`/`delete`/`excel`/`admin`)로 구성된 구조 — `{"screens": {"<screen_key>": {"view": bool, "create": bool, "update": bool, "delete": bool, "excel": bool, "admin": bool}}}`. 상세 근거와 화면×역할×버튼 전체 매트릭스는 `backend/docs/PERMISSION_MATRIX.md` 참조, 실제 값은 `sys_role_mst_seed.py` 참조. row-level 세부 권한(예: TEAM_LEAD가 "본인 팀만" 투입 수정)은 API 레이어에서 별도 구현하며 `PERM_JSON`은 화면/버튼 노출 여부만 다룬다.
 
 > 설계서 §5.3.13에는 6개 역할 코드만 값 목록으로 제시되어 있고 `ROLE_NM`/`ROLE_DESC`/`PERM_JSON` 상세는 없었음 — 위 내용은 로드맵 §9 "인증/권한 범위 미정" 이슈에 대한 MVP 확정본(2026-07-02, v2 — 화면 설계서 기준 버튼 권한 매트릭스 반영). 화면 설계서에 명시되지 않은 일부 버튼 권한은 인접 권한 그룹 기준으로 추정했으며, `PERMISSION_MATRIX.md` §5에 운영팀 확인 필요 사항으로 정리했다.
+>
+> **`EMPLOYEE` 역할 추가 (2026-07-06, v3):** 사원 직접 로그인·자기서비스(본인 정보 조회/수정) 지원을 위해 신규 역할을 추가해 6종→7종으로 확정. 사원 등록 시 이 역할이 기본 배정된다. 상세 근거는 `[DESIGN]HRM_Automation_System_Design_v0_6.md` §5.3.10, 화면 접근 권한은 `PERMISSION_MATRIX.md` §참조.
 
 ---
 

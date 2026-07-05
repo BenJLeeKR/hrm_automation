@@ -351,7 +351,7 @@ erDiagram
 | `JIKGUP_ID` | UUID | FK | 직급 ID (`HR_JIKGUP_MST`) |
 | `JIKMU_ID` | UUID | FK NULL | 주 직무 ID (`HR_JIKMU_MST`) |
 | `EMPL_STAT_CD` | VARCHAR(20) | NOT NULL | 재직상태코드 (ACTIVE / LEAVE / RETIRED) |
-| `EMAIL_ADDR` | VARCHAR(255) | UNIQUE | 이메일 주소 |
+| `EMAIL_ADDR` | VARCHAR(255) | UNIQUE NOT NULL | 이메일 주소 |
 | `MPHONE_NO` | VARCHAR(50) | NULL | 휴대폰 번호 |
 | `HIRE_DT` | DATE | NULL | 입사일 |
 | `RETIR_DT` | DATE | NULL | 퇴직일 |
@@ -363,6 +363,8 @@ erDiagram
 > **`JIKMU_ID`** 는 NULL 허용. **주(Primary) 직무 1개**를 나타낸다. 복수 역할(예: "PM, AA") 보유 시 추가 역할은 `HR_EMPL_ROLE_REL`에 등록한다. (`ResourceManagement_v2.xlsx` 인력마스터 시트 기준)
 >
 > **`EMPL_STAT_CD` 코드값:** `ACTIVE`(재직), `LEAVE`(휴직), `RETIRED`(퇴직)
+>
+> **`EMAIL_ADDR` NOT NULL (2026-07-06 설계 변경):** 사원 직접 로그인·자기서비스 지원을 위해 사원 등록 시 이메일을 필수로 변경 — 사원 등록과 동시에 이 이메일로 `SYS_USER_MST` 계정을 자동 생성하는 전제 조건이다(§5.5 업무 규칙 "사원 계정 자동 생성" 참조). 기존에 이메일이 없는 사원 레코드는 마이그레이션 시 별도 보정 필요.
 
 #### 5.3.2 `HR_DEPT_MST` — 부서 마스터
 
@@ -548,22 +550,27 @@ erDiagram
 | `ENCR_PWD` | VARCHAR(255) | NULL | 암호화 비밀번호 (SSO 사용 시 NULL) |
 | `ROLE_ID` | UUID | FK NOT NULL | 역할 ID (`SYS_ROLE_MST`) |
 | `USE_YN` | BOOLEAN | DEFAULT TRUE | 계정 활성 여부 |
+| `PWD_CHG_YN` | BOOLEAN | DEFAULT TRUE | 비밀번호 변경 필요 여부 (임시 비밀번호 상태) |
 | `LAST_LGN_DTTM` | TIMESTAMPTZ | NULL | 최근 로그인 일시 |
 | `REG_DTTM` | TIMESTAMPTZ | NOT NULL | 등록일시 |
 | `UPD_DTTM` | TIMESTAMPTZ | NOT NULL | 수정일시 |
 
-> **`EMPL_ID`** 는 NULL 허용. 시스템 관리 계정, 외부 협력사 계정 등 사원과 무관한 사용자를 지원한다.
+> **`EMPL_ID`** 는 NULL 허용. 시스템 관리 계정, 외부 협력사 계정 등 사원과 무관한 사용자를 지원한다. 다만 사원과 연동된 계정(`EMPL_ID` NOT NULL)은 사원 등록 시 자동 생성되는 것이 기본 흐름이다(§5.5 업무 규칙 "사원 계정 자동 생성" 참조).
+>
+> **`PWD_CHG_YN` (2026-07-06 설계 변경):** 계정 생성 시 서버가 임시 비밀번호를 발급하면 `TRUE`로 설정한다. 로그인 성공 시 이 값이 `TRUE`이면 비밀번호 변경 화면으로 강제 이동시키고, 사용자가 직접 지정한 비밀번호로 변경을 완료하면 `FALSE`로 전환한다. 관리자가 계정 등록 모달에서 초기 비밀번호를 직접 입력해 생성한 계정(시스템/외부 협력사 계정 등)은 등록 시점에 `FALSE`로 생성할 수 있다.
 
 #### 5.3.10 `SYS_ROLE_MST` — 역할 마스터
 
 | 컬럼명 | 타입 | 제약 | 설명 |
 |---|---|---|---|
 | `ROLE_ID` | UUID | PK | 역할 ID |
-| `ROLE_CD` | VARCHAR(50) | UNIQUE NOT NULL | 역할 코드 (ADMIN / HR_MGR / PM / TEAM_LEAD / EXEC / VIEWER) |
+| `ROLE_CD` | VARCHAR(50) | UNIQUE NOT NULL | 역할 코드 (ADMIN / HR_MGR / PM / TEAM_LEAD / EXEC / EMPLOYEE / VIEWER) |
 | `ROLE_NM` | VARCHAR(100) | NOT NULL | 역할명 |
 | `ROLE_DESC` | TEXT | NULL | 역할 설명 |
 | `PERM_JSON` | JSONB | NULL | 세부 권한 목록 JSON (확장용) |
 | `USE_YN` | BOOLEAN | DEFAULT TRUE | 사용여부 |
+
+> **`EMPLOYEE`(일반 사원) 역할 신규 추가 (2026-07-06 설계 변경):** 기존 6개 역할은 관리자·조직 관리 계층(ADMIN/HR_MGR/PM/TEAM_LEAD/EXEC)과 외부 협력사용 최소 권한(VIEWER)만 다루고 있어, 사원이 본인 명의 계정으로 직접 로그인해 본인 정보를 조회·일부 수정하는 일반 직원 역할이 빠져 있었다. `EMPLOYEE`는 사원 등록 시 기본으로 배정되는 역할이며, 대시보드 조회와 본인 사원 레코드(`HR_EMPL_MST`) 조회·제한적 수정(이메일·연락처 — 부서/직급/직무는 인사담당자 전용 유지) 권한만 가진다. "본인 레코드만" 제한은 화면/버튼 단위인 `PERM_JSON` 구조로 표현할 수 없는 행(row) 단위 제약이라, API 레이어에서 `SYS_USER_MST.EMPL_ID`와 대상 `EMPL_ID`를 비교해 별도 구현해야 한다(§9 리스크 "TEAM_LEAD 본인팀 스코프 미구현"과 동일한 종류의 한계).
 
 #### 5.3.11 `SYS_AUDIT_LOG` — 감사 로그
 
@@ -689,6 +696,8 @@ erDiagram
 | 퇴직자 계정 처리 | `EMPL_STAT_CD = 'RETIRED'` 처리 시 연결 `SYS_USER_MST.USE_YN = FALSE` 자동 처리 |
 | 감사 로그 | `SYS_AUDIT_LOG`에 변경 전(`BFR_VAL_JSON`) · 후(`AFT_VAL_JSON`) 값 기록 |
 | 가동가능일 직접 입력 금지 | `ASGN_END_DT + 1`로 자동 계산; UI 및 API에서 직접 저장 불가 |
+| **사원 계정 자동 생성** (2026-07-06 신규) | `HR_EMPL_MST` 등록(`EMAIL_ADDR` 필수) 시 `SYS_USER_MST` 계정을 함께 생성한다 — `USER_LGID`는 `EMAIL_ADDR` 전체 값을 그대로 사용, `EMPL_ID`는 신규 사원 ID로 연결, `ROLE_ID`는 기본값 `EMPLOYEE`. 초기 비밀번호는 서버가 임시 비밀번호를 생성해 해시 저장(`ENCR_PWD`)하고 `PWD_CHG_YN=TRUE`로 설정, 응답에 평문 임시 비밀번호를 1회만 포함해 화면에 노출한다(이메일 발송 인프라 미구축 — §9 리스크 참조, 등록한 관리자/인사담당자가 직원에게 안전한 방법으로 직접 전달). 이메일이 이미 다른 계정의 `USER_LGID`/`EMAIL_ADDR`로 사용 중이면 사원 등록 자체를 409로 거부한다(계정 생성 실패 = 사원 등록 실패, 트랜잭션 일관성 유지) |
+| **직원 역할(업무 권한) 배정** (2026-07-06 신규) | `PM`/`TEAM_LEAD`/`EXEC`/`EMPLOYEE`/`VIEWER` 역할 배정은 `ADMIN`·`HR_MGR`가 수행 가능(SCR-015 접근 권한 "A H"로 변경). 단 `HR_MGR`은 `EMPL_ID`가 연결된 계정에 대해서만 위 5개 역할 범위 내에서 변경할 수 있고, `ADMIN` 역할로의 승격이나 `EMPL_ID`가 없는 시스템/외부 협력사 계정의 수정은 `ADMIN`만 가능하다. 이 제약은 화면/버튼 단위 `PERM_JSON`으로 표현할 수 없어 API 레이어에서 별도 검증 필요 |
 
 ---
 
@@ -748,6 +757,8 @@ FastAPI 백엔드는 다음 역할을 수행한다.
 | GET | `/api/v1/auth/me` | 현재 사용자 조회 |
 | POST | `/api/v1/auth/logout` | 로그아웃 (Refresh Token 무효화) |
 | POST | `/api/v1/auth/change-password` | 비밀번호 변경 |
+
+> **최초 로그인 강제 변경 (2026-07-06 설계 변경):** `POST /api/v1/auth/login` 응답에 `SYS_USER_MST.PWD_CHG_YN`을 포함한다 — `TRUE`이면 프론트엔드가 다른 화면으로 이동하지 못하도록 비밀번호 변경 화면으로 강제 리다이렉트하고, `POST /api/v1/auth/change-password` 성공 시 `PWD_CHG_YN=FALSE`로 전환한다.
 
 #### 사원
 
