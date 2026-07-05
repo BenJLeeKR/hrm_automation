@@ -58,6 +58,7 @@ interface SkillOut {
 interface EmployeeSkillOut {
   EMPL_ID: string
   SKILL_ID: string
+  PRFCY_LEVL: number | null
 }
 
 // 화면 탭(즉시/부분/기간 가동)은 백엔드 AVAIL_STAT_CD와 1:1로 대응한다
@@ -75,9 +76,16 @@ interface AvailabilityRow extends AvailabilityCalcOut {
   deptName: string
   jobTypeName: string | null
   skillNames: string[]
+  // 기술·숙련도 필터(§9-1)에 사용 — SKILL_ID별 보유 숙련도(1~5), 미보유 기술은 키가 없음.
+  skillLevels: Record<string, number>
 }
 
-async function loadAvailability(): Promise<{ rows: AvailabilityRow[]; departments: DepartmentOut[]; jobTypes: JobTypeOut[] }> {
+async function loadAvailability(): Promise<{
+  rows: AvailabilityRow[]
+  departments: DepartmentOut[]
+  jobTypes: JobTypeOut[]
+  skills: SkillOut[]
+}> {
   const [availability, employeesRes, departments, jobTypes, skills, employeeSkills] = await Promise.all([
     apiGet<AvailabilityCalcOut[]>('/api/v1/availability'),
     apiGet<EmployeeListResponse>('/api/v1/employees?limit=200'),
@@ -92,12 +100,16 @@ async function loadAvailability(): Promise<{ rows: AvailabilityRow[]; department
   const jobTypeById = new Map(jobTypes.map((j) => [j.JIKMU_ID, j]))
   const skillNameById = new Map(skills.map((s) => [s.SKILL_ID, s.SKILL_NM]))
   const skillNamesByEmpId = new Map<string, string[]>()
+  const skillLevelsByEmpId = new Map<string, Record<string, number>>()
   for (const es of employeeSkills) {
     const name = skillNameById.get(es.SKILL_ID)
     if (!name) continue
     const list = skillNamesByEmpId.get(es.EMPL_ID) ?? []
     list.push(name)
     skillNamesByEmpId.set(es.EMPL_ID, list)
+    const levels = skillLevelsByEmpId.get(es.EMPL_ID) ?? {}
+    if (es.PRFCY_LEVL != null) levels[es.SKILL_ID] = es.PRFCY_LEVL
+    skillLevelsByEmpId.set(es.EMPL_ID, levels)
   }
 
   const rows = availability.map((a) => {
@@ -109,10 +121,11 @@ async function loadAvailability(): Promise<{ rows: AvailabilityRow[]; department
       deptName: employee ? (deptById.get(employee.DEPT_ID)?.DEPT_NM ?? '-') : '-',
       jobTypeName: employee?.JIKMU_ID ? (jobTypeById.get(employee.JIKMU_ID)?.JIKMU_NM ?? null) : null,
       skillNames: skillNamesByEmpId.get(a.EMPL_ID) ?? [],
+      skillLevels: skillLevelsByEmpId.get(a.EMPL_ID) ?? {},
     }
   })
 
-  return { rows, departments, jobTypes }
+  return { rows, departments, jobTypes, skills }
 }
 
 export default function AvailabilityPage() {
@@ -121,9 +134,12 @@ export default function AvailabilityPage() {
   const [query, setQuery] = useState('')
   const [dept, setDept] = useState('ALL')
   const [jobType, setJobType] = useState('ALL')
+  const [skillId, setSkillId] = useState('ALL')
+  const [minProficiency, setMinProficiency] = useState('ALL')
   const [rows, setRows] = useState<AvailabilityRow[]>([])
   const [departments, setDepartments] = useState<DepartmentOut[]>([])
   const [jobTypes, setJobTypes] = useState<JobTypeOut[]>([])
+  const [skills, setSkills] = useState<SkillOut[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -133,6 +149,7 @@ export default function AvailabilityPage() {
         setRows(result.rows)
         setDepartments(result.departments)
         setJobTypes(result.jobTypes)
+        setSkills(result.skills)
         setError(null)
       })
       .catch(() => setError('가동 가능 인력 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요.'))
@@ -147,6 +164,22 @@ export default function AvailabilityPage() {
     () => [{ label: '전체', value: 'ALL' }, ...jobTypes.map((j) => ({ label: j.JIKMU_NM, value: j.JIKMU_ID }))],
     [jobTypes],
   )
+  // 기술·숙련도 필터(§9-1) — 백엔드 `GET /api/v1/availability`는 이미 `skill_id`/
+  // `min_prfcy_levl` 쿼리 파라미터를 지원하지만, 이 화면은 조직·직무 필터와 동일하게
+  // 이미 로드해둔 사원기술(`skillLevels`) 데이터로 클라이언트에서 필터링한다(재요청 없음,
+  // 기존 조직/직무 필터와 동일한 원칙).
+  const skillOptions = useMemo(
+    () => [{ label: '전체', value: 'ALL' }, ...skills.map((s) => ({ label: s.SKILL_NM, value: s.SKILL_ID }))],
+    [skills],
+  )
+  const proficiencyOptions = [
+    { label: '전체', value: 'ALL' },
+    { label: 'Lv.1 이상', value: '1' },
+    { label: 'Lv.2 이상', value: '2' },
+    { label: 'Lv.3 이상', value: '3' },
+    { label: 'Lv.4 이상', value: '4' },
+    { label: 'Lv.5', value: '5' },
+  ]
 
   const counts = useMemo(
     () => ({
@@ -162,6 +195,11 @@ export default function AvailabilityPage() {
       if (r.AVAIL_STAT_CD !== tab) return false
       if (dept !== 'ALL' && r.deptName !== deptOptions.find((o) => o.value === dept)?.label) return false
       if (jobType !== 'ALL' && r.jobTypeName !== jobTypeOptions.find((o) => o.value === jobType)?.label) return false
+      if (skillId !== 'ALL') {
+        const level = r.skillLevels[skillId]
+        if (level === undefined) return false
+        if (minProficiency !== 'ALL' && level < Number(minProficiency)) return false
+      }
       if (
         query &&
         !r.empName.includes(query) &&
@@ -171,7 +209,7 @@ export default function AvailabilityPage() {
         return false
       return true
     })
-  }, [rows, tab, dept, deptOptions, jobType, jobTypeOptions, query])
+  }, [rows, tab, dept, deptOptions, jobType, jobTypeOptions, skillId, minProficiency, query])
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -222,6 +260,24 @@ export default function AvailabilityPage() {
               options={deptOptions}
               placeholder="조직 전체"
               className="sm:w-48"
+            />
+            <Select
+              value={skillId}
+              onValueChange={(v) => {
+                setSkillId(v)
+                if (v === 'ALL') setMinProficiency('ALL')
+              }}
+              options={skillOptions}
+              placeholder="기술 전체"
+              className="sm:w-48"
+            />
+            <Select
+              value={minProficiency}
+              onValueChange={setMinProficiency}
+              options={proficiencyOptions}
+              placeholder="숙련도 전체"
+              className="sm:w-40"
+              disabled={skillId === 'ALL'}
             />
           </div>
 
