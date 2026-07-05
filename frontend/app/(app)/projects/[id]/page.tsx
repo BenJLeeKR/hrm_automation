@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, CircleOff } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { EmptyState } from '@/components/common/empty-state'
 import { UtilizationBar } from '@/components/common/utilization-progress'
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ProjectFormModal } from '@/components/projects/project-form-modal'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import {
   Table,
   TableBody,
@@ -19,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { apiGet, ApiError } from '@/lib/api'
+import { apiGet, apiPatch, ApiError } from '@/lib/api'
 import { assignmentTypeLabel, assignmentStatusLabel } from '@/lib/labels'
 
 // 백엔드 프로젝트 상세 관련 API 응답 타입(로드맵 §8 "프로젝트 목록/상세 화면 구현", SCR-008) —
@@ -108,6 +109,22 @@ export default function ProjectDetailPage({
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openEdit, setOpenEdit] = useState(false)
+  const [openCloseConfirm, setOpenCloseConfirm] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [closeError, setCloseError] = useState<string | null>(null)
+
+  async function handleClose() {
+    setClosing(true)
+    setCloseError(null)
+    try {
+      await apiPatch(`/api/v1/projects/${id}`, { PJT_STAT_CD: 'CLOSED' })
+      reload()
+    } catch (err) {
+      setCloseError(err instanceof ApiError ? err.message : '종료 처리에 실패했습니다. 잠시 후 다시 시도하세요.')
+    } finally {
+      setClosing(false)
+    }
+  }
 
   function reload() {
     let cancelled = false
@@ -182,13 +199,22 @@ export default function ProjectDetailPage({
         title={project.PJT_NM}
         description={`${project.PJT_CD} · ${project.CLNT_NM ?? '고객사 미지정'}`}
       >
-        {/* "인력 투입"/"종료처리" 버튼은 이번 범위에서 다루지 않아 후속 작업으로 남긴다
-            (§9-1 참조) — "수정"만 사원 상세 화면과 동일한 패턴으로 우선 제공한다. */}
+        {/* "인력 투입" 버튼은 이번 범위에서 다루지 않아 후속 작업으로 남긴다(§9-1 참조). */}
         <Button variant="secondary" onClick={() => setOpenEdit(true)}>
           <Pencil className="size-4" />
           수정
         </Button>
+        <Button
+          variant="secondary"
+          onClick={() => setOpenCloseConfirm(true)}
+          disabled={project.PJT_STAT_CD === 'CLOSED'}
+        >
+          <CircleOff className="size-4" />
+          종료처리
+        </Button>
       </PageHeader>
+
+      {closeError && <p className="text-sm text-destructive">{closeError}</p>}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -308,6 +334,15 @@ export default function ProjectDetailPage({
       </Card>
 
       <ProjectFormModal open={openEdit} onOpenChange={setOpenEdit} onSaved={reload} project={project} />
+      <ConfirmDialog
+        open={openCloseConfirm}
+        onClose={() => setOpenCloseConfirm(false)}
+        onConfirm={handleClose}
+        title="프로젝트를 종료 처리하시겠습니까?"
+        description={`"${project.PJT_NM}" 프로젝트의 상태를 "종료"로 전환합니다. 프로젝트 정보는 삭제되지 않습니다.`}
+        confirmText={closing ? '처리 중...' : '종료 처리'}
+        destructive
+      />
     </div>
   )
 }
