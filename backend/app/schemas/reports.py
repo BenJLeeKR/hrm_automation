@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -18,8 +19,9 @@ class ReportOut(BaseModel):
     """주간/월간 리포트 응답 스키마 (SCR-013 탭 1·2 — 두 탭이 동일한 구조를 공유한다).
 
     1차 구현 범위(로드맵 §8 "리포트 화면 구현")는 요약 KPI·부서별 가동률·기술별 인력
-    분포까지만 다룬다 — "월별 가동률 통계" 매트릭스 탭과 리포트 발송/Excel 내보내기는
-    후속 작업으로 분리했다(§9 리스크 참조).
+    분포까지만 다룬다 — "월별 가동률 통계" 매트릭스 탭과 Excel 내보내기는 후속 작업으로
+    분리했다(§9 리스크 참조). 리포트 수동 발송은 `ReportSendRequest`/`ReportSendResponse`로
+    별도 구현했다(§9-1).
     """
 
     as_of: date
@@ -31,6 +33,25 @@ class ReportOut(BaseModel):
     job_missing_count: int
     dept_utilization: list[DeptUtilizationItem]
     skill_distribution: list[SkillDistributionItem]
+
+
+class ReportSendRequest(BaseModel):
+    """리포트 수동 발송 요청 스키마 (`POST /api/v1/reports/send`, SCR-013 "리포트 발송" 버튼).
+
+    `period`는 조회 중인 탭의 기준값을 그대로 전달한다 — 주간은 `GET /reports/weekly`와
+    동일한 'YYYY-Www' 형식, 월간은 `GET /reports/monthly`와 동일한 'YYYYMM' 형식이다.
+    """
+
+    report_type: Literal["weekly", "monthly"]
+    period: str | None = None
+
+
+class ReportSendResponse(BaseModel):
+    """리포트 수동 발송 응답 스키마 — `TEAMS_WEBHOOK_URL` 미설정 시에도 에러가 아니라
+    `sent=False`로 안내한다(`PJT_ASGN_END_ALERT` 배치와 동일한 선택적 연동 원칙)."""
+
+    sent: bool
+    message: str
 
 
 class UtilizationMatrixRow(BaseModel):

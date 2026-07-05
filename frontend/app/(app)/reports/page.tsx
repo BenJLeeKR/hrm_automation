@@ -1,20 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, Zap, Clock, CalendarClock, AlertTriangle } from 'lucide-react'
+import { Users, Zap, Clock, CalendarClock, AlertTriangle, Send } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { StatCard } from '@/components/common/stat-card'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Tabs } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { SkillBarChart } from '@/components/charts/skill-bar-chart'
 import { DeptUtilizationChart } from '@/components/charts/dept-utilization-chart'
 import { UtilizationMatrix } from '@/components/reports/utilization-matrix'
-import { apiGet, ApiError } from '@/lib/api'
+import { apiGet, apiPost, ApiError } from '@/lib/api'
 
 // 백엔드 리포트 API(로드맵 §8 "리포트 화면 구현", SCR-013 탭 1·2) 응답 타입 — 필드명은
 // backend/app/schemas/reports.py와 동일하게 유지한다. 탭 3 "월별 가동률 통계" 매트릭스와
-// 리포트 발송/Excel 내보내기는 이번 범위에서 제외했다(§9 리스크 참조).
+// Excel 내보내기는 이번 범위에서 제외했다(§9 리스크 참조). 리포트 발송(§9-1)은
+// `ReportSendResponse`와 동일하게 유지한다.
+interface ReportSendResponse {
+  sent: boolean
+  message: string
+}
 interface DeptUtilizationItem {
   DEPT_ID: string
   DEPT_NM: string
@@ -61,11 +67,33 @@ export default function ReportsPage() {
   const [report, setReport] = useState<ReportOut | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendResult, setSendResult] = useState<string | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
+
+  async function handleSend() {
+    setSending(true)
+    setSendError(null)
+    setSendResult(null)
+    try {
+      const result = await apiPost<ReportSendResponse>('/api/v1/reports/send', {
+        report_type: tab === 'WEEKLY' ? 'weekly' : 'monthly',
+        period: tab === 'WEEKLY' ? week : month,
+      })
+      setSendResult(result.message)
+    } catch (err) {
+      setSendError(err instanceof ApiError ? err.message : '리포트 발송에 실패했습니다. 잠시 후 다시 시도하세요.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   useEffect(() => {
     if (tab === 'MATRIX') return
     setLoading(true)
     setError(null)
+    setSendResult(null)
+    setSendError(null)
     const path =
       tab === 'WEEKLY'
         ? `/api/v1/reports/weekly?week=${week}`
@@ -114,9 +142,15 @@ export default function ReportsPage() {
                 className="w-44"
               />
             )}
+            <Button variant="secondary" onClick={handleSend} disabled={sending || !report}>
+              <Send className="size-4" />
+              {sending ? '발송 중...' : '리포트 발송'}
+            </Button>
           </div>
 
           {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+          {sendResult && <p className="mb-4 text-sm text-muted-foreground">{sendResult}</p>}
+          {sendError && <p className="mb-4 text-sm text-destructive">{sendError}</p>}
 
           {!report ? (
             <p className="text-sm text-muted-foreground">{loading ? '불러오는 중입니다...' : ''}</p>

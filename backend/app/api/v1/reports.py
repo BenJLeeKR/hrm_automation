@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.reports import build_report, build_utilization_matrix
-from app.schemas.reports import ReportOut, UtilizationMatrixOut
+from app.schemas.reports import ReportOut, ReportSendRequest, ReportSendResponse, UtilizationMatrixOut
+from app.services.teams_notify import TeamsNotifyError, send_teams_message
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -40,6 +41,41 @@ def get_monthly_report(
     """월간 리포트 (SCR-013 탭 2) — `get_weekly_report`와 동일한 집계를 월 단위로 제공한다."""
     as_of = _parse_yyyymm(month) if month else date.today()
     return ReportOut(**build_report(db, as_of=as_of))
+
+
+@router.post(
+    "/send", response_model=ReportSendResponse, dependencies=[Depends(require_permission("reports", "admin"))]
+)
+def send_report(payload: ReportSendRequest, db: Session = Depends(get_db)) -> ReportSendResponse:
+    """리포트 수동 발송 (SCR-013 "리포트 발송" 버튼, §9-1) — 화면에서 조회 중인 주간/월간
+    리포트 요약을 Teams Incoming Webhook으로 전송한다. 리포트 조회와 동일한
+    `build_report`를 재사용해 새 집계 로직을 만들지 않는다. `TEAMS_WEBHOOK_URL` 미설정
+    시에는 `PJT_ASGN_END_ALERT` 배치와 동일하게 예외 없이 `sent=False`로 안내한다.
+    """
+    if payload.report_type == "weekly":
+        as_of = _parse_iso_week(payload.period) if payload.period else date.today()
+        iso_year, iso_week, _ = as_of.isocalendar()
+        label = f"주간 리포트 ({iso_year}-W{iso_week:02d})"
+    else:
+        as_of = _parse_yyyymm(payload.period) if payload.period else date.today()
+        label = f"월간 리포트 ({as_of.strftime('%Y-%m')})"
+
+    report = build_report(db, as_of=as_of)
+    text = (
+        f"[HRM 자동화 시스템] {label}\n"
+        f"재직 인원: {report['total_active_employees']}명\n"
+        f"즉시 가동: {report['available_count']}명 · 부분 가동: {report['partial_count']}명 · "
+        f"풀 투입: {report['full_count']}명\n"
+        f"종료 예정: {report['ending_count']}건 · 직무 미등록: {report['job_missing_count']}명"
+    )
+
+    try:
+        sent = send_teams_message(text)
+    except TeamsNotifyError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from None
+
+    message = "Teams로 리포트를 전송했습니다." if sent else "TEAMS_WEBHOOK_URL이 설정되어 있지 않아 전송을 건너뛰었습니다."
+    return ReportSendResponse(sent=sent, message=message)
 
 
 def _parse_iso_week(week: str) -> date:

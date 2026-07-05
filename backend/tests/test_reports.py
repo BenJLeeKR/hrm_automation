@@ -65,6 +65,57 @@ def test_viewer_cannot_view_reports(client, viewer_token):
     assert resp.status_code == 403
 
 
+def test_send_weekly_report_without_webhook_returns_sent_false(client, admin_token, monkeypatch):
+    """`TEAMS_WEBHOOK_URL` 미설정(로컬/테스트 기본값)이면 예외 없이 sent=False로
+    안내한다 — `PJT_ASGN_END_ALERT` 배치와 동일한 선택적 연동 원칙(§9-1)."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "TEAMS_WEBHOOK_URL", "")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.post(
+        "/api/v1/reports/send", headers=headers, json={"report_type": "weekly", "period": "2026-W27"}
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["sent"] is False
+    assert "TEAMS_WEBHOOK_URL" in body["message"]
+
+
+def test_send_monthly_report_with_webhook_calls_teams(client, admin_token, monkeypatch):
+    """`TEAMS_WEBHOOK_URL`이 설정된 경우를 실제 네트워크 호출 없이 모킹해 검증한다."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "TEAMS_WEBHOOK_URL", "https://example.invalid/webhook")
+    monkeypatch.setattr("app.api.v1.reports.send_teams_message", lambda text: True)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.post(
+        "/api/v1/reports/send", headers=headers, json={"report_type": "monthly", "period": "202607"}
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["sent"] is True
+
+
+def test_send_report_invalid_period_returns_422(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.post(
+        "/api/v1/reports/send", headers=headers, json={"report_type": "weekly", "period": "invalid"}
+    )
+
+    assert resp.status_code == 422
+
+
+def test_viewer_cannot_send_report(client, viewer_token):
+    """`reports.admin` 권한이 없는 VIEWER는 발송 API도 차단되어야 한다."""
+    headers = {"Authorization": f"Bearer {viewer_token}"}
+    resp = client.post(
+        "/api/v1/reports/send", headers=headers, json={"report_type": "weekly", "period": "2026-W27"}
+    )
+
+    assert resp.status_code == 403
+
+
 def test_utilization_matrix_reflects_assignment(client, admin_token, db_session, dept, jikgup):
     """월별 가동률 통계 매트릭스가 실제 투입 이력을 반영해야 한다(SCR-013 탭 3)."""
     headers = {"Authorization": f"Bearer {admin_token}"}
