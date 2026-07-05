@@ -187,7 +187,14 @@ export default function ProjectDetailPage({
   }
 
   const { project, employees, assignments } = data
-  const activeAssignments = assignments.filter((a) => a.ASGN_STAT_CD === 'ACTIVE')
+  // 사원 상세 화면과 동일하게, "진행 중"은 ASGN_STAT_CD='ACTIVE'뿐 아니라 오늘이 투입
+  // 기간(ASGN_STRT_DT~ASGN_END_DT) 안에 있어야 한다(`AVAILABILITY_CALC_SPEC.md` §2/§4
+  // 기준) — 기간이 이미 끝난 ACTIVE 건까지 집계되면 "투입 인원"/"평균 투입률"이 사원
+  // 목록의 가동률과 어긋난다(사용자 리포트로 발견, 2026-07-05).
+  const today = new Date().toISOString().slice(0, 10)
+  const activeAssignments = assignments.filter(
+    (a) => a.ASGN_STAT_CD === 'ACTIVE' && a.ASGN_STRT_DT <= today && (a.ASGN_END_DT === null || a.ASGN_END_DT >= today),
+  )
   const plannedCount = assignments.filter((a) => a.ASGN_STAT_CD === 'PLANNED').length
   const doneCount = assignments.filter((a) => a.ASGN_STAT_CD === 'DONE').length
   // 종료처리는 프로젝트 상태만 전환하고 투입 이력은 자동으로 바꾸지 않는다(사용자

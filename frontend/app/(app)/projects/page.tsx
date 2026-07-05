@@ -31,7 +31,7 @@ interface ProjectListResponse {
   items: ProjectOut[]
 }
 interface AssignmentListResponse {
-  items: Array<{ PJT_ID: string; ASGN_STAT_CD: string }>
+  items: Array<{ PJT_ID: string; ASGN_STAT_CD: string; ASGN_STRT_DT: string; ASGN_END_DT: string | null }>
 }
 
 const statusVariant: Record<ProjectOut['PJT_STAT_CD'], 'muted' | 'default' | 'warning' | 'secondary'> = {
@@ -47,8 +47,14 @@ async function loadProjects(): Promise<{ projects: ProjectOut[]; memberCountByPj
     apiGet<AssignmentListResponse>('/api/v1/assignments?limit=200&asgn_stat_cd=ACTIVE'),
   ])
 
+  // 사원 상세 화면과 동일하게, `AVAILABILITY_CALC_SPEC.md` §2/§4 기준 "진행 중"은
+  // ASGN_STAT_CD='ACTIVE'뿐 아니라 오늘이 투입 기간(ASGN_STRT_DT~ASGN_END_DT) 안에
+  // 있어야 한다 — 이 조건이 없으면 투입 기간이 이미 끝난 ACTIVE 건까지 인원수에
+  // 잡혀 사원 목록의 가동률 집계와 어긋난다(사용자 리포트로 발견, 2026-07-05).
+  const today = new Date().toISOString().slice(0, 10)
   const memberCountByPjtId = new Map<string, number>()
   for (const a of assignments.items) {
+    if (a.ASGN_STRT_DT > today || (a.ASGN_END_DT !== null && a.ASGN_END_DT < today)) continue
     memberCountByPjtId.set(a.PJT_ID, (memberCountByPjtId.get(a.PJT_ID) ?? 0) + 1)
   }
 
