@@ -190,6 +190,9 @@ export default function ProjectDetailPage({
   const activeAssignments = assignments.filter((a) => a.ASGN_STAT_CD === 'ACTIVE')
   const plannedCount = assignments.filter((a) => a.ASGN_STAT_CD === 'PLANNED').length
   const doneCount = assignments.filter((a) => a.ASGN_STAT_CD === 'DONE').length
+  // 종료처리는 프로젝트 상태만 전환하고 투입 이력은 자동으로 바꾸지 않는다(사용자
+  // 확인 후 "투입 인력" 목록에서 개별 수정 버튼으로 직접 처리하도록 안내만 제공).
+  const ongoingAssignmentCount = activeAssignments.length + plannedCount
   const memberCount = new Set(activeAssignments.map((a) => a.EMPL_ID)).size
   const avgAllocation = activeAssignments.length
     ? Math.round(activeAssignments.reduce((s, a) => s + a.ALLOC_RT, 0) / activeAssignments.length)
@@ -398,7 +401,11 @@ export default function ProjectDetailPage({
         onClose={() => setOpenCloseConfirm(false)}
         onConfirm={handleClose}
         title="프로젝트를 종료 처리하시겠습니까?"
-        description={`"${project.PJT_NM}" 프로젝트의 상태를 "종료"로 전환합니다. 프로젝트 정보는 삭제되지 않습니다.`}
+        description={
+          ongoingAssignmentCount > 0
+            ? `"${project.PJT_NM}" 프로젝트의 상태를 "종료"로 전환합니다. 프로젝트 정보는 삭제되지 않습니다. 단, 투입된 인력의 진행 상태는 자동으로 변경되지 않습니다 — 현재 진행/계획 상태인 인력 ${ongoingAssignmentCount}명은 필요 시 "투입 인력" 목록에서 개별적으로 상태를 "완료"로 변경해 주세요.`
+            : `"${project.PJT_NM}" 프로젝트의 상태를 "종료"로 전환합니다. 프로젝트 정보는 삭제되지 않습니다.`
+        }
         confirmText={closing ? '처리 중...' : '종료 처리'}
         destructive
       />
