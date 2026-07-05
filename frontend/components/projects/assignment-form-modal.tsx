@@ -20,6 +20,11 @@ import { assignmentTypeOptions, assignmentStatusOptions } from '@/lib/options'
 // `employee-form-modal.tsx`와 동일한 등록/수정 공용 패턴. 대상 사원·프로젝트는 등록
 // 이후 변경할 대상이 아니라(사번/프로젝트 코드와 동일한 원칙) 수정 모드에서는 Select를
 // 비활성화하고, 대신 진행 상태(`ASGN_STAT_CD`) Select를 새로 노출한다.
+//
+// §9-1 "리소스 추천 화면 '이 후보로 투입 요청' 버튼 없음" 해소를 위해 `preset*` prop들을
+// 추가했다 — 추천 결과에서 특정 후보를 고르면 그 사원·역할·시작일을 등록 모드 폼에
+// 미리 채워주되(수정 모드처럼 잠그지 않음), 사용자가 확인 후 값을 바꿔서 등록할 수도
+// 있도록 한다.
 const typeSelectOptions = assignmentTypeOptions.filter((o) => o.value !== 'ALL')
 const statusSelectOptions = assignmentStatusOptions.filter((o) => o.value !== 'ALL')
 
@@ -55,6 +60,11 @@ interface Props {
   fixedPjtName?: string
   /** 전달 시 수정 모드로 동작한다 — 대상 사원·프로젝트는 수정 불가. */
   assignment?: EditableAssignment
+  /** 등록 모드에서만 사용하는 초기값 — 추천 결과의 후보를 그대로 등록 폼에 채워준다. */
+  presetEmplId?: string
+  presetRoleNm?: string
+  presetStartDate?: string
+  presetAllocRt?: string
 }
 
 export function AssignmentFormModal({
@@ -66,32 +76,36 @@ export function AssignmentFormModal({
   fixedPjtId,
   fixedPjtName,
   assignment,
+  presetEmplId,
+  presetRoleNm,
+  presetStartDate,
+  presetAllocRt,
 }: Props) {
   const isEdit = Boolean(assignment)
   const employeeOptions = employees.map((e) => ({ label: `${e.EMPL_NM} (${e.EMPL_NO})`, value: e.EMPL_ID }))
   const projectOptions = (projects ?? []).map((p) => ({ label: p.PJT_NM, value: p.PJT_ID }))
 
-  const [empId, setEmpId] = useState(assignment?.EMPL_ID ?? '')
+  const [empId, setEmpId] = useState(assignment?.EMPL_ID ?? presetEmplId ?? '')
   const [pjtId, setPjtId] = useState(assignment?.PJT_ID ?? '')
   const [type, setType] = useState(assignment?.ASGN_TYPE_CD ?? typeSelectOptions[0].value)
   const [status, setStatus] = useState(assignment?.ASGN_STAT_CD ?? statusSelectOptions[0].value)
-  const [role, setRole] = useState(assignment?.PRJT_ROLE_NM ?? '')
-  const [startDate, setStartDate] = useState(assignment?.ASGN_STRT_DT ?? '')
+  const [role, setRole] = useState(assignment?.PRJT_ROLE_NM ?? presetRoleNm ?? '')
+  const [startDate, setStartDate] = useState(assignment?.ASGN_STRT_DT ?? presetStartDate ?? '')
   const [endDate, setEndDate] = useState(assignment?.ASGN_END_DT ?? '')
-  const [allocRt, setAllocRt] = useState(String(assignment?.ALLOC_RT ?? 100))
+  const [allocRt, setAllocRt] = useState(String(assignment?.ALLOC_RT ?? presetAllocRt ?? 100))
   const [remark, setRemark] = useState(assignment?.RMRK ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   function reset() {
-    setEmpId(assignment?.EMPL_ID ?? '')
+    setEmpId(assignment?.EMPL_ID ?? presetEmplId ?? '')
     setPjtId(assignment?.PJT_ID ?? '')
     setType(assignment?.ASGN_TYPE_CD ?? typeSelectOptions[0].value)
     setStatus(assignment?.ASGN_STAT_CD ?? statusSelectOptions[0].value)
-    setRole(assignment?.PRJT_ROLE_NM ?? '')
-    setStartDate(assignment?.ASGN_STRT_DT ?? '')
+    setRole(assignment?.PRJT_ROLE_NM ?? presetRoleNm ?? '')
+    setStartDate(assignment?.ASGN_STRT_DT ?? presetStartDate ?? '')
     setEndDate(assignment?.ASGN_END_DT ?? '')
-    setAllocRt(String(assignment?.ALLOC_RT ?? 100))
+    setAllocRt(String(assignment?.ALLOC_RT ?? presetAllocRt ?? 100))
     setRemark(assignment?.RMRK ?? '')
     setFormError(null)
   }

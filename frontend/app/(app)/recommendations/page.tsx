@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Sparkles, Search, Trophy, Medal, Award, X } from 'lucide-react'
+import { Sparkles, Search, Trophy, Medal, Award, X, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/common/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { EmptyState } from '@/components/common/empty-state'
+import { AssignmentFormModal } from '@/components/projects/assignment-form-modal'
 import { apiGet, apiPost, ApiError } from '@/lib/api'
 
 // 백엔드 리소스 추천 API(로드맵 §8 "리소스 추천 화면 구현", SCR-011) 응답 타입 —
@@ -31,6 +32,7 @@ interface SkillOut {
 }
 interface EmployeeOut {
   EMPL_ID: string
+  EMPL_NO: string
   EMPL_NM: string
   JIKMU_ID: string | null
 }
@@ -108,6 +110,10 @@ export default function RecommendationsPage() {
   const [results, setResults] = useState<ResultRow[] | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // "이 후보로 투입 요청"(§9-1) — 추천 결과를 실제 투입 등록으로 이어주기 위해 요청
+  // 시점에 조회한 사원 목록을 보관해 등록 모달(`AssignmentFormModal`)에 재사용한다.
+  const [employees, setEmployees] = useState<EmployeeOut[]>([])
+  const [assignTarget, setAssignTarget] = useState<ResultRow | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -170,6 +176,7 @@ export default function RecommendationsPage() {
         apiGet<EmployeeListResponse>('/api/v1/employees?limit=200'),
         apiGet<EmployeeSkillOut[]>('/api/v1/employee-skills'),
       ])
+      setEmployees(employeesRes.items)
       const employeeById = new Map(employeesRes.items.map((e) => [e.EMPL_ID, e]))
       const jobTypeById = new Map(jobTypes.map((j) => [j.JIKMU_ID, j]))
       const skillNameById = new Map(skills.map((s) => [s.SKILL_ID, s.SKILL_NM]))
@@ -377,6 +384,13 @@ export default function RecommendationsPage() {
                         })}
                       </div>
                     )}
+
+                    <div className="mt-5 flex justify-end">
+                      <Button size="sm" variant="secondary" onClick={() => setAssignTarget(rec)}>
+                        <UserPlus className="size-4" />
+                        이 후보로 투입 요청
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               )
@@ -384,6 +398,23 @@ export default function RecommendationsPage() {
           )}
         </div>
       </div>
+
+      {assignTarget && (
+        <AssignmentFormModal
+          open
+          onOpenChange={(open) => {
+            if (!open) setAssignTarget(null)
+          }}
+          onSaved={() => setAssignTarget(null)}
+          employees={employees}
+          fixedPjtId={projectId}
+          fixedPjtName={projects.find((p) => p.PJT_ID === projectId)?.PJT_NM}
+          presetEmplId={assignTarget.EMPL_ID}
+          presetRoleNm={role}
+          presetStartDate={availDate}
+          presetAllocRt={minAllocRt}
+        />
+      )}
     </div>
   )
 }
