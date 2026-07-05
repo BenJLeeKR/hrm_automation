@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Boxes, Menu, ChevronDown, LogOut, User, KeyRound } from 'lucide-react'
+import { Boxes, Menu, ChevronDown, LogOut, User, KeyRound } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Dropdown, DropdownItem } from '@/components/ui/dropdown'
 import { logout, type CurrentUser } from '@/lib/auth'
 import { ChangePasswordModal } from './change-password-modal'
+import { NotificationsDropdown } from './notifications-dropdown'
 
 interface TopNavProps {
   onMenuClick: () => void
@@ -45,14 +46,7 @@ export function TopNav({ onMenuClick, currentUser }: TopNavProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          className="relative rounded-lg p-2 text-nav-icon transition-colors hover:bg-nav-hover hover:text-nav-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nav-accent"
-          aria-label="알림"
-        >
-          <Bell className="size-5" />
-          <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-nav-accent" />
-        </button>
+        <NotificationsDropdown />
 
         {roleLabel && (
           <span className="hidden rounded-md bg-nav-active-bg px-2.5 py-1 text-xs font-semibold text-nav-active-text sm:inline-flex">
