@@ -151,8 +151,19 @@ async function loadEmployeeDetail(id: string): Promise<EmployeeDetailData> {
   const projectById = new Map(projects.items.map((p) => [p.PJT_ID, p]))
   const assignmentItems = assignments.items
 
+  // 사원 목록 화면(`GET /api/v1/availability`)은 `AVAILABILITY_CALC_SPEC.md` §2/§4에
+  // 따라 ASGN_STAT_CD='ACTIVE'이면서 기준일(오늘)이 투입 기간(ASGN_STRT_DT~ASGN_END_DT)
+  // 내인 건만 집계한다 — 이 화면도 동일한 기간 조건을 적용해야 두 화면의 "가동률"이
+  // 일치한다(사용자 리포트로 발견: 투입 기간이 이미 종료된 ACTIVE 건이 기간 조건 없이
+  // 전부 합산되어 목록과 값이 달랐던 버그, 2026-07-05).
+  const today = new Date().toISOString().slice(0, 10)
   const currentUtilization = assignmentItems
-    .filter((a) => a.ASGN_STAT_CD === 'ACTIVE')
+    .filter(
+      (a) =>
+        a.ASGN_STAT_CD === 'ACTIVE' &&
+        a.ASGN_STRT_DT <= today &&
+        (a.ASGN_END_DT === null || a.ASGN_END_DT >= today),
+    )
     .reduce((sum, a) => sum + a.ALLOC_RT, 0)
 
   return {
