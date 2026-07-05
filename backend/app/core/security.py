@@ -41,6 +41,15 @@ def generate_temp_password() -> str:
     return "".join(chars)
 
 
+def resolve_initial_password() -> str:
+    """사원 계정 자동 생성 시 사용할 초기 비밀번호를 결정한다 — 운영팀 요청(2026-07-06)에
+    따라 `.env`의 `EMPLOYEE_INITIAL_PASSWORD`가 설정되어 있으면 그 값을 우선 사용하고,
+    미설정 시에는 `generate_temp_password()`로 무작위 생성한다(하위 호환 기본값). 사원
+    등록(`app/api/v1/employees.py`)과 계정 없는 기존 사원 백필
+    (`app/db/backfill_employee_accounts.py`) 양쪽에서 재사용한다."""
+    return settings.EMPLOYEE_INITIAL_PASSWORD or generate_temp_password()
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return _pwd_context.verify(plain_password, hashed_password)
 

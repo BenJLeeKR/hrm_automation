@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permission
 from app.core.audit import record_audit
 from app.core.pagination import PaginationParams
-from app.core.security import generate_temp_password, hash_password
+from app.core.security import hash_password, resolve_initial_password
 from app.db.session import get_db
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.hr_empl_mst import (
@@ -179,7 +179,7 @@ def post_employee(
             detail="EMPLOYEE 역할이 설정되어 있지 않아 계정을 생성할 수 없습니다.",
         )
 
-    temp_password = generate_temp_password()
+    temp_password = resolve_initial_password()
     try:
         employee = create_employee(db, payload.model_dump())
         user = SysUserMst(

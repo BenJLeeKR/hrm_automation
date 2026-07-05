@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     # 생성. 미설정 시 알림 채널 설정 저장/조회 API가 500으로 실패한다(app/core/crypto.py).
     CONFIG_ENCRYPTION_KEY: str = ""
 
+    # 사원 계정 자동 생성(설계서 §5.5 "사원 계정 자동 생성", §8 큐 1-2) 시 발급하는 초기
+    # 비밀번호 — 운영팀 요청(2026-07-06)에 따라 서버 무작위 생성 대신 이 값을 우선 사용한다.
+    # 미설정 시에는 기존처럼 `generate_temp_password()`로 무작위 생성(하위 호환 기본값).
+    # `PWD_CHG_YN=TRUE`로 최초 로그인 시 강제 변경되므로 고정값이라도 안전하게 운용된다.
+    EMPLOYEE_INITIAL_PASSWORD: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]

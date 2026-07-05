@@ -276,3 +276,33 @@ def test_retire_employee_without_linked_account_succeeds(client, db_session, adm
     retire_resp = client.delete(f"/api/v1/employees/{employee.EMPL_ID}", headers=headers)
     assert retire_resp.status_code == 200
     assert retire_resp.json()["EMPL_STAT_CD"] == "RETIRED"
+
+
+def test_create_employee_uses_env_initial_password_when_set(client, admin_token, dept, jikgup, monkeypatch):
+    """`.env`의 `EMPLOYEE_INITIAL_PASSWORD`가 설정되어 있으면 무작위 생성 대신 그 값을
+    초기 비밀번호로 사용해야 한다(운영팀 요청, 2026-07-06)."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "EMPLOYEE_INITIAL_PASSWORD", "Fixed!Init123")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl_no = f"PYTESTENVPW{uuid.uuid4().hex[:6]}"
+
+    create_resp = client.post(
+        "/api/v1/employees",
+        headers=headers,
+        json={
+            "EMPL_NO": empl_no,
+            "EMPL_NM": "초기비밀번호테스트",
+            "EMAIL_ADDR": f"{empl_no}@example.com",
+            "DEPT_ID": str(dept.DEPT_ID),
+            "JIKGUP_ID": str(jikgup.JIKGUP_ID),
+        },
+    )
+    assert create_resp.status_code == 201
+    assert create_resp.json()["temp_password"] == "Fixed!Init123"
+
+    login_resp = client.post(
+        "/api/v1/auth/login",
+        json={"USER_LGID": f"{empl_no}@example.com", "password": "Fixed!Init123"},
+    )
+    assert login_resp.status_code == 200
