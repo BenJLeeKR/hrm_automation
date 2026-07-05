@@ -1,5 +1,7 @@
 import uuid
 
+from app.models.hr_empl_mst import HrEmplMst
+
 
 def test_create_patch_job_type(client, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
@@ -64,3 +66,119 @@ def test_viewer_can_view_job_types(client, viewer_token):
     resp = client.get("/api/v1/job-types", headers=headers)
 
     assert resp.status_code == 200
+
+
+def test_create_patch_department(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    dept_cd = f"PYTEST{uuid.uuid4().hex[:6]}".upper()
+
+    create_resp = client.post(
+        "/api/v1/departments", headers=headers, json={"DEPT_CD": dept_cd, "DEPT_NM": "테스트부서"}
+    )
+    assert create_resp.status_code == 201
+    dept_id = create_resp.json()["DEPT_ID"]
+    assert create_resp.json()["USE_YN"] is True
+
+    patch_resp = client.patch(f"/api/v1/departments/{dept_id}", headers=headers, json={"DEPT_NM": "수정된부서"})
+    assert patch_resp.status_code == 200
+    assert patch_resp.json()["DEPT_NM"] == "수정된부서"
+
+
+def test_duplicate_dept_cd_returns_409(client, admin_token, dept):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    resp = client.post("/api/v1/departments", headers=headers, json={"DEPT_CD": dept.DEPT_CD, "DEPT_NM": "중복부서"})
+
+    assert resp.status_code == 409
+
+
+def test_deactivate_department_with_active_employee_returns_409(client, db_session, admin_token, dept, jikgup):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl = HrEmplMst(
+        EMPL_ID=uuid.uuid4(),
+        EMPL_NO=f"PYTEST{uuid.uuid4().hex[:6]}",
+        EMPL_NM="테스트사원",
+        DEPT_ID=dept.DEPT_ID,
+        JIKGUP_ID=jikgup.JIKGUP_ID,
+        EMPL_STAT_CD="ACTIVE",
+    )
+    db_session.add(empl)
+    db_session.flush()
+
+    resp = client.patch(f"/api/v1/departments/{dept.DEPT_ID}", headers=headers, json={"USE_YN": False})
+
+    assert resp.status_code == 409
+
+
+def test_deactivate_department_without_employees_succeeds(client, admin_token, dept):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    resp = client.patch(f"/api/v1/departments/{dept.DEPT_ID}", headers=headers, json={"USE_YN": False})
+
+    assert resp.status_code == 200
+    assert resp.json()["USE_YN"] is False
+
+
+def test_patch_nonexistent_department_returns_404(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    resp = client.patch(f"/api/v1/departments/{uuid.uuid4()}", headers=headers, json={"DEPT_NM": "없음"})
+
+    assert resp.status_code == 404
+
+
+def test_viewer_cannot_create_department(client, viewer_token):
+    headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    resp = client.post(
+        "/api/v1/departments",
+        headers=headers,
+        json={"DEPT_CD": f"PYTEST{uuid.uuid4().hex[:6]}".upper(), "DEPT_NM": "권한테스트"},
+    )
+
+    assert resp.status_code == 403
+
+
+def test_create_patch_position(client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    jikgup_cd = f"PYTEST{uuid.uuid4().hex[:6]}".upper()
+
+    create_resp = client.post(
+        "/api/v1/positions", headers=headers, json={"JIKGUP_CD": jikgup_cd, "JIKGUP_NM": "테스트직급", "JIKGUP_ORD": 999}
+    )
+    assert create_resp.status_code == 201
+    jikgup_id = create_resp.json()["JIKGUP_ID"]
+
+    patch_resp = client.patch(f"/api/v1/positions/{jikgup_id}", headers=headers, json={"JIKGUP_NM": "수정된직급"})
+    assert patch_resp.status_code == 200
+    assert patch_resp.json()["JIKGUP_NM"] == "수정된직급"
+
+
+def test_deactivate_position_with_active_employee_returns_409(client, db_session, admin_token, dept, jikgup):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    empl = HrEmplMst(
+        EMPL_ID=uuid.uuid4(),
+        EMPL_NO=f"PYTEST{uuid.uuid4().hex[:6]}",
+        EMPL_NM="테스트사원",
+        DEPT_ID=dept.DEPT_ID,
+        JIKGUP_ID=jikgup.JIKGUP_ID,
+        EMPL_STAT_CD="ACTIVE",
+    )
+    db_session.add(empl)
+    db_session.flush()
+
+    resp = client.patch(f"/api/v1/positions/{jikgup.JIKGUP_ID}", headers=headers, json={"USE_YN": False})
+
+    assert resp.status_code == 409
+
+
+def test_viewer_cannot_create_position(client, viewer_token):
+    headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    resp = client.post(
+        "/api/v1/positions",
+        headers=headers,
+        json={"JIKGUP_CD": f"PYTEST{uuid.uuid4().hex[:6]}".upper(), "JIKGUP_NM": "권한테스트", "JIKGUP_ORD": 999},
+    )
+
+    assert resp.status_code == 403
