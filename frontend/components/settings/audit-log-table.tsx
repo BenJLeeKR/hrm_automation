@@ -1,17 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Download } from 'lucide-react'
 import { SearchInput } from '@/components/common/search-input'
 import { Select } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogHeader, DialogBody } from '@/components/ui/dialog'
-import { apiGet, ApiError } from '@/lib/api'
+import { apiGet, apiDownloadFile, ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 // 백엔드 감사 로그 API(로드맵 §8 "설정 화면 구현", SCR-016) 응답 타입 — 필드명은
-// backend/app/schemas/sys_audit_log.py와 동일하게 유지한다. 1차 구현 범위는 목록 조회만
-// 다루고, Excel 내보내기는 후속 작업으로 분리했다(§9 리스크 참조).
+// backend/app/schemas/sys_audit_log.py와 동일하게 유지한다. Excel 내보내기(§9-1)는
+// `GET /audit-logs/export`로 별도 제공한다.
 interface AuditLogItem {
   AUDIT_ID: string
   USER_LGID: string
@@ -62,6 +63,23 @@ export function AuditLogTable() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [detail, setDetail] = useState<AuditLogItem | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  async function handleExport() {
+    setExporting(true)
+    setExportError(null)
+    try {
+      const params = new URLSearchParams()
+      if (action !== 'ALL') params.set('act_cd', action)
+      if (keyword) params.set('user_lgid', keyword)
+      await apiDownloadFile(`/api/v1/audit-logs/export?${params.toString()}`, 'audit_logs.xlsx')
+    } catch (err) {
+      setExportError(err instanceof ApiError ? err.message : 'Excel 내보내기에 실패했습니다.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -96,6 +114,7 @@ export function AuditLogTable() {
   return (
     <div className="flex flex-col gap-4">
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {exportError && <p className="text-sm text-destructive">{exportError}</p>}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput
@@ -106,6 +125,10 @@ export function AuditLogTable() {
         />
         <Select value={action} onValueChange={setAction} options={actionOptions} className="sm:w-44" />
         <span className="text-xs text-muted-foreground sm:ml-auto">전체 {total.toLocaleString()}건 중 최근 {logs.length}건 표시</span>
+        <Button variant="secondary" size="sm" onClick={handleExport} disabled={exporting}>
+          <Download className="size-4" />
+          {exporting ? '내보내는 중...' : 'Excel 내보내기'}
+        </Button>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border">

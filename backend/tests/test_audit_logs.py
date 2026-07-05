@@ -61,3 +61,21 @@ def test_list_audit_logs_filters_by_tgt_id(client, admin_token, dept, jikgup):
     items = resp.json()["items"]
     assert len(items) >= 1
     assert all(item["TGT_ID"] == empl_id for item in items)
+
+
+def test_export_audit_logs_returns_xlsx(client, admin_token):
+    """§9-1 "감사 로그 Excel 내보내기" — 화면 조회 API와 동일한 필터로 전체 행을 xlsx로 내려준다."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    resp = client.get("/api/v1/audit-logs/export", headers=headers, params={"act_cd": "LOGIN"})
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert "audit_logs_" in resp.headers["content-disposition"]
+
+
+def test_viewer_cannot_export_audit_logs(client, viewer_token):
+    """설계서(SCR-016) 접근 권한이 "A(Admin 전용)"이므로 VIEWER는 내보내기도 403이어야 한다."""
+    headers = {"Authorization": f"Bearer {viewer_token}"}
+    resp = client.get("/api/v1/audit-logs/export", headers=headers)
+
+    assert resp.status_code == 403
