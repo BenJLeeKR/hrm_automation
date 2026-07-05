@@ -69,6 +69,7 @@ SYS_ROLE_MST_SEED = [
             settings=_perm(view=True),
             settings_users=_perm(view=True, create=True, update=True, delete=True, admin=True),
             settings_audit_logs=_perm(view=True, excel=True, admin=True),
+            settings_notification=_perm(view=True, update=True, admin=True),
         ),
     },
     {
@@ -91,6 +92,7 @@ SYS_ROLE_MST_SEED = [
             # settings_users/settings_audit_logs: 화면 설계서상 Admin 전용 (A) — HR_MGR 접근 불가
             settings_users=_perm(),
             settings_audit_logs=_perm(),
+            settings_notification=_perm(),
         ),
     },
     {
@@ -112,6 +114,7 @@ SYS_ROLE_MST_SEED = [
             settings=_perm(),
             settings_users=_perm(),
             settings_audit_logs=_perm(),
+            settings_notification=_perm(),
         ),
     },
     {
@@ -135,6 +138,7 @@ SYS_ROLE_MST_SEED = [
             settings=_perm(),
             settings_users=_perm(),
             settings_audit_logs=_perm(),
+            settings_notification=_perm(),
         ),
     },
     {
@@ -156,6 +160,7 @@ SYS_ROLE_MST_SEED = [
             settings=_perm(),
             settings_users=_perm(),
             settings_audit_logs=_perm(),
+            settings_notification=_perm(),
         ),
     },
     {
@@ -177,6 +182,7 @@ SYS_ROLE_MST_SEED = [
             settings=_perm(),
             settings_users=_perm(),
             settings_audit_logs=_perm(),
+            settings_notification=_perm(),
         ),
     },
 ]

@@ -11,6 +11,8 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 redis==5.2.1
+# 알림 채널 설정(SYS_CONFIG) SMTP 비밀번호 등 IS_SECRET=TRUE 값 AES-256 암호화 (설계서 §5.3.17)
+cryptography==44.0.0
 openpyxl==3.1.5
 python-multipart==0.0.20
 # 배치 스케줄러 (Phase 7 "HR_AVAIL_SNAP_GEN 배치 구현", 설계서 산출물 worker.py 기준)

@@ -35,6 +35,19 @@ class Settings(BaseSettings):
     # (`app/services/teams_notify.py` 참조) — DEEPSEEK_API_KEY와 동일한 선택적 연동 패턴.
     TEAMS_WEBHOOK_URL: str = ""
 
+    # 알림 채널(SYS_CONFIG) DB 값이 NULL일 때 폴백으로 쓰는 SMTP 환경변수 (설계서 §5.3.17
+    # "폴백 정책"). `.env.example`에 이미 자리만 잡혀 있던 값들을 실제로 읽어 쓴다.
+    SMTP_HOST: str = ""
+    SMTP_PORT: str = ""
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+
+    # SYS_CONFIG.IS_SECRET=TRUE 값(SMTP 비밀번호 등) 암호화 키 (설계서 §5.3.17, 2026-07-05
+    # "일반 설정" §9-1 리스크 해소). 32바이트를 base64 인코딩한 값 — `Fernet.generate_key()`로
+    # 생성. 미설정 시 알림 채널 설정 저장/조회 API가 500으로 실패한다(app/core/crypto.py).
+    CONFIG_ENCRYPTION_KEY: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]

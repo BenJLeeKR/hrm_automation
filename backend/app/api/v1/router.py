@@ -14,6 +14,7 @@ from app.api.v1 import (
     projects,
     recommendations,
     reports,
+    settings_notification,
     skills,
     users,
 )
@@ -35,3 +36,4 @@ api_router.include_router(ai_chat.router)
 api_router.include_router(reports.router)
 api_router.include_router(users.router)
 api_router.include_router(audit_logs.router)
+api_router.include_router(settings_notification.router)

@@ -27,7 +27,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function apiSend<T>(method: 'POST' | 'PATCH', path: string, body?: unknown): Promise<T> {
+async function apiSend<T>(method: 'POST' | 'PATCH' | 'PUT', path: string, body?: unknown): Promise<T> {
   const accessToken = getAccessToken()
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -53,6 +53,10 @@ export function apiPost<T>(path: string, body?: unknown): Promise<T> {
 
 export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   return apiSend<T>('PATCH', path, body)
+}
+
+export function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  return apiSend<T>('PUT', path, body)
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
