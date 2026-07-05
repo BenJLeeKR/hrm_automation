@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Boxes, Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react'
+import { Bell, Boxes, Menu, ChevronDown, LogOut, User, KeyRound } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Dropdown, DropdownItem } from '@/components/ui/dropdown'
 import { logout, type CurrentUser } from '@/lib/auth'
+import { ChangePasswordModal } from './change-password-modal'
 
 interface TopNavProps {
   onMenuClick: () => void
@@ -13,6 +15,7 @@ interface TopNavProps {
 
 export function TopNav({ onMenuClick, currentUser }: TopNavProps) {
   const router = useRouter()
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   // 로그인 사용자 본인 이름을 별도로 저장하지 않아(사원-계정 이름 연동은 로드맵 §8 큐
   // 진행 중) 로그인 ID를 표시명으로 대신 사용한다 — 하드코딩된 "관리자"/
   // admin@blueward.co.kr을 실제 로그인 계정 정보로 대체(§9-1 "내 프로필" 화면).
@@ -76,8 +79,8 @@ export function TopNav({ onMenuClick, currentUser }: TopNavProps) {
           <DropdownItem onClick={() => router.push('/profile')}>
             <User /> 내 프로필
           </DropdownItem>
-          <DropdownItem onClick={() => router.push('/settings')}>
-            <Settings /> 설정
+          <DropdownItem onClick={() => setChangePasswordOpen(true)}>
+            <KeyRound /> 비밀번호 변경
           </DropdownItem>
           <div className="my-1 h-px bg-border" />
           <DropdownItem
@@ -90,6 +93,8 @@ export function TopNav({ onMenuClick, currentUser }: TopNavProps) {
           </DropdownItem>
         </Dropdown>
       </div>
+
+      <ChangePasswordModal open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
     </header>
   )
 }

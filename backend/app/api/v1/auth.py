@@ -12,13 +12,22 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
     verify_password,
 )
 from app.db.session import get_db
 from app.models.sys_role_mst import SysRoleMst
 from app.models.sys_user_mst import SysUserMst
 from app.repositories.sys_user_mst import get_user, get_user_by_login_id, update_last_login, update_user
-from app.schemas.auth import AccessTokenResponse, LoginRequest, MeOut, MeUpdate, RefreshRequest, TokenResponse
+from app.schemas.auth import (
+    AccessTokenResponse,
+    ChangePasswordRequest,
+    LoginRequest,
+    MeOut,
+    MeUpdate,
+    RefreshRequest,
+    TokenResponse,
+)
 from app.schemas.sys_user_mst import SysUserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -115,3 +124,21 @@ def update_me(
         aft_val_json=SysUserOut.model_validate(current_user).model_dump(mode="json"),
     )
     return _build_me_out(db, current_user)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    current_user: SysUserMst = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    """비밀번호 변경 (설계서 §6 API 목록에 이미 명시, §9-1 "설정" 메뉴를 "비밀번호 변경"으로
+    교체) — 현재 비밀번호 확인 후 본인 비밀번호만 교체한다. 비밀번호 값은 감사 로그에도
+    남기지 않는다(`SysUserOut`이 `ENCR_PWD`를 응답에서 제외하는 것과 동일한 원칙)."""
+    if not current_user.ENCR_PWD or not verify_password(payload.current_password, current_user.ENCR_PWD):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="현재 비밀번호가 올바르지 않습니다.")
+
+    update_user(db, current_user, {"ENCR_PWD": hash_password(payload.new_password)})
+    record_audit(db, request, current_user, act_cd="UPDATE", tgt_tbl_nm="SYS_USER_MST", tgt_id=current_user.USER_ID)
+    return None

@@ -1,4 +1,4 @@
-from tests.conftest import create_user_with_password
+from tests.conftest import TEST_PASSWORD, create_user_with_password
 
 
 def test_login_success(client, db_session, admin_role):
@@ -117,4 +117,60 @@ def test_update_me_duplicate_email_conflict(client, db_session, admin_role):
 def test_update_me_requires_auth(client):
     resp = client.patch("/api/v1/auth/me", json={"EMAIL_ADDR": "no-auth@example.com"})
 
+    assert resp.status_code == 401
+
+
+def test_change_password_success_and_relogin(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    access_token = client.post(
+        "/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}
+    ).json()["access_token"]
+
+    resp = client.post(
+        "/api/v1/auth/change-password",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"current_password": password, "new_password": "NewStr0ng!Pass"},
+    )
+    assert resp.status_code == 204
+
+    old_login = client.post("/api/v1/auth/login", json={"USER_LGID": login_id, "password": password})
+    assert old_login.status_code == 401
+
+    new_login = client.post("/api/v1/auth/login", json={"USER_LGID": login_id, "password": "NewStr0ng!Pass"})
+    assert new_login.status_code == 200
+
+
+def test_change_password_wrong_current_password(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    access_token = client.post(
+        "/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}
+    ).json()["access_token"]
+
+    resp = client.post(
+        "/api/v1/auth/change-password",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"current_password": "wrong-password", "new_password": "NewStr0ng!Pass"},
+    )
+    assert resp.status_code == 401
+
+
+def test_change_password_weak_new_password_rejected(client, db_session, admin_role):
+    login_id, password = create_user_with_password(db_session, admin_role)
+    access_token = client.post(
+        "/api/v1/auth/login", json={"USER_LGID": login_id, "password": password}
+    ).json()["access_token"]
+
+    resp = client.post(
+        "/api/v1/auth/change-password",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"current_password": password, "new_password": "weak"},
+    )
+    assert resp.status_code == 422
+
+
+def test_change_password_requires_auth(client):
+    resp = client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": TEST_PASSWORD, "new_password": "NewStr0ng!Pass"},
+    )
     assert resp.status_code == 401

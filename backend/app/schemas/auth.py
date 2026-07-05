@@ -1,6 +1,8 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from app.schemas.sys_user_mst import _PASSWORD_MIN_LENGTH, _PASSWORD_PATTERN
 
 
 class LoginRequest(BaseModel):
@@ -49,3 +51,21 @@ class MeUpdate(BaseModel):
     사용자 관리(SCR-015, `PATCH /users/{user_id}`)에서만 변경 가능하며 본인 수정 대상이 아니다."""
 
     EMAIL_ADDR: str | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    """비밀번호 변경 요청 (`POST /api/v1/auth/change-password`, 설계서 §6 API 목록에 이미
+    명시되어 있던 엔드포인트, §9-1 "설정" 메뉴를 "비밀번호 변경"으로 교체). 현재 비밀번호
+    확인 후 새 비밀번호로 교체한다 — `SYS_USER_MST.PWD_CHG_YN`(최초 로그인 강제 변경) 연동은
+    해당 컬럼이 아직 없어(로드맵 §8 큐 2번 "사원-계정 연동" 마이그레이션 대기 중) 이번
+    범위에서 다루지 않는다."""
+
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def _validate_new_password(cls, value: str) -> str:
+        if len(value) < _PASSWORD_MIN_LENGTH or not _PASSWORD_PATTERN.match(value):
+            raise ValueError("8자 이상, 영문·숫자·특수문자를 포함해야 합니다.")
+        return value
