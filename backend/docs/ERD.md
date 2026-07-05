@@ -448,6 +448,25 @@ FK 관계 없음 (독립 테이블). 연계 배치: `HR_AVAIL_SNAP_GEN`(매일 0
 
 ---
 
+### 3.16 SYS_CONFIG — 시스템 설정 (2026-07-05 신규)
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| CONFIG_KEY | VARCHAR(100) | 설정 키 (PK, 예: `notification.teams_webhook_url`) |
+| CONFIG_GRP | VARCHAR(50) | 설정 그룹 (`NOTIFICATION`) |
+| CONFIG_NM | VARCHAR(200) | 한글 표시명 |
+| CONFIG_VAL | TEXT | 설정값 (NULL이면 `.env` 값으로 폴백) |
+| IS_SECRET | BOOLEAN | 비밀값 여부 (TRUE면 AES-256 암호화 저장) |
+| CONFIG_DESC | TEXT | 설명 |
+| UPD_DTTM | TIMESTAMPTZ | 수정일시 |
+| UPD_USER | VARCHAR(100) | 수정자 |
+
+FK 관계 없음 (독립 테이블). 알림 채널(Teams Webhook, SMTP) 설정을 키-값으로 저장하며 관리자가 `/settings/notification`(SCR-017) 화면에서 직접 수정한다. `IS_SECRET=TRUE` 항목의 암호화 키는 `.env`의 `CONFIG_ENCRYPTION_KEY`로 관리(DB에 저장하지 않음). 상세: `[DESIGN]HRM_Automation_System_Design_v0_7.md` §5.3.17.
+
+> "일반 설정"(조직 정보·가동률 임계값·배치 실행 시각) 항목은 2026-07-05 운영팀 확인 결과 하드코딩 유지로 확정되어 `SYS_CONFIG`에 저장하지 않는다.
+
+---
+
 ## 4. 관계(카디널리티) 요약
 
 | 관계 | 카디널리티 | 비고 |
@@ -467,6 +486,7 @@ FK 관계 없음 (독립 테이블). 연계 배치: `HR_AVAIL_SNAP_GEN`(매일 0
 | SYS_ROLE_MST → SYS_USER_MST | 1:N | `ROLE_ID` |
 | PJT_RSRC_REQ → HR_JIKMU_MST | N:1 (선택) | `REQ_JIKMU_ID`, nullable |
 | SYS_BATCH_HIS | 독립 | FK 관계 없음 |
+| SYS_CONFIG | 독립 | FK 관계 없음 (2026-07-05 신규) |
 
 ---
 

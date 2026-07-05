@@ -3,6 +3,7 @@
 > 출처: `plan_docs/[DESIGN]HRM_Screen_Design.md` "화면 목록" 표 및 화면별 상세 접근 권한 문구 (설계서는 수정하지 않음, 본 문서는 실행용 정리본)
 > 대상: `SYS_ROLE_MST.PERM_JSON` Seed 반영 (`backend/app/db/seed/sys_role_mst_seed.py`)
 > 작성일: 2026-07-02 (2026-07-06 v3 — `EMPLOYEE` 역할 추가, `settings_users` 접근 권한 A→A H로 변경. `[DESIGN]HRM_Automation_System_Design_v0_6.md` §5.5 "사원 계정 자동 생성"/"직원 역할 배정" 반영)
+> (2026-07-05 v4 — `settings_notification`(SCR-017, `SYS_CONFIG`) 신규 권한 키 추가. `[DESIGN]HRM_Automation_System_Design_v0_7.md` §5.3.17 반영)
 > 역할 7종: `ADMIN`, `HR_MGR`, `PM`, `TEAM_LEAD`, `EXEC`, `EMPLOYEE`, `VIEWER`
 
 ---
@@ -37,6 +38,7 @@
 | SCR-014 | 설정 (허브) | `settings` | A H |
 | SCR-015 | 사용자 관리 | `settings_users` | A H (2026-07-06 변경 — HR_MGR은 사원 연동 계정의 업무 역할 배정만 가능) |
 | SCR-016 | 감사 로그 | `settings_audit_logs` | A (Admin 전용) |
+| SCR-017 | 알림 채널 설정 | `settings_notification` | A (Admin 전용, 2026-07-05 신규) |
 
 (A=ADMIN, H=HR_MGR, P=PM, T=TEAM_LEAD, E=EXEC, S=EMPLOYEE(일반 사원, 2026-07-06 신규), V=VIEWER — 화면 설계서 범례 그대로 사용)
 
@@ -228,7 +230,7 @@
 | EMPLOYEE | - | - | - | - | - | - |
 | VIEWER | - | - | - | - | - | - |
 
-허브(네비게이션) 화면 — 하위 카드(사용자 관리/감사 로그)의 실제 권한은 각 화면(`settings_users`, `settings_audit_logs`)에서 별도 적용. "알림 채널/배치 관리/백업 관리" 카드는 화면 설계서에 상세 정의 없어 이번 매트릭스에서 제외(TBD).
+허브(네비게이션) 화면 — 하위 카드(사용자 관리/감사 로그/알림 채널)의 실제 권한은 각 화면(`settings_users`, `settings_audit_logs`, `settings_notification`)에서 별도 적용. (2026-07-05) "일반 설정" 카드는 설계 범위에서 제외 확정(§9 리스크 "해소"), "배치 관리/백업 관리" 카드는 여전히 화면 설계서에 상세 정의 없어 이번 매트릭스에서 제외(TBD).
 
 ### `settings_users` — 사용자 관리 (SCR-015, Admin 전용)
 
@@ -258,6 +260,20 @@
 
 화면 설계서 명시: "접근 권한 A (Admin 전용)". Excel 내보내기 버튼 있음, 역할 제한은 화면 전체 게이트(A)와 동일. (2026-07-06) `settings_users`와 달리 감사 로그는 `HR_MGR`에게 확대하지 않고 Admin 전용을 유지한다.
 
+### `settings_notification` — 알림 채널 설정 (SCR-017, Admin 전용, 2026-07-05 신규)
+
+| 역할 | V | C | U | D | X | A |
+|---|---|---|---|---|---|---|
+| ADMIN | ● | - | ● | - | - | ● |
+| HR_MGR | - | - | - | - | - | - |
+| PM | - | - | - | - | - | - |
+| TEAM_LEAD | - | - | - | - | - | - |
+| EXEC | - | - | - | - | - | - |
+| EMPLOYEE | - | - | - | - | - | - |
+| VIEWER | - | - | - | - | - | - |
+
+화면 설계서 명시: "접근 권한 A (Admin 전용)". `C`(등록)/`D`(삭제) 버튼 없음 — `SYS_CONFIG` 시드 데이터를 조회(V)·수정(U)만 함. `A`(admin 열)는 테스트 발송(`POST /settings/notification/test`) 기능에 매핑. `settings_users`와 달리 `HR_MGR`에게 확대하지 않는다 — 알림 채널은 조직 운영 인프라 설정이라 인사 업무와 무관.
+
 ---
 
 ## 4. `PERM_JSON` 반영 스키마
@@ -277,7 +293,7 @@
 }
 ```
 
-`screen_key`(및 `codes` 논리 키 포함) 14종: `dashboard`, `employees`, `skills`, `job_types`, `codes`, `projects`, `assignments`, `availability`, `recommendations`, `ai_chat`, `reports`, `settings`, `settings_users`, `settings_audit_logs`
+`screen_key`(및 `codes` 논리 키 포함) 15종: `dashboard`, `employees`, `skills`, `job_types`, `codes`, `projects`, `assignments`, `availability`, `recommendations`, `ai_chat`, `reports`, `settings`, `settings_users`, `settings_audit_logs`, `settings_notification`(2026-07-05 신규)
 
 실제 값은 `backend/app/db/seed/sys_role_mst_seed.py`에 반영되어 있다.
 
@@ -293,3 +309,4 @@
 6. `settings` 허브의 "알림 채널/배치 관리/백업 관리" 카드는 화면 상세 설계 부재로 이번 Seed에서 제외 — Phase 7 운영 자동화 화면 설계 시 추가 확정 필요.
 7. `settings_users`의 `HR_MGR` 권한 확대(2026-07-06) — "`EMPL_ID` 연결 계정만"·"업무 역할만"이라는 값(role)·행(row) 단위 제약은 `PERM_JSON`으로 표현할 수 없어 API 레이어 구현이 반드시 필요. 구현 전까지는 `HR_MGR`에게 `settings_users.update=true`를 그대로 부여하면 시스템 계정까지 수정 가능해지는 위험이 있으므로, API 레이어 검증이 완성되기 전에는 Seed에 반영하지 않도록 주의.
 8. `EMPLOYEE` 역할의 화면별 접근 범위(2026-07-06 신규) — 이번 문서에서는 MVP로 "본인 사원 레코드만 조회/이메일·연락처 수정" 외 전 화면 비허용으로 보수적으로 설정했다. 향후 "내 프로필" 전용 화면(SCR 미부여) 설계가 확정되면 함께 재검토 필요.
+9. `SYS_CONFIG.IS_SECRET` 암호화 키(`CONFIG_ENCRYPTION_KEY`) 회전 절차(2026-07-05) — MVP 범위에서는 키 회전 자동화(구 키 복호화 → 신 키 재암호화 배치)를 구현하지 않고 수동 재입력으로 대체하기로 확정(`[DESIGN]HRM_Automation_System_Design_v0_7.md` §5.3.17 참조). 운영 규모가 커지면 재검토 필요.
